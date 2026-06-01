@@ -4,18 +4,24 @@
 
 > This section applies to contributions to the **accelerator project itself**
 > (the open-source `alz-sub-vending-terraform-accelerator`). If you are an
-> operator running a copy created from this template, skip to the operational
-> sections below.
+> operator running a vended copy, skip to the operational sections below.
 
-Contributions and suggestions are welcome. By submitting a pull request you
-certify that you wrote the contribution, or otherwise have the right to submit
-it under the project's [MIT License](LICENSE) (the
-[Developer Certificate of Origin](https://developercertificate.org/) is a good
-summary of this expectation).
+This project welcomes contributions and suggestions. Most contributions require
+you to agree to a Contributor License Agreement (CLA) declaring that you have the
+right to, and actually do, grant us the rights to use your contribution. For
+details, visit [https://cla.opensource.microsoft.com](https://cla.opensource.microsoft.com).
 
-Please be respectful and constructive in issues and pull requests. Security
-issues are handled per the project's security policy (`SECURITY.md`); for
-support options see the support guide (`SUPPORT.md`).
+When you submit a pull request, a CLA bot will automatically determine whether you
+need to provide a CLA and decorate the PR appropriately (e.g., status check,
+comment). Simply follow the instructions provided by the bot. You will only need to
+do this once across all repos using our CLA.
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the
+[Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact
+[opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions
+or comments. Security issues are handled per the accelerator's security policy
+(`SECURITY.md`); for support options see the accelerator's support guide (`SUPPORT.md`).
 
 ## Vending a new subscription
 

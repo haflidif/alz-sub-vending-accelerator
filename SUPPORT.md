@@ -13,9 +13,9 @@ For help and questions about using this project, please:
 - Open a [GitHub Discussion](https://docs.github.com/en/discussions) (if enabled) or a
   GitHub Issue for questions not covered by the docs.
 
-## Support policy
+## Microsoft Support Policy
 
 This is a community-supported, open-source accelerator. Support is limited to the
 resources listed above and provided on a best-effort basis by the maintainers and
-community. It is **not** covered by any commercial support agreement, SLA, or
+community. It is **not** covered by a Microsoft commercial support agreement, SLA, or
 Azure support plan.

@@ -39,11 +39,12 @@ locals {
     "(^|/)\\.env$",
     "\\.DS_Store$",
     "/\\.gitkeep$",
-    "(^|/)-[a-zA-Z]$",    # stray shell-redirect artefacts like "-w"
-    "(^|/)\\.run\\.log$", # local run logs
-    "^SECURITY\\.md$",    # accelerator OSS governance — not for vended repos
-    "^SUPPORT\\.md$",     # accelerator OSS governance — not for vended repos
-    "^CODEOWNERS$",       # accelerator CODEOWNERS — vending repo gets a rendered one
+    "(^|/)-[a-zA-Z]$",        # stray shell-redirect artefacts like "-w"
+    "(^|/)\\.run\\.log$",     # local run logs
+    "^SECURITY\\.md$",        # accelerator OSS governance — not for vended repos
+    "^SUPPORT\\.md$",         # accelerator OSS governance — not for vended repos
+    "^CODE_OF_CONDUCT\\.md$", # accelerator OSS governance — not for vended repos
+    "^CODEOWNERS$",           # accelerator CODEOWNERS — vending repo gets a rendered one
   ]
 
   skeleton_files_all = toset(fileset(local.skeleton_root, "**/*"))
