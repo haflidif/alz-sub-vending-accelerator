@@ -1,8 +1,8 @@
 # `.github/` — CI/CD machinery
 
 The skeleton ships everything CI needs to validate PRs and apply
-subscriptions on merge. GitHub Actions only — **no Terragrunt, no
-external runners, no shared service-principal secrets**. Auth is OIDC →
+subscriptions on merge. GitHub Actions only — **no external runners, no
+shared service-principal secrets**. Auth is OIDC →
 UAMI federation; every workflow runs inside the operator's tenant.
 
 ## Files

@@ -11,10 +11,9 @@ template itself, not the AVM module pinned by the engine (see
 
 ## [0.1.0] - 2026-06-01
 
-Initial public release — a GitHub **template** for Azure Subscription Vending
+A GitHub **template** for Azure Subscription Vending
 built on [`Azure/avm-ptn-alz-sub-vending/azure`](https://registry.terraform.io/modules/Azure/avm-ptn-alz-sub-vending/azure/latest),
 with per-subscription Terraform state and YAML-driven subscription contracts.
-GitHub Actions only — no Terragrunt.
 
 ### Vending engine (`terraform/`)
 - Single-folder Terraform engine (no submodules) that vends one subscription

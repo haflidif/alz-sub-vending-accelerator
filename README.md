@@ -3,7 +3,7 @@
 Subscription vending repository built on top of
 [`Azure/avm-ptn-alz-sub-vending/azure`][avm], with
 **per-subscription Terraform state** and **YAML-driven** subscription
-contracts. CI/CD is GitHub Actions only — **no Terragrunt**.
+contracts. CI/CD runs on **GitHub Actions**.
 
 [avm]: https://registry.terraform.io/modules/Azure/avm-ptn-alz-sub-vending/azure/latest
 
