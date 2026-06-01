@@ -243,7 +243,7 @@ Per-layer references (each folder has its own README):
 | `bootstrap/` | [`bootstrap/README.md`](bootstrap/README.md) — what the bootstrap module creates + manual flow |
 | `terraform/` | [`terraform/README.md`](terraform/README.md) — engine file-by-file |
 | `landingzones/` | [`landingzones/README.md`](landingzones/README.md) — consumer reference for `sub.yaml` |
-| `.github/` | [`.github/README.md`](.github/README.md) — CI/CD workflows, OIDC, Dependabot |
+| `.github/` | [`.github/CICD.md`](.github/CICD.md) — CI/CD workflows, OIDC, Dependabot |
 | `scripts/` | [`scripts/README.md`](scripts/README.md) — local helper scripts |
 
 Topic-by-topic docs in `docs/`:

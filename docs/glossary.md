@@ -108,7 +108,7 @@ repo:<owner>/<repo>:pull_request             ← pr-validate.yml on PR
 repo:<owner>/<repo>:environment:production   ← apply.yml's apply job (gated)
 ```
 
-See [`.github/README.md → OIDC subject claims`](../.github/README.md#oidc-subject-claims).
+See [`.github/CICD.md → OIDC subject claims`](../.github/CICD.md#oidc-subject-claims).
 
 ## G
 

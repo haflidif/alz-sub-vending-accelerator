@@ -68,7 +68,7 @@ In the newly created GitHub repo:
 - Enable Azure Policy tag inheritance at the MG scope
   (recommended in [`docs/tagging.md`](docs/tagging.md#azure-policy-tag-inheritance-recommended))
 - Familiarize with the PR validation + apply workflow
-  ([`.github/README.md`](.github/README.md))
+  ([`.github/CICD.md`](.github/CICD.md))
 
 ---
 
