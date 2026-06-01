@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../sub.schema.json
+# =============================================================================
+# Subscription contract: dev-sandbox-platform-001
+# =============================================================================
+# Sandbox archetype defaults: workload = Production, budget REQUIRED, no peering.
+# To opt in to DevTest pricing add `workload: DevTest` below — requires the
+# EA/MCA billing scope to be entitled for the Dev/Test offer (see
+# docs/onboarding.md → "DevTest entitlement").
+# =============================================================================
+archetype:   sandbox                 # REQUIRED — corp | online | sandbox
+
+displayName: dev-sandbox-platform-001
+aliasName:   dev-sandbox-platform-001
+location:    westeurope              # REQUIRED
+
+owner:                platform-team@example.com           # → tag: businessowner   (REQUIRED)
+technicalResponsible: platform-team@example.com           # → tag: technicalcontact
+costCenter:           "3120"                               # → tag: costcenter
+workloadName:         Platform Sandbox                     # → tag: workloadname
+costAllocationCode:   PRJ-9999                             # → tag: <cost_allocation_tag_key>
+
+tags:
+  purpose: experimentation
+  expiry:  "2026-12-31"   # consumer-supplied expiry tag for cleanup automation
+
+# No networking by default — sandboxes are isolated.
+network:
+  enabled: false
+
+# REQUIRED for sandbox.
+budget:
+  amount: 250
+  contacts:
+    - platform-team@example.com
+
+roleAssignments: {}

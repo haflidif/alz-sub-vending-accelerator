@@ -1,0 +1,204 @@
+# =============================================================================
+# Bootstrap inputs — copy to terraform.tfvars and edit before running.
+#
+# Recommended path:
+#   pwsh ./Invoke-Bootstrap.ps1
+# The wizard will fill these values in for you and keep them in
+# .bootstrap-inputs.json so re-runs are idempotent.
+#
+# Advanced / bypass-the-wizard path:
+#   Copy-Item terraform.tfvars.example terraform.tfvars
+#   # edit values below
+#   terraform init && terraform plan && terraform apply
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Identity & location
+# -----------------------------------------------------------------------------
+platform_subscription_id = "REPLACE-platform-subscription-id"
+uami_resource_group_name = "rg-platform-identity-prod"
+uami_name                = "id-subvending-pipeline"
+location                 = "westeurope"
+
+
+# -----------------------------------------------------------------------------
+# Existing platform Terraform state storage account
+# -----------------------------------------------------------------------------
+state_storage_account_resource_group_name = "rg-platform-tfstate-prod"
+state_storage_account_name                = "stplatformtfstate"
+state_container_name                      = "subvending-tfstate"
+
+
+# -----------------------------------------------------------------------------
+# RBAC scopes
+#   alz_root_management_group_id is the BARE management-group name, not a full
+#   resource ID. It MUST be a parent of every archetype MG in management_group_ids.
+# -----------------------------------------------------------------------------
+alz_root_management_group_id    = "REPLACE-root-mg-name"
+connectivity_subscription_id    = "REPLACE-connectivity-subscription-id"
+grant_user_access_administrator = true
+
+
+# -----------------------------------------------------------------------------
+# GitHub repository (where the seeded vending repo lives)
+# -----------------------------------------------------------------------------
+github_owner                 = "REPLACE-github-org"
+github_repository_name       = "sub-vending"
+create_github_repository     = false
+github_repository_visibility = "private"
+github_default_branch        = "main"
+
+# Branch protection on main (PR + status checks required to merge).
+# Defaults match the shipped pr-validate.yml job names. Override
+# branch_protection_required_status_checks if you rename jobs.
+enforce_branch_protection                         = true
+branch_protection_required_approving_review_count = 1
+# branch_protection_required_status_checks = [
+#   "PR Validate / YAML schema validation",
+#   "PR Validate / PR Validate Result",
+# ]
+
+# Production environment reviewers (look up numeric IDs via the GitHub API or
+# `gh api /users/<login>` / `gh api /orgs/<org>/teams/<team-slug>`).
+production_environment_name  = "production"
+production_reviewer_user_ids = []
+production_reviewer_team_ids = []
+
+
+# -----------------------------------------------------------------------------
+# Bootstrap-resource tags (applied to UAMI, RBAC role assignments, GitHub repo)
+# -----------------------------------------------------------------------------
+tags = {
+  managedby = "terraform"
+  workload  = "sub-vending-bootstrap"
+  owner     = "platform-team"
+}
+
+
+# -----------------------------------------------------------------------------
+# CODEOWNERS for the seeded repo
+#
+# The bootstrap renders .github/CODEOWNERS into the seeded repo from
+# bootstrap/templates/CODEOWNERS.tftpl. The default team owns '*' and every
+# engine path. Per-archetype handles are appended for landingzones/<arch>/.
+# -----------------------------------------------------------------------------
+codeowners_default_team = "@REPLACE-org/platform-team"
+
+codeowners_archetype_teams = {
+  # corp    = ["@REPLACE-org/corp-archetype-owners"]
+  # online  = ["@REPLACE-org/online-archetype-owners"]
+  # sandbox = ["@REPLACE-org/sandbox-archetype-owners"]
+}
+
+
+# -----------------------------------------------------------------------------
+# Skeleton seeding (defaults are usually fine)
+# -----------------------------------------------------------------------------
+copy_skeleton_files    = true
+skeleton_source_path   = ".."
+skeleton_commit_author = "sub-vending-bootstrap"
+skeleton_commit_email  = "platform-bootstrap@example.local"
+
+
+# =============================================================================
+# Platform context — written into terraform/terraform.auto.tfvars in the
+# seeded repo so the workflows can `terraform plan` without manual setup.
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Tenant
+# -----------------------------------------------------------------------------
+tenant_id = "REPLACE-tenant-guid"
+
+
+# -----------------------------------------------------------------------------
+# Billing scopes (map of named billing scopes available to vended subscriptions)
+#
+# The map MUST contain a `default` entry. Per-subscription YAMLs can opt into a
+# non-default key via `billingScopeKey: <name>`.
+#
+# Each entry sets agreement_type to EA | MCA | MPA and populates the matching
+# nested object (ea / mca / mpa). Leave the other two nested objects unset.
+#
+# The bootstrap derives the full Azure billing scope path string and writes the
+# resolved map into the seeded repo's terraform.auto.tfvars. See
+# docs/billing-scopes.md for path formats and CLI discovery commands.
+# -----------------------------------------------------------------------------
+billing_scopes = {
+  default = {
+    # ---- EA example ----
+    agreement_type = "EA"
+    ea = {
+      billing_account_name  = "REPLACE-billing-account-name"  # numeric e.g. 7690848
+      enrollment_account_id = "REPLACE-enrollment-account-id" # numeric e.g. 403507
+    }
+  }
+
+  # ---- Optional additional scopes (uncomment and edit) ----
+  #
+  # mca_prod = {
+  #   agreement_type = "MCA"
+  #   mca = {
+  #     billing_account_name = "11111111-2222-3333-4444-555555555555:66666666-7777-8888-9999-000000000000_2024-01-31"
+  #     billing_profile_name = "ABCD-EFGH-IJK-LMN"
+  #     invoice_section_name = "WXYZ-1234"
+  #   }
+  # }
+  #
+  # mpa_partner = {
+  #   agreement_type = "MPA"
+  #   mpa = {
+  #     billing_account_name = "11111111-2222-3333-4444-555555555555:66666666-7777-8888-9999-000000000000_2024-01-31"
+  #     customer_id          = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+  #   }
+  # }
+}
+
+
+# -----------------------------------------------------------------------------
+# Cost-allocation tag (in addition to the always-on `costcenter` tag)
+#
+# Set `name` to your organization's convention (e.g. activitycode, wbselement,
+# programcode). Set `required = true` to fail-fast when a sub.yaml omits
+# `costAllocationCode`. Optional `pattern` is a Terraform regex (anchors
+# recommended) validated at plan time.
+# -----------------------------------------------------------------------------
+cost_allocation_tag = {
+  name     = "projectcode"
+  required = false
+  # pattern = "^[A-Z]{3}-[0-9]{4}$"
+}
+
+
+# -----------------------------------------------------------------------------
+# Management groups (archetype name -> destination MG resource ID)
+#   Keys MUST match the archetype values used in
+#   landingzones/<archetype>/*.yaml (corp / online / sandbox by default).
+#   Values MUST be full management-group resource IDs.
+# -----------------------------------------------------------------------------
+management_group_ids = {
+  corp    = "/providers/Microsoft.Management/managementGroups/REPLACE-corp-mg-name"
+  online  = "/providers/Microsoft.Management/managementGroups/REPLACE-online-mg-name"
+  sandbox = "/providers/Microsoft.Management/managementGroups/REPLACE-sandbox-mg-name"
+}
+
+
+# -----------------------------------------------------------------------------
+# Hub VNet (corp/online subscriptions are peered to this VNet)
+#   Leave as an empty string if your platform has no hub VNet.
+# -----------------------------------------------------------------------------
+hub_virtual_network_resource_id = ""
+
+
+# -----------------------------------------------------------------------------
+# Mandatory tags (merged into every vended subscription)
+#   CAF-aligned defaults: lowercase, no separators. Per-subscription identity
+#   tags (businessowner / costcenter / etc.) layer on top.
+# -----------------------------------------------------------------------------
+mandatory_tags = {
+  managedby  = "terraform"
+  source     = "avm-ptn-alz-sub-vending"
+  deployedby = "subscription-vending-pipeline"
+}

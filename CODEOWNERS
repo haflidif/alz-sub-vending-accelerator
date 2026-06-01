@@ -1,0 +1,14 @@
+# Code owners for the alz-sub-vending-terraform-accelerator project.
+#
+# These owners are automatically requested for review on pull requests to THIS
+# repository (the accelerator project itself).
+#
+# NOTE: This file governs contributions to the accelerator. It is intentionally
+# EXCLUDED from the bootstrap seed (see bootstrap/files.tf) so it never lands in a
+# vended repository. The CODEOWNERS that governs a vending repo is rendered
+# separately by the bootstrap from bootstrap/templates/CODEOWNERS.tftpl.
+#
+# On transfer to a Microsoft org, replace @haflidif with the owning team handle
+# (e.g. @Azure/alz-maintainers).
+
+* @haflidif

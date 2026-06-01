@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=../sub.schema.json
+# =============================================================================
+# Subscription contract: prod-corp-erp-001
+# =============================================================================
+# Naming convention: <env>-<archetype>-<workload>[-<seq>]
+# Folder name is also used as the alias name unless `aliasName` is overridden.
+# =============================================================================
+
+archetype:   corp                   # REQUIRED — corp | online | sandbox
+
+displayName: prod-corp-erp-001
+aliasName:   prod-corp-erp-001
+workload:    Production             # Production | DevTest
+location:    westeurope             # REQUIRED — no default
+
+# --- Ownership / chargeback -------------------------------------------------
+owner:                erp-platform@example.com           # → tag: businessowner   (REQUIRED)
+technicalResponsible: erp-ops@example.com                # → tag: technicalcontact (optional, defaults to owner)
+costCenter:           "3120"                             # → tag: costcenter
+workloadName:         ERP                                # → tag: workloadname (optional, defaults to aliasName)
+costAllocationCode:   PRJ-1234                           # → tag: <cost_allocation_tag_key> (default key: projectcode)
+
+# Optional: choose a non-default billing scope when the operator declared
+# multiple in `billing_scopes` (e.g. sandbox EA vs prod MCA).
+# billingScopeKey: default
+
+# --- Free-form tags (merged on top of mandatory + archetype + identity tags)
+tags:
+  application:  erp
+  dataClass:    confidential
+  businessUnit: finance
+
+# --- Networking -------------------------------------------------------------
+network:
+  enabled: true
+  addressSpace:
+    - 10.50.0.0/22
+  hubPeering: true
+  subnets:
+    app:
+      address_prefixes: ["10.50.0.0/24"]
+    data:
+      address_prefixes: ["10.50.1.0/24"]
+
+# --- Budget -----------------------------------------------------------------
+budget:
+  amount: 5000
+  contacts:
+    - finops@example.com
+
+# --- Subscription-scoped role assignments ----------------------------------
+# Keys are arbitrary; values are passed straight to the AVM module's
+# `role_assignments` map. principal_id must be an Entra object id.
+roleAssignments:
+  owners:
+    principal_id:               "REPLACE-WITH-OWNER-GROUP-OBJECT-ID"
+    role_definition_id_or_name: "Owner"
+  contributors:
+    principal_id:               "REPLACE-WITH-CONTRIB-GROUP-OBJECT-ID"
+    role_definition_id_or_name: "Contributor"
+
+# --- Optional: user-assigned managed identity -------------------------------
+# managedIdentity:
+#   name: id-erp-runtime
+#   resourceGroupName: rg-prod-corp-erp-001-identity

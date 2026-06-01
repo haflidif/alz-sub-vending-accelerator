@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# =============================================================================
+# discover-subs.sh
+# -----------------------------------------------------------------------------
+# Emits a GitHub Actions matrix (JSON) of subscriptions to operate on.
+#
+# Each subscription is described by ONE flat YAML file:
+#   landingzones/<archetype>/<sub-name>.yaml
+#
+# Modes:
+#   changed  — subs whose YAML was added/modified between $BASE and $HEAD
+#   single   — only the subscription at $SUB_PATH (the .yaml file, OR just the
+#              <archetype>/<sub-name> stem; .yaml is appended if missing)
+#   all      — every landingzones/*/*.yaml in the repo
+#
+# Outputs (written to $GITHUB_OUTPUT):
+#   matrix=<json>            -- {"include":[{"sub_path":"...","archetype":"...","name":"...","state_key":"..."}]}
+#   count=<int>
+# =============================================================================
+set -euo pipefail
+
+MODE="${MODE:-changed}"
+BASE="${BASE:-origin/main}"
+HEAD="${HEAD:-HEAD}"
+SUB_PATH="${SUB_PATH:-}"
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+discover_all() {
+  find landingzones -mindepth 2 -maxdepth 2 -type f -name '*.yaml' | sort
+}
+
+discover_changed() {
+  # Only fetch when BASE looks like a remote ref. Commit SHAs (from
+  # github.event.before on push) are already in the repo when fetch-depth=0.
+  if [[ "$BASE" == origin/* ]]; then
+    git fetch --no-tags --prune --unshallow origin "${BASE#origin/}" >/dev/null 2>&1 \
+      || git fetch --no-tags --prune origin "${BASE#origin/}" >/dev/null 2>&1 \
+      || true
+  fi
+  git diff --name-only --diff-filter=AM "${BASE}...${HEAD}" -- 'landingzones/*/*.yaml' | sort -u
+}
+
+case "$MODE" in
+  all)     mapfile -t files < <(discover_all) ;;
+  changed) mapfile -t files < <(discover_changed) ;;
+  single)
+    if [[ -z "$SUB_PATH" ]]; then
+      echo "::error::mode=single requires SUB_PATH (e.g. landingzones/corp/prod-corp-erp-001 or landingzones/corp/prod-corp-erp-001.yaml)" >&2
+      exit 1
+    fi
+    if [[ "$SUB_PATH" == *.yaml ]]; then
+      files=("$SUB_PATH")
+    else
+      files=("${SUB_PATH%/}.yaml")
+    fi
+    [[ -f "${files[0]}" ]] || { echo "::error::not found: ${files[0]}" >&2; exit 1; }
+    ;;
+  *) echo "::error::unknown MODE: $MODE" >&2; exit 1 ;;
+esac
+
+include="[]"
+count=0
+for f in "${files[@]:-}"; do
+  [[ -z "$f" ]] && continue
+  # landingzones/<archetype>/<name>.yaml
+  arch="$(echo "$f" | awk -F'/' '{print $2}')"
+  base="$(echo "$f" | awk -F'/' '{print $3}')"
+  name="${base%.yaml}"
+  [[ -z "$arch" || -z "$name" || "$base" == "$name" ]] && { echo "::warning::skipping malformed path: $f"; continue; }
+  entry=$(jq -nc --arg p "$f" --arg a "$arch" --arg n "$name" \
+    '{sub_path:$p, archetype:$a, name:$n, state_key:("\($a)/\($n).tfstate")}')
+  include=$(jq -c --argjson e "$entry" '. + [$e]' <<<"$include")
+  count=$((count + 1))
+done
+
+matrix=$(jq -nc --argjson inc "$include" '{include:$inc}')
+{
+  echo "matrix=${matrix}"
+  echo "count=${count}"
+} >>"${GITHUB_OUTPUT:-/dev/stdout}"
+
+echo "Discovered $count subscription(s) for mode=$MODE"
+jq . <<<"$matrix" || true

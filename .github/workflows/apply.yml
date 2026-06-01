@@ -1,0 +1,135 @@
+name: Apply
+
+# -----------------------------------------------------------------------------
+# Three trigger modes:
+#   1. push to main         — auto: applies subscriptions whose YAML changed
+#                             between the previous and current commit
+#   2. workflow_dispatch    — manual: choose mode
+#                               • changed (default)
+#                               • single  (specify sub_path)
+#                               • all     (re-applies every YAML in repo)
+# -----------------------------------------------------------------------------
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'landingzones/*/*.yaml'
+      - 'terraform/**'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Selection mode
+        type: choice
+        default: changed
+        options: [changed, single, all]
+      sub_path:
+        description: 'For mode=single: path to the sub YAML, e.g. landingzones/corp/prod-corp-erp-001.yaml (the .yaml suffix is optional)'
+        required: false
+        default: ''
+
+permissions:
+  id-token: write
+  contents: read
+
+# Top-level concurrency keeps the dispatch queue ordered. Per-archetype/sub
+# concurrency is set on the apply job below to allow parallel vending of
+# different subscriptions while still serialising same-sub re-runs.
+concurrency:
+  group: apply-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1) Discover which subscriptions to apply
+  # ---------------------------------------------------------------------------
+  discover:
+    name: Discover subscriptions
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+      count:  ${{ steps.set.outputs.count }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Discover
+        id: set
+        env:
+          MODE:     ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'changed' }}
+          SUB_PATH: ${{ inputs.sub_path }}
+          BASE:     ${{ github.event.before || 'HEAD~1' }}
+          HEAD:     ${{ github.sha }}
+        run: bash .github/scripts/discover-subs.sh
+
+  # ---------------------------------------------------------------------------
+  # 2) Apply each subscription with its own state
+  # ---------------------------------------------------------------------------
+  apply:
+    name: Apply ${{ matrix.archetype }}/${{ matrix.name }}
+    needs: discover
+    if: needs.discover.outputs.count != '0'
+    runs-on: ubuntu-latest
+    # Per-sub concurrency: same subscription cannot apply twice in parallel
+    # (state-locking would fight us anyway), but different subs run freely.
+    concurrency:
+      group: apply-${{ matrix.archetype }}-${{ matrix.name }}
+      cancel-in-progress: false
+    # Use a GitHub Environment to require manual approval before apply.
+    # Configure required reviewers in repo Settings → Environments → "production".
+    environment: production
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
+    env:
+      ARM_USE_AZUREAD: 'true'
+      ARM_USE_OIDC:    'true'
+      ARM_CLIENT_ID:        ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID:        ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID:  ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZAPI_RETRY_GET_AFTER_PUT_MAX_TIME: '60m'
+      TF_IN_AUTOMATION: 'true'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.5
+          terraform_wrapper: false
+
+      - uses: azure/login@v3
+        with:
+          client-id:       ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id:       ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform init (per-sub state)
+        working-directory: terraform
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.BACKEND_RESOURCE_GROUP_NAME }}" \
+            -backend-config="storage_account_name=${{ vars.BACKEND_STORAGE_ACCOUNT_NAME }}" \
+            -backend-config="container_name=${{ vars.BACKEND_CONTAINER_NAME }}" \
+            -backend-config="key=${{ matrix.state_key }}" \
+            -backend-config="tenant_id=${{ vars.AZURE_TENANT_ID }}" \
+            -backend-config="subscription_id=${{ vars.AZURE_SUBSCRIPTION_ID }}"
+
+      - name: Terraform plan
+        working-directory: terraform
+        env:
+          TF_VAR_sub_yaml_path: ../${{ matrix.sub_path }}
+        run: |
+          terraform plan -input=false -no-color -out=tfplan
+
+      - name: Terraform apply
+        working-directory: terraform
+        run: terraform apply -input=false -no-color tfplan
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: apply-${{ matrix.archetype }}-${{ matrix.name }}
+          path: |
+            terraform/tfplan
+          retention-days: 30

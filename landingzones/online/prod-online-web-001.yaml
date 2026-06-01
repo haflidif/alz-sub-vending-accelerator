@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../sub.schema.json
+# =============================================================================
+# Subscription contract: prod-online-web-001
+# =============================================================================
+archetype:   online                  # REQUIRED — corp | online | sandbox
+
+displayName: prod-online-web-001
+aliasName:   prod-online-web-001
+workload:    Production
+location:    westeurope              # REQUIRED
+
+owner:                web-platform@example.com           # → tag: businessowner   (REQUIRED)
+technicalResponsible: web-ops@example.com                 # → tag: technicalcontact
+costCenter:           "3120"                              # → tag: costcenter
+workloadName:         Public Web                          # → tag: workloadname
+costAllocationCode:   PRJ-1235                            # → tag: <cost_allocation_tag_key>
+
+tags:
+  application: public-web
+  exposure:    internet
+
+# Online subscriptions default to NO hub peering — flip on only if needed.
+network:
+  enabled: true
+  addressSpace:
+    - 10.150.0.0/22
+  hubPeering: false
+  subnets:
+    ingress:
+      address_prefixes: ["10.150.0.0/24"]
+    app:
+      address_prefixes: ["10.150.1.0/24"]
+
+budget:
+  amount: 3000
+  contacts:
+    - finops@example.com
+
+roleAssignments: {}

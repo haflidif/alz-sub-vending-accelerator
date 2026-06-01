@@ -1,0 +1,46 @@
+# Terraform
+**/.terraform/
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfplan.*
+crash.log
+crash.*.log
+
+# Terragrunt
+**/.terragrunt-cache/
+terragrunt-debug.tfvars.json
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets — should never live here
+*.pem
+*.pfx
+.env
+.env.*
+
+# Local tfvars — may contain tenant/sub/billing IDs.
+# Bootstrap ships .example files; copy + rename locally.
+terraform.tfvars
+terraform.tfvars.json
+!terraform.tfvars.example
+!*/terraform.tfvars.example
+
+# Interactive-bootstrap sidecar state (operator inputs persisted between runs).
+# Contains tenant/sub/billing IDs — must never be committed.
+.bootstrap-inputs.json
+**/.bootstrap-inputs.json
+.bootstrap-inputs.json.bak
+**/.bootstrap-inputs.json.bak
+
+# Local run logs / stray shell-redirect artefacts
+.run.log
+-?

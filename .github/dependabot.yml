@@ -1,0 +1,31 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore(ci)
+    labels:
+      - dependencies
+      - github-actions
+
+  - package-ecosystem: terraform
+    directory: /terraform
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore(terraform)
+    labels:
+      - dependencies
+      - terraform
+
+  - package-ecosystem: terraform
+    directory: /bootstrap
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore(bootstrap)
+    labels:
+      - dependencies
+      - terraform

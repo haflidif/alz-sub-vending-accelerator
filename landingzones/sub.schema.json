@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/sub-vending/sub.schema.json",
+  "title": "Subscription contract",
+  "description": "Schema for landingzones/<archetype>/<sub-name>.yaml. Validated by .github/workflows/pr-validate.yml on every PR.",
+  "type": "object",
+  "additionalProperties": false,
+
+  "required": [
+    "archetype",
+    "location",
+    "owner"
+  ],
+
+  "properties": {
+    "archetype": {
+      "description": "Landing-zone archetype. Must match a folder under landingzones/ AND a key in terraform/archetypes.tf.",
+      "type": "string",
+      "enum": ["corp", "online", "sandbox"]
+    },
+
+    "displayName": {
+      "description": "Azure subscription display name. Defaults to filename without .yaml.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-zA-Z0-9._\\- ]+$"
+    },
+    "aliasName": {
+      "description": "EA / MCA subscription alias. Defaults to filename without .yaml. Must be unique within the billing scope.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 63,
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+    },
+
+    "workload": {
+      "description": "Lifecycle classifier — emitted as the `environment` tag. Defaults to Production. Set to DevTest to opt in to Dev/Test pricing (requires EA/MCA entitlement; see docs/onboarding.md).",
+      "type": "string",
+      "enum": ["Production", "DevTest"]
+    },
+    "location": {
+      "description": "Default Azure region for resources created by this module (network RG, etc). No default — must be set.",
+      "type": "string",
+      "minLength": 3,
+      "examples": ["westeurope", "northeurope"]
+    },
+
+    "owner": {
+      "description": "Business owner email or distribution list. Emitted as the `businessowner` tag and used for budget alerts.",
+      "type": "string",
+      "format": "email"
+    },
+    "technicalResponsible": {
+      "description": "Technical owner email. Emitted as `technicalcontact` tag. Defaults to `owner` if omitted.",
+      "type": "string",
+      "format": "email"
+    },
+    "costCenter": {
+      "description": "Finance cost-center code (string — leading zeros matter). Emitted as `costcenter` tag.",
+      "type": "string",
+      "pattern": "^[0-9A-Za-z\\-]+$"
+    },
+    "workloadName": {
+      "description": "Human-friendly workload name. Emitted as `workloadname` tag. Defaults to aliasName if omitted.",
+      "type": "string",
+      "minLength": 1
+    },
+    "costAllocationCode": {
+      "description": "Optional user-defined cost-allocation code (e.g. project / activity / WBS code). Emitted as the tag whose KEY is configured by the operator via `cost_allocation_tag_key` (default: projectcode). Required when the operator sets `cost_allocation_required = true`. Pattern enforcement (if any) is applied at terraform plan time via `cost_allocation_pattern`.",
+      "type": "string",
+      "minLength": 1,
+      "examples": ["PRJ-1234", "PC016083", "WBS.001.AB"]
+    },
+    "billingScopeKey": {
+      "description": "Selects which billing scope from `billing_scopes` is used when creating this subscription. Defaults to `default`. See docs/billing-scopes.md.",
+      "type": "string",
+      "minLength": 1,
+      "default": "default",
+      "examples": ["default", "sandbox", "prod-mca"]
+    },
+
+    "tags": {
+      "description": "Free-form tag map merged on top of mandatory + archetype + identity tags. Caller wins on conflict.",
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+
+    "network": {
+      "description": "Spoke networking. Set enabled:false to skip VNet/peering entirely.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled":      { "type": "boolean" },
+        "addressSpace": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}/([0-9]|[12][0-9]|3[0-2])$"
+          },
+          "minItems": 1
+        },
+        "hubPeering":   { "type": "boolean" },
+        "subnets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["address_prefixes"],
+            "properties": {
+              "address_prefixes": {
+                "type": "array",
+                "items": { "type": "string" },
+                "minItems": 1
+              }
+            }
+          }
+        }
+      },
+      "if":   { "properties": { "enabled": { "const": true } }, "required": ["enabled"] },
+      "then": { "required": ["addressSpace"] }
+    },
+
+    "budget": {
+      "description": "Subscription-scoped consumption budget. REQUIRED for sandbox.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount"],
+      "properties": {
+        "amount":   { "type": "number", "exclusiveMinimum": 0 },
+        "contacts": {
+          "type": "array",
+          "items": { "type": "string", "format": "email" }
+        }
+      }
+    },
+
+    "roleAssignments": {
+      "description": "Subscription-scoped role assignments. Keys are arbitrary; values forwarded to AVM module.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["principal_id", "role_definition_id_or_name"],
+        "additionalProperties": true,
+        "properties": {
+          "principal_id":               { "type": "string", "minLength": 1 },
+          "role_definition_id_or_name": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+
+    "managedIdentity": {
+      "description": "Optional user-assigned managed identity provisioned alongside the subscription.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name":              { "type": "string", "minLength": 3, "maxLength": 128 },
+        "resourceGroupName": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+
+  "allOf": [
+    {
+      "if": { "properties": { "archetype": { "const": "sandbox" } }, "required": ["archetype"] },
+      "then": {
+        "required": ["budget"],
+        "description": "Sandbox subscriptions MUST declare a budget."
+      }
+    }
+  ]
+}

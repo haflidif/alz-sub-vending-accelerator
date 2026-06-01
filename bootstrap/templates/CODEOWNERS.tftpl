@@ -1,0 +1,18 @@
+# CODEOWNERS for sub-vending
+#
+# Rendered by `bootstrap/files.tf` from `bootstrap/templates/CODEOWNERS.tftpl`.
+# Re-run the bootstrap (or update via PR directly) to change owners.
+
+# Default owners — apply to everything that isn't specifically overridden.
+*                                   ${default_team}
+
+# Engine — locked down to the default team.
+/terraform/                         ${default_team}
+/bootstrap/                         ${default_team}
+/.github/                           ${default_team}
+/docs/                              ${default_team}
+%{ for archetype, owners in archetype_owners ~}
+
+# ${archetype} archetype
+/landingzones/${archetype}/         ${join(" ", owners)}
+%{ endfor ~}
