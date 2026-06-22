@@ -31,7 +31,7 @@ jobs:
     name: YAML schema validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install check-jsonschema
         run: pipx install 'check-jsonschema==0.37.2'
@@ -59,7 +59,7 @@ jobs:
       matrix: ${{ steps.set.outputs.matrix }}
       count:  ${{ steps.set.outputs.count }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # need history for git diff
 
@@ -91,7 +91,7 @@ jobs:
       AZAPI_RETRY_GET_AFTER_PUT_MAX_TIME: '60m'
       TF_IN_AUTOMATION: 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: hashicorp/setup-terraform@v4
         with:
