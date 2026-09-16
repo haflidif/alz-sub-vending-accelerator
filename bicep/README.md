@@ -45,9 +45,10 @@ placement, governed tags, billing-scope selection, resource-provider
 registration, subscription-scoped role assignments, one requested managed
 identity, one spoke virtual network, hub peering, and one subscription budget.
 
-The upstream Bicep AVM accepts one budget threshold type per deployment. This
-foundation uses forecast thresholds. Matching the Terraform starter's separate
-actual and forecast notifications remains part of the parity work.
+The upstream Bicep AVM accepts one budget threshold type per deployment. The
+accelerator disables that limited budget path and deploys one subscription
+budget through `modules/budget.bicep`, preserving the Terraform starter's
+separate actual and forecast notifications.
 
 The AVM's default resource-provider registration uses an Azure deployment
 script and supporting identity, storage, and private networking resources.
@@ -84,3 +85,7 @@ offline compilation:
 The final what-if with platform-managed provider registration produced only
 the expected management-group association, subscription tag, and budget
 operations. No deployment was applied.
+
+Budget parity was also validated against the existing Sandbox subscription.
+The resulting budget contained the expected `actual50`, `actual90`, and
+`forecast100` notification thresholds in one resource.
