@@ -70,7 +70,7 @@
 
 .PARAMETER Engine
     Starter engine to package into the generated vending repository. Terraform
-    is the current default and only available starter. Bicep is planned.
+    is the default starter. Bicep is also available.
 
 .PARAMETER Destroy
     Switch to destroy/teardown mode. Reverses what the bootstrap created.

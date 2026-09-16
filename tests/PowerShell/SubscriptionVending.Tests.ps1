@@ -44,6 +44,7 @@ try {
   New-Item -ItemType Directory -Path $bootstrapPath -Force | Out-Null
   Copy-Item -LiteralPath $starterRoot -Destination $testStarterRoot -Recurse
   New-Item -ItemType Directory -Path (Join-Path $testRoot 'terraform') -Force | Out-Null
+  Copy-Item -LiteralPath (Join-Path $repositoryRoot 'bicep') -Destination (Join-Path $testRoot 'bicep') -Recurse
   New-Item -ItemType Directory -Path (Join-Path $testRoot 'landingzones') -Force | Out-Null
   New-Item -ItemType Directory -Path (Join-Path $testRoot '.github/workflows') -Force | Out-Null
   New-Item -ItemType Directory -Path (Join-Path $testRoot '.github/scripts') -Force | Out-Null
@@ -77,13 +78,13 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
 
   $engines = @(Get-SubscriptionVendingEngine)
   Assert-Equal 'Available' ($engines | Where-Object Name -eq 'Terraform').Availability 'Terraform availability is incorrect.'
-  Assert-Equal 'Planned' ($engines | Where-Object Name -eq 'Bicep').Availability 'Bicep availability is incorrect.'
+  Assert-Equal 'Available' ($engines | Where-Object Name -eq 'Bicep').Availability 'Bicep availability is incorrect.'
   Assert-Equal '1.0' ($engines | Where-Object Name -eq 'Terraform').ContractVersion 'Terraform contract version is incorrect.'
 
   $starterResults = @(Test-SubscriptionVendingStarter)
   Assert-Equal 2 $starterResults.Count 'Unexpected starter validation result count.'
   Assert-Equal 26 ($starterResults | Where-Object Name -eq 'Terraform').ImplementedCapabilities 'Terraform capability count is incorrect.'
-  Assert-Equal 0 ($starterResults | Where-Object Name -eq 'Bicep').ImplementedCapabilities 'Bicep should not report implemented capabilities yet.'
+  Assert-Equal 26 ($starterResults | Where-Object Name -eq 'Bicep').ImplementedCapabilities 'Bicep capability count is incorrect.'
   $terraformManifest = Get-Content -LiteralPath (Join-Path $starterRoot 'terraform/starter.json') -Raw | ConvertFrom-Json
   Assert-Equal 'terraform/' $terraformManifest.package.includePrefixes[0] 'Terraform package prefix is incorrect.'
   $starterContract = Get-Content -LiteralPath (Join-Path $starterRoot 'starter-contract.json') -Raw | ConvertFrom-Json
@@ -147,9 +148,20 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Equal $true $captured.PlanOnly 'PlanOnly was not forwarded.'
   Assert-Equal 'inputs.json' $captured.InputsPath 'InputsPath was not forwarded.'
 
-  Assert-Throws `
-    -Script { Initialize-SubscriptionVending -Engine Bicep -StarterRoot $testStarterRoot } `
-    -MessagePattern '*Bicep starter is planned and cannot be selected*'
+  Initialize-SubscriptionVending `
+    -Engine Bicep `
+    -Phase configure `
+    -StarterRoot $testStarterRoot `
+    -NonInteractive `
+    -PlanOnly `
+    -InputsPath 'bicep-inputs.json'
+
+  $captured = Get-Content -LiteralPath $capturePath -Raw | ConvertFrom-Json
+  Assert-Equal 'configure' $captured.Phase 'Bicep phase was not forwarded.'
+  Assert-Equal 'Bicep' $captured.Engine 'Bicep engine was not forwarded.'
+  Assert-Equal $true $captured.NonInteractive 'Bicep NonInteractive was not forwarded.'
+  Assert-Equal $true $captured.PlanOnly 'Bicep PlanOnly was not forwarded.'
+  Assert-Equal 'bicep-inputs.json' $captured.InputsPath 'Bicep InputsPath was not forwarded.'
 
   $newInputsPath = Join-Path $testRoot 'new-inputs.json'
   '{}' | Set-Content -LiteralPath $newInputsPath
@@ -163,6 +175,19 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Equal 0 $LASTEXITCODE 'Legacy bootstrap should accept the Terraform starter.'
   $savedInputs = Get-Content -LiteralPath $newInputsPath -Raw | ConvertFrom-Json
   Assert-Equal 'terraform' $savedInputs.starter_name 'Legacy bootstrap did not persist the normalized starter name.'
+
+  $newBicepInputsPath = Join-Path $testRoot 'new-bicep-inputs.json'
+  '{}' | Set-Content -LiteralPath $newBicepInputsPath
+  & pwsh -NoLogo -NoProfile -File $legacyBootstrapPath `
+    -Engine Bicep `
+    -Phase configure `
+    -NonInteractive `
+    -SkipPreflight `
+    -InputsPath $newBicepInputsPath `
+    -TfvarsPath (Join-Path $testRoot 'new-bicep.tfvars.json') | Out-Null
+  Assert-Equal 0 $LASTEXITCODE 'Legacy bootstrap should accept the Bicep starter.'
+  $savedBicepInputs = Get-Content -LiteralPath $newBicepInputsPath -Raw | ConvertFrom-Json
+  Assert-Equal 'bicep' $savedBicepInputs.starter_name 'Legacy bootstrap did not persist the normalized Bicep starter name.'
 
   $mismatchInputsPath = Join-Path $testRoot 'mismatch-inputs.json'
   '{"starter_name":"terraform"}' | Set-Content -LiteralPath $mismatchInputsPath
