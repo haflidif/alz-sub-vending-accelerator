@@ -14,15 +14,15 @@
     ]
   },
   "runtime": {
-    "enginePath": null,
+    "enginePath": "bicep",
     "requestPath": "landingzones",
     "requestSchemaPath": "landingzones/sub.schema.json",
-    "previewWorkflowPath": null,
-    "deploymentWorkflowPath": null,
-    "discoveryScriptPath": null,
-    "previewMode": null,
-    "deploymentMode": null,
-    "stateMode": null
+    "previewWorkflowPath": ".github/workflows/pr-validate.yml",
+    "deploymentWorkflowPath": ".github/workflows/apply.yml",
+    "discoveryScriptPath": ".github/scripts/discover-subs.sh",
+    "previewMode": "arm-what-if",
+    "deploymentMode": "management-group-deployment",
+    "stateMode": "azure-deployment-per-subscription"
   },
   "capabilities": {
     "implemented": [],

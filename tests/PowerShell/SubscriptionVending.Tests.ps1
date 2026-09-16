@@ -101,6 +101,20 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Equal $true ('README.md' -in $terraformPackage) 'Common files must be included in the Terraform package.'
   Assert-Equal $true ('terraform/main.tf' -in $terraformPackage) 'Terraform files must be included in the Terraform package.'
   Assert-Equal $false ('bicep/main.bicep' -in $terraformPackage) 'Non-selected Bicep files must be excluded from the Terraform package.'
+  $bicepManifest = Get-Content -LiteralPath (Join-Path $starterRoot 'bicep/starter.json') -Raw | ConvertFrom-Json
+  Assert-Equal 'bicep' $bicepManifest.runtime.enginePath 'Bicep engine path is incorrect.'
+  Assert-Equal 'arm-what-if' $bicepManifest.runtime.previewMode 'Bicep preview mode is incorrect.'
+  $bicepPackage = @(
+    $sampleFiles | Where-Object {
+      $file = $_
+      $isEngineFile = @($starterContract.packageRoots | Where-Object { $file.StartsWith($_) }).Count -gt 0
+      $isSelectedFile = @($bicepManifest.package.includePrefixes | Where-Object { $file.StartsWith($_) }).Count -gt 0
+      -not $isEngineFile -or $isSelectedFile
+    }
+  )
+  Assert-Equal $true ('README.md' -in $bicepPackage) 'Common files must be included in the Bicep package.'
+  Assert-Equal $true ('bicep/main.bicep' -in $bicepPackage) 'Bicep files must be included in the Bicep package.'
+  Assert-Equal $false ('terraform/main.tf' -in $bicepPackage) 'Non-selected Terraform files must be excluded from the Bicep package.'
 
   $invalidStarterRoot = Join-Path $testRoot 'invalid-starters'
   Copy-Item -LiteralPath $starterRoot -Destination $invalidStarterRoot -Recurse

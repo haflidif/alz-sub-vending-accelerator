@@ -85,6 +85,13 @@ sub-vending/
 │   └── terraform.auto.tfvars      # ← RENDERED by bootstrap (NOT in the skeleton).
 │                                  #   Holds tenant/billing/MGs/hub/tags.
 │
+├── bicep/                         # ← planned Bicep engine package
+│   ├── main.bicep                 # pinned AVM sub-vending wrapper
+│   ├── SubscriptionVending.Bicep.psm1
+│   ├── platform.schema.json
+│   ├── platform.example.json
+│   └── README.md
+│
 ├── landingzones/                  # ← consumers add one YAML file per sub here
 │   ├── sub.schema.json
 │   ├── README.md

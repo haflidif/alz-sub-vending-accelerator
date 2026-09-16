@@ -19,8 +19,11 @@ Initialize-SubscriptionVending -Engine Terraform
 ```
 
 The Bicep engine is visible as `Planned` but cannot be selected yet. It will
-be enabled only after its starter provides the required identities, GitHub
-Actions, YAML request handling, validation, preview, and deployment behavior.
+be enabled only after its identities, GitHub Actions, YAML request handling,
+preview, deployment behavior, and remaining Terraform parity are verified
+end to end.
+The bootstrap configuration already carries the selected engine into GitHub
+repository variables and has an engine-specific platform rendering boundary.
 
 > 🧹 **Need to undo a bootstrap** (wrong tenant, wrong repo, typo,
 > abandoned POC)? The same wizard handles teardown — run

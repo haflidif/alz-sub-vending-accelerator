@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/sub-vending/bicep-platform.schema.json",
+  "title": "Bicep starter platform configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "billingScopes",
+    "managementGroupIds",
+    "mandatoryTags",
+    "costAllocation"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "billingScopes": {
+      "type": "object",
+      "required": ["default"],
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^/providers/Microsoft\\.Billing/billingAccounts/"
+      }
+    },
+    "managementGroupIds": {
+      "type": "object",
+      "required": ["corp", "online", "sandbox"],
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^/providers/Microsoft\\.Management/managementGroups/[^/]+$"
+      }
+    },
+    "hubNetworkResourceId": {
+      "type": "string"
+    },
+    "mandatoryTags": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "costAllocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "required", "pattern"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]{1,127}$"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "pattern": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "enableTelemetry": {
+      "type": "boolean"
+    }
+  }
+}

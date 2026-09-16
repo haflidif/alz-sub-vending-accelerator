@@ -51,6 +51,8 @@ All three leave **identical Terraform state** behind.
 - Repository (optional — set `create_github_repository = true`)
 - Repository **variables** consumed by `.github/workflows/*.yml`:
   - `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`
+  - `VENDING_ENGINE`, `ALZ_ROOT_MANAGEMENT_GROUP_ID`,
+    `AZURE_DEPLOYMENT_LOCATION`
   - `BACKEND_RESOURCE_GROUP_NAME`, `BACKEND_STORAGE_ACCOUNT_NAME`, `BACKEND_CONTAINER_NAME`
 - `production` Environment with required reviewers and `protected_branches` policy
 - **Seeds the repo with the runtime skeleton**: `terraform/`, `landingzones/`
@@ -58,8 +60,10 @@ All three leave **identical Terraform state** behind.
   `CONTRIBUTING.md`, and `.gitignore`. Accelerator development files such as
   `powershell/`, `starters/`, `tests/`, and proposals are excluded.
   Shared files are combined with the engine package selected by
-  `starter_name`. The available Terraform starter includes `terraform/`;
-  every other declared engine package root is excluded.
+  `starter_name`. The available Terraform starter includes `terraform/` and
+  renders `terraform/terraform.auto.tfvars`. The planned Bicep starter is
+  prepared to include `bicep/` and render `bicep/platform.json`. Every other
+  declared engine package root is excluded.
   Done with `github_repository_file` per file (same pattern as the upstream
   ALZ accelerator's `alz/github` module). Only `bootstrap/` itself, ephemeral
   Terraform state, and the root `terraform.tfvars` (consumer-specific

@@ -1,0 +1,23 @@
+{
+  "$schema": "./platform.schema.json",
+  "billingScopes": {
+    "default": "/providers/Microsoft.Billing/billingAccounts/REPLACE/billingProfiles/REPLACE/invoiceSections/REPLACE"
+  },
+  "managementGroupIds": {
+    "corp": "/providers/Microsoft.Management/managementGroups/REPLACE-corp",
+    "online": "/providers/Microsoft.Management/managementGroups/REPLACE-online",
+    "sandbox": "/providers/Microsoft.Management/managementGroups/REPLACE-sandbox"
+  },
+  "hubNetworkResourceId": "",
+  "mandatoryTags": {
+    "managedby": "bicep",
+    "source": "avm-ptn-lz-sub-vending",
+    "deployedby": "subscription-vending-pipeline"
+  },
+  "costAllocation": {
+    "name": "projectcode",
+    "required": false,
+    "pattern": null
+  },
+  "enableTelemetry": true
+}

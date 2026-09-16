@@ -173,6 +173,24 @@ resource "github_actions_variable" "azure_subscription_id" {
   value         = var.platform_subscription_id
 }
 
+resource "github_actions_variable" "vending_engine" {
+  repository    = local.github_repo_name
+  variable_name = "VENDING_ENGINE"
+  value         = var.starter_name
+}
+
+resource "github_actions_variable" "alz_root_management_group_id" {
+  repository    = local.github_repo_name
+  variable_name = "ALZ_ROOT_MANAGEMENT_GROUP_ID"
+  value         = var.alz_root_management_group_id
+}
+
+resource "github_actions_variable" "azure_deployment_location" {
+  repository    = local.github_repo_name
+  variable_name = "AZURE_DEPLOYMENT_LOCATION"
+  value         = var.location
+}
+
 resource "github_actions_variable" "backend_resource_group" {
   repository    = local.github_repo_name
   variable_name = "BACKEND_RESOURCE_GROUP_NAME"
@@ -252,5 +270,6 @@ resource "github_branch_protection" "default" {
     github_repository.this,
     github_repository_file.skeleton,
     github_repository_file.platform_auto_tfvars,
+    github_repository_file.bicep_platform,
   ]
 }

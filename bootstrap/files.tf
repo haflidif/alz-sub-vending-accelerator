@@ -133,12 +133,56 @@ locals {
 }
 
 resource "github_repository_file" "platform_auto_tfvars" {
+  count = var.starter_name == "terraform" ? 1 : 0
+
   repository = local.github_repo_name
   branch     = var.github_default_branch
   file       = "terraform/terraform.auto.tfvars"
   content    = local.auto_tfvars_content
 
   commit_message = "chore(bootstrap): seed terraform/terraform.auto.tfvars [skip ci]"
+  commit_author  = var.skeleton_commit_author
+  commit_email   = var.skeleton_commit_email
+
+  overwrite_on_create = true
+}
+
+###############################################################################
+# Render bicep/platform.json for the Bicep request compiler.
+###############################################################################
+
+locals {
+  bicep_platform_content = jsonencode({
+    "$schema"            = "./platform.schema.json"
+    billingScopes        = local.resolved_billing_scopes
+    managementGroupIds   = var.management_group_ids
+    hubNetworkResourceId = var.hub_virtual_network_resource_id
+    mandatoryTags = merge(
+      var.mandatory_tags,
+      {
+        managedby  = "bicep"
+        source     = "avm-ptn-lz-sub-vending"
+        deployedby = "subscription-vending-pipeline"
+      },
+    )
+    costAllocation = {
+      name     = coalesce(var.cost_allocation_tag.name, "projectcode")
+      required = coalesce(var.cost_allocation_tag.required, false)
+      pattern  = var.cost_allocation_tag.pattern
+    }
+    enableTelemetry = true
+  })
+}
+
+resource "github_repository_file" "bicep_platform" {
+  count = var.starter_name == "bicep" ? 1 : 0
+
+  repository = local.github_repo_name
+  branch     = var.github_default_branch
+  file       = "bicep/platform.json"
+  content    = local.bicep_platform_content
+
+  commit_message = "chore(bootstrap): seed bicep/platform.json [skip ci]"
   commit_author  = var.skeleton_commit_author
   commit_email   = var.skeleton_commit_email
 

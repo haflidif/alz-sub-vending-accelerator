@@ -14,7 +14,7 @@
 
   "properties": {
     "archetype": {
-      "description": "Landing-zone archetype. Must match a folder under landingzones/ AND a key in terraform/archetypes.tf.",
+      "description": "Landing-zone archetype. Must match a folder under landingzones/ and an archetype supported by the selected starter.",
       "type": "string",
       "enum": ["corp", "online", "sandbox"]
     },
@@ -67,7 +67,7 @@
       "minLength": 1
     },
     "costAllocationCode": {
-      "description": "Optional user-defined cost-allocation code (e.g. project / activity / WBS code). Emitted as the tag whose KEY is configured by the operator via `cost_allocation_tag_key` (default: projectcode). Required when the operator sets `cost_allocation_required = true`. Pattern enforcement (if any) is applied at terraform plan time via `cost_allocation_pattern`.",
+      "description": "Optional user-defined cost-allocation code (e.g. project / activity / WBS code). Emitted as the tag key configured by the operator, which defaults to projectcode. Required when platform policy enables it. Pattern enforcement is applied during deployment preview.",
       "type": "string",
       "minLength": 1,
       "examples": ["PRJ-1234", "PC016083", "WBS.001.AB"]
@@ -136,7 +136,7 @@
     },
 
     "roleAssignments": {
-      "description": "Subscription-scoped role assignments. Keys are arbitrary; values forwarded to AVM module.",
+      "description": "Subscription-scoped role assignments. Keys are arbitrary and values are normalized for the selected AVM engine.",
       "type": "object",
       "additionalProperties": {
         "type": "object",
