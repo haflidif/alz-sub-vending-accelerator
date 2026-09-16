@@ -153,10 +153,11 @@ resource "github_repository_file" "platform_auto_tfvars" {
 
 locals {
   bicep_platform_content = jsonencode({
-    "$schema"            = "./platform.schema.json"
-    billingScopes        = local.resolved_billing_scopes
-    managementGroupIds   = var.management_group_ids
-    hubNetworkResourceId = var.hub_virtual_network_resource_id
+    "$schema"                   = "./platform.schema.json"
+    billingScopes               = local.resolved_billing_scopes
+    managementGroupIds          = var.management_group_ids
+    hubNetworkResourceId        = var.hub_virtual_network_resource_id
+    hubNetworkUseRemoteGateways = var.hub_virtual_network_use_remote_gateways
     mandatoryTags = merge(
       var.mandatory_tags,
       {

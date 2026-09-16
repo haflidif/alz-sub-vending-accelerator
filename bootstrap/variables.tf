@@ -337,6 +337,12 @@ variable "hub_virtual_network_resource_id" {
   description = "Resource ID of the platform hub VNet to peer corp/online subscriptions to. Leave empty if no hub. Written into terraform.auto.tfvars in the seeded repo."
 }
 
+variable "hub_virtual_network_use_remote_gateways" {
+  type        = bool
+  default     = false
+  description = "Whether Bicep spoke peerings use a virtual network gateway in the configured hub. Keep false unless the hub has a gateway configured for transit."
+}
+
 variable "mandatory_tags" {
   type = map(string)
   default = {

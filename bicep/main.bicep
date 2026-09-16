@@ -36,6 +36,7 @@ param virtualNetworkAddressSpace string[] = []
 param virtualNetworkSubnets array = []
 param virtualNetworkPeeringEnabled bool = false
 param hubNetworkResourceId string = ''
+param virtualNetworkUseRemoteGateways bool = false
 
 param roleAssignments array = []
 
@@ -76,6 +77,7 @@ module subscriptionVending 'br/public:avm/ptn/lz/sub-vending:0.8.0' = {
     virtualNetworkSubnets: virtualNetworkSubnets
     virtualNetworkPeeringEnabled: virtualNetworkPeeringEnabled
     hubNetworkResourceId: hubNetworkResourceId
+    virtualNetworkUseRemoteGateways: virtualNetworkUseRemoteGateways
     roleAssignmentEnabled: !empty(roleAssignments)
     roleAssignments: roleAssignments
     userAssignedIdentityResourceGroupName: userAssignedIdentityResourceGroupName

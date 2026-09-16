@@ -32,6 +32,7 @@ try {
   Assert-Equal $true ($template -match "param existingSubscriptionId string = ''") 'Existing-subscription validation input is missing.'
   Assert-Equal $true ($template -match 'subscriptionAliasEnabled: empty\(existingSubscriptionId\)') 'Subscription creation is not disabled for existing-subscription validation.'
   Assert-Equal $true ($template -match 'virtualNetworkName: virtualNetworkEnabled \? virtualNetworkName : null') 'Disabled networking must not pass an invalid empty VNet name.'
+  Assert-Equal $true ($template -match 'param virtualNetworkUseRemoteGateways bool = false') 'Remote gateway use must default to false.'
 
   $platform = @{
     billingScopes = @{
@@ -118,6 +119,7 @@ try {
   Assert-Equal 'prod-corp-app-001' $result.parameters.subscriptionAliasName.value 'Alias default is incorrect.'
   Assert-Equal 'contoso-corp' $result.parameters.subscriptionManagementGroupId.value 'Management group selection is incorrect.'
   Assert-Equal $true $result.parameters.virtualNetworkPeeringEnabled.value 'Corp guardrail must force hub peering.'
+  Assert-Equal $false $result.parameters.virtualNetworkUseRemoteGateways.value 'Remote gateway use must default to false.'
   Assert-Equal '10.20.1.0/24' $result.parameters.virtualNetworkSubnets.value[0].addressPrefix 'Subnet prefix conversion is incorrect.'
   Assert-Equal 'Microsoft.Storage' $result.parameters.virtualNetworkSubnets.value[0].serviceEndpoints[0] 'Service endpoint conversion is incorrect.'
   Assert-Equal 'Microsoft.Web/serverFarms' $result.parameters.virtualNetworkSubnets.value[0].delegation 'Subnet delegation conversion is incorrect.'
@@ -139,6 +141,11 @@ try {
   Assert-Equal 'id-workload' $result.parameters.userAssignedManagedIdentities.value[0].name 'Managed identity conversion is incorrect.'
   Assert-Equal $false $result.parameters.enableTelemetry.value 'Telemetry setting is incorrect.'
   Assert-Equal 0 $result.parameters.resourceProviders.value.Count 'Explicit resource provider configuration was not preserved.'
+
+  $remoteGatewayPlatform = $platform.Clone()
+  $remoteGatewayPlatform.hubNetworkUseRemoteGateways = $true
+  $remoteGatewayResult = ConvertTo-BicepSubscriptionParameters -Request $request -Platform $remoteGatewayPlatform -RequestName 'remote-gateway'
+  Assert-Equal $true $remoteGatewayResult.parameters.virtualNetworkUseRemoteGateways.value 'Explicit remote gateway use was not preserved.'
 
   $ownerOnlyBudgetRequest = $request.Clone()
   $ownerOnlyBudgetRequest.budget = @{
