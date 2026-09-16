@@ -417,7 +417,7 @@ function ConvertTo-BicepSubscriptionParameters {
     budgetEnabled = @{ value = $budgetEnabled }
     budgetName = @{ value = if ($budgetEnabled) { "$aliasName-monthly" } else { '' } }
     budgetAmount = @{ value = $budgetAmount }
-    budgetContactEmails = @{ value = $budgetContacts }
+    budgetContactEmails = @{ value = @($budgetContacts) }
     budgetActualThresholds = @{ value = @($archetypeConfig.BudgetActualThresholds) }
     budgetForecastThresholds = @{ value = @($archetypeConfig.BudgetForecastThresholds) }
     enableTelemetry = @{ value = [bool](Get-MapValue -Map $Platform -Key 'enableTelemetry' -Default $true) }
