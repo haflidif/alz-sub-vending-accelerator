@@ -48,7 +48,7 @@ and to keep experiments off the production network.
 | Workload default | `Production` (always available). Set `workload: DevTest` in sub.yaml to opt in. |
 | Hub peering default | `false` |
 | Allow `hubPeering: false` | yes (it's never on) |
-| Budget required | **yes** — `terraform plan` fails without it |
+| Budget required | **yes**. Engine validation fails without it |
 | Budget alerts | actual ≥ 50%, actual ≥ 90%, forecast ≥ 100% |
 
 > **DevTest entitlement** — Opting in to `workload: DevTest` requires the
@@ -66,7 +66,9 @@ The vending repo is the source of truth post-bootstrap. Day-2 archetype
 changes are a regular PR — **do not** re-run the bootstrap module (its state
 is one-shot and local to the operator workstation that ran it).
 
-1. Open `terraform/archetypes.tf` and add a new entry to `local.archetype_config`:
+1. Add the new rules to `terraform/archetypes.tf`. If the Bicep starter must
+   support the archetype, add the equivalent entry to the `$archetypes` map in
+   `bicep/SubscriptionVending.Bicep.psm1`.
 
    ```hcl
    identity = {
@@ -80,8 +82,9 @@ is one-shot and local to the operator workstation that ran it).
    }
    ```
 
-2. Add the matching MG ID directly to the seeded repo's
-   `terraform/terraform.auto.tfvars` (`management_group_ids` map):
+2. Add the matching MG ID directly to the selected engine configuration:
+   `terraform/terraform.auto.tfvars` (`management_group_ids`) or
+   `bicep/platform.json` (`managementGroupIds`).
 
    ```hcl
    management_group_ids = {

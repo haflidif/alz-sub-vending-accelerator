@@ -61,7 +61,7 @@ discover_changed() {
     && grep -Eq '^terraform/.*\.tf(\.json)?$' <<<"$changed"; then
     discover_all
   elif [[ "$VENDING_ENGINE" == "bicep" ]] \
-    && grep -Eq '^bicep/.*(\.bicep|\.psm1|/platform\.json)$' <<<"$changed"; then
+    && grep -Eq '^bicep/(.*\.(bicep|psm1)|platform\.json|default-resource-providers\.json)$' <<<"$changed"; then
     discover_all
   else
     git diff --name-only --diff-filter=AM "${BASE}...${HEAD}" \

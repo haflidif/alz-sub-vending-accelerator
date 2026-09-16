@@ -52,9 +52,15 @@ template itself, not the AVM module pinned by the engine (see
   0.1 generated repository contents.
 - Forwarded engine selection through the PowerShell module and legacy
   bootstrap, persisted `starter_name`, and exposed it as a Terraform output.
+- Updated operator, architecture, CI/CD, tagging, billing, schema, repository,
+  and teardown documentation for the available Terraform and Bicep engines.
 
 ### Fixed
 
+- Made Bicep platform configuration and default resource-provider changes
+  select every subscription in PR validation and apply workflows.
+- Added discovery regression coverage for Bicep platform-wide files and
+  invalid `VENDING_ENGINE` values.
 - Propagated legacy bootstrap exit codes through the PowerShell module.
 - Removed unsafe `-WhatIf` behavior from module initialization and reject it in
   legacy bootstrap mode. `-PlanOnly` remains the supported preview path.

@@ -9,8 +9,8 @@ UAMI federation; every workflow runs inside the operator's tenant.
 
 | Path | Purpose |
 |---|---|
-| [`workflows/pr-validate.yml`](workflows/pr-validate.yml) | Runs on every PR. Validates every sub YAML against the JSON Schema, discovers which subs changed, runs `terraform fmt -check` / `validate` / `plan` per affected sub, and posts the plan as a PR comment. |
-| [`workflows/apply.yml`](workflows/apply.yml) | Runs on `push` to `main` and `workflow_dispatch`. Discovers affected subs (mode `changed` / `single` / `all`), applies each in its own state behind the `production` GitHub Environment gate. |
+| [`workflows/pr-validate.yml`](workflows/pr-validate.yml) | Runs on every PR. Validates YAML and accelerator contracts, discovers affected subscriptions, then runs Terraform plan or Bicep validate/what-if and posts the preview as a PR comment. |
+| [`workflows/apply.yml`](workflows/apply.yml) | Runs on `push` to `main` and `workflow_dispatch`. Discovers affected subscriptions and deploys them with the selected engine behind the `production` GitHub Environment gate. |
 | [`scripts/discover-subs.sh`](scripts/discover-subs.sh) | Single bash script consumed by **both** workflows. Emits a `matrix` JSON listing every `(sub_path, archetype, name, state_key)` to operate on. |
 | [`dependabot.yml`](dependabot.yml) | Weekly updates for GitHub Actions pins, monthly updates for the `terraform/` and `bootstrap/` providers. |
 | [`PULL_REQUEST_TEMPLATE.md`](PULL_REQUEST_TEMPLATE.md) | PR description scaffold — change type + per-track checklists. |
@@ -40,17 +40,22 @@ Output written to `$GITHUB_OUTPUT`:
 
 `state_key` is always `<archetype>/<name>.tfstate` — this is what the
 `terraform init -backend-config="key=…"` step in each job uses. Per-sub
-state isolation is enforced here.
+state isolation is enforced here. Bicep ignores this compatibility field.
+
+`VENDING_ENGINE` must be `terraform` or `bicep`. A change to Terraform
+runtime `.tf` files selects all requests in a Terraform repository. A change
+to Bicep templates, the request compiler, `platform.json`, or
+`default-resource-providers.json` selects all requests in a Bicep repository.
 
 ## How the `apply.yml` matrix runs
 
 1. **`discover` job** — runs `discover-subs.sh`, emits the matrix.
-2. **`apply` job** — fan-out (max 5 parallel) over the matrix. Each job:
+2. The matching engine job fans out over the matrix, with at most five
+   subscriptions in parallel:
    - Logs into Azure via `azure/login@v3` using OIDC against the operator's UAMI (FIC matches the trigger — branch / PR / environment).
-   - Runs `terraform init` with per-sub backend config (its own `key`).
-   - Runs `terraform plan -out=tfplan` against the sub's YAML.
-   - Runs `terraform apply tfplan`.
-   - Uploads the plan artifact (`tfplan`, 30-day retention).
+   - Terraform initializes the per-sub backend, creates a saved plan, applies
+     it, and uploads the plan artifact.
+   - Bicep compiles the YAML request and runs `az deployment mg create`.
 
 The `production` GitHub Environment gates every job in this matrix —
 required reviewers are configured by `bootstrap/` from
@@ -80,6 +85,9 @@ repo:
 | `AZURE_CLIENT_ID` | `azurerm_user_assigned_identity.pipeline.client_id` | `azure/login@v3` |
 | `AZURE_TENANT_ID` | Platform sub's tenant ID | `azure/login@v3` + `terraform init -backend-config=tenant_id=` |
 | `AZURE_SUBSCRIPTION_ID` | `platform_subscription_id` | `azure/login@v3` + `terraform init -backend-config=subscription_id=` |
+| `VENDING_ENGINE` | Selected starter | Workflow routing and discovery validation |
+| `ALZ_ROOT_MANAGEMENT_GROUP_ID` | ALZ root management group | Bicep validation, what-if, and deployment scope |
+| `AZURE_DEPLOYMENT_LOCATION` | Bootstrap deployment location | Bicep management-group deployment location |
 | `BACKEND_RESOURCE_GROUP_NAME` | Platform state SA's RG | `terraform init` |
 | `BACKEND_STORAGE_ACCOUNT_NAME` | Platform state SA name | `terraform init` |
 | `BACKEND_CONTAINER_NAME` | `azurerm_storage_container.tfstate.name` (default `subvending-tfstate`) | `terraform init` |
@@ -120,7 +128,7 @@ down — see
 |---|---|---|
 | `Expected — Waiting for status to be reported` on a PR that doesn't touch `landingzones/` | The `plan` matrix has `count=0` so the job didn't run. The required check `PR Validate Result` should still report. | Confirm the `PR Validate / PR Validate Result` check appears; if not, branch protection is referencing a job name that doesn't exist (rename mismatch). |
 | `AADSTS70021: No matching federated identity record found` | The workflow's subject claim doesn't match any FIC on the UAMI. | Re-check `repo:<owner>/<repo>:…` in the FIC vs the workflow's trigger context. If you renamed `main` or the `production` environment, update the FIC. |
-| `terraform plan` succeeds in PR but `apply` blocks forever | No reviewer has approved the `production` environment. | Settings → Environments → `production` → review the run, or add more reviewers via `production_reviewer_user_ids` / `production_reviewer_team_ids` and re-run `bootstrap/`. |
+| Preview succeeds in PR but `apply` blocks forever | No reviewer has approved the `production` environment. | Settings → Environments → `production` → review the run, or update the environment reviewers in GitHub Settings. |
 | `Error: state blob is already locked` | A previous `apply` job died without releasing the lease. | Azure portal → state SA → container → blob → break lease. Or `terraform force-unlock <lock-id>` from a workstation that has access. |
 | `mode=single` workflow_dispatch fails with `not found: …` | `SUB_PATH` doesn't resolve to a real file. | `discover-subs.sh` will append `.yaml` if missing — check the typed path and the actual filename. |
 

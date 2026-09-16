@@ -1,10 +1,9 @@
 # Tearing down a vended subscription
 
-Subscription **cancellation** in Azure is a soft delete — the subscription
+Subscription **cancellation** in Azure is a soft delete. The subscription
 enters `Disabled` state for 90 days before being permanently deleted by the
-platform. The same applies to its Terraform state: deleting the state alone
-will not delete Azure resources, and cancelling the subscription will not
-remove the state. Doing both, in the right order, is the operator's job.
+platform. Terraform repositories must also manage their state blob. Bicep
+repositories have no Terraform day-2 state to delete.
 
 This document is the canonical tear-down runbook. Follow it whenever you
 need to retire a vended subscription, whether the workload is moving
@@ -30,7 +29,8 @@ difference is what you do about Azure-side state.
 
 1. You can authenticate as the pipeline UAMI (or a user with equivalent
    permissions) — same identity that originally vended the subscription.
-2. You have access to the state container that the pipeline uses
+2. For Terraform repositories, you have access to the state container that
+   the pipeline uses
    (`<state SA>/subvending-tfstate/<archetype>/<name>.tfstate`).
 3. The subscription is **not** the connectivity subscription, the
    management subscription, or any other shared platform sub. Those are
@@ -41,8 +41,9 @@ difference is what you do about Azure-side state.
 ## Path A — Destroy (workload retired with the subscription)
 
 Use this when the subscription contained nothing worth keeping. Result: the
-subscription is cancelled in Azure, every Terraform-managed resource group
-is force-deleted, the state blob is removed, and the YAML is gone.
+subscription is cancelled in Azure and the YAML is gone. Terraform
+repositories can first destroy managed resources and remove the state blob.
+Bicep repositories skip the Terraform-specific steps and proceed to A.2.
 
 ### A.1 — Run `terraform destroy` from your workstation
 
@@ -141,15 +142,15 @@ themselves (e.g. they prefer Bicep, or they have their own Terraform
 estate) but the subscription should keep existing.
 
 1. **Stop pipeline management.** Open a PR that removes the YAML; merge.
-2. **Strip the state.** Run `terraform state rm 'module.subscription'`
+2. **Terraform only: strip the state.** Run `terraform state rm 'module.subscription'`
    followed by `terraform apply` (a no-op apply on empty state) — this
    tells Terraform to forget the resources without destroying them. The
    resources remain in Azure exactly as they are.
 3. **Reassign ownership.** Move the subscription to a different MG (or
    not), grant the new owners RBAC at the subscription scope, and
    document the change.
-4. **Delete the state blob** (Step A.3, blob delete). Same reasoning as
-   Path B.
+4. **Terraform only: delete the state blob** (Step A.3, blob delete). Same
+   reasoning as Path B. Bicep repositories have no state cleanup step.
 
 > Detached subscriptions are no longer governed by the sub-vending
 > pipeline's tag policy, role assignments, or peering rules. The new

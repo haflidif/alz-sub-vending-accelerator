@@ -4,7 +4,7 @@ One-time setup the platform team performs **before** any subscription can be
 vended. After this is done, day-to-day vending happens via PRs — see
 [`first-vend.md`](first-vend.md).
 
-> ⏱  Total time: ~15 minutes (mostly waiting for `terraform apply` and a
+> Total time: ~15 minutes (mostly waiting for the bootstrap apply and a
 > billing-role round-trip).
 
 ## Prerequisites — confirm you have these
@@ -30,7 +30,8 @@ entirely.
 > operator runs locally: [`bootstrap/`](../bootstrap/). It creates the
 > pipeline UAMI, OIDC federation, MG-scoped RBAC, GitHub repo + branch
 > protection + production environment, and seeds the vending skeleton
-> into that new repo with `terraform/terraform.auto.tfvars` pre-filled.
+> into that new repo with either `terraform/terraform.auto.tfvars` or
+> `bicep/platform.json` pre-filled.
 > It is idempotent and safe to re-run.
 >
 > For green-field POC tenants you'll first need the prerequisites (root MG
@@ -47,16 +48,18 @@ entirely.
 ## Step 1: Run the bootstrap module
 
 The accelerator ships the `SubscriptionVending` PowerShell module as its
-operator entry point. The Terraform engine delegates to
-[`Invoke-Bootstrap.ps1`](../bootstrap/Invoke-Bootstrap.ps1), preserving the
-existing prompts, validation, saved answers, and resumability.
+operator entry point. Select Terraform or Bicep when creating the vending
+repository. Both engines delegate the one-time repository and identity setup
+to [`Invoke-Bootstrap.ps1`](../bootstrap/Invoke-Bootstrap.ps1), preserving
+the existing prompts, validation, saved answers, and resumability.
 
 ```powershell
 az login --tenant <your-tenant-id>
 $env:GITHUB_TOKEN = "<your PAT>"
 
 Import-Module ./powershell/SubscriptionVending/SubscriptionVending.psd1
-Initialize-SubscriptionVending -Engine Terraform
+Get-SubscriptionVendingEngine
+Initialize-SubscriptionVending -Engine Terraform # or Bicep
 ```
 
 The wizard runs four phases:
@@ -246,7 +249,7 @@ teams (or vend yourself) following [`first-vend.md`](first-vend.md).
 
 ## Updating platform inputs after bootstrap
 
-The bootstrap is **one-shot** by design — its Terraform state lives on the
+The bootstrap is **one-shot** by design. Its Terraform state lives on the
 operator workstation that ran it and is **not** maintained for day-to-day
 operations. Treat the seeded vending repo as the source of truth.
 
@@ -254,19 +257,18 @@ Day-2 changes are made via PR to the seeded repo:
 
 | Change | Files to edit (in the seeded vending repo) |
 | --- | --- |
-| Add / update a billing scope | `terraform/terraform.auto.tfvars` → `billing_scopes` map (use the path formats in [`docs/billing-scopes.md`](billing-scopes.md)) |
-| Change the cost-allocation tag key / required-flag / pattern | `terraform/terraform.auto.tfvars` → `cost_allocation_tag_key` / `cost_allocation_required` / `cost_allocation_pattern` |
-| Update / add platform-wide tags | `terraform/terraform.auto.tfvars` → `mandatory_tags` |
-| Rotate the hub VNet ID | `terraform/terraform.auto.tfvars` → `hub_virtual_network_resource_id` |
-| Add a new archetype + MG | `terraform/archetypes.tf` + `terraform/terraform.auto.tfvars` (`management_group_ids`) + `landingzones/<arch>/` + `landingzones/sub.schema.json` `enum` — see [`docs/archetypes.md`](archetypes.md) |
-| Add a new billing scope key | `terraform/terraform.auto.tfvars` → `billing_scopes` (then sub.yaml authors use `billingScopeKey:`); grant SubscriptionCreator on the new scope manually |
+| Add / update a billing scope | Terraform: `terraform/terraform.auto.tfvars`; Bicep: `bicep/platform.json` |
+| Change the cost-allocation tag settings | Terraform: `terraform/terraform.auto.tfvars`; Bicep: `bicep/platform.json` |
+| Update platform-wide tags | Terraform: `terraform/terraform.auto.tfvars`; Bicep: `bicep/platform.json` |
+| Rotate the hub VNet ID or remote-gateway setting | Terraform: `terraform/terraform.auto.tfvars`; Bicep: `bicep/platform.json` |
+| Add a new archetype + MG | Selected engine rules + platform configuration + `landingzones/<arch>/` + schema enum; see [`docs/archetypes.md`](archetypes.md) |
+| Add a new billing scope key | Update the selected engine configuration, then grant SubscriptionCreator on the new scope manually |
 | Change branch protection / production approvers | Edit directly in GitHub (Settings → Branches / Environments) — the bootstrap configured these once but no longer manages them |
 | Rotate the pipeline UAMI or recreate the repo | This is recovery, not day-2: re-run `bootstrap/` after restoring or recreating its local state. Avoid unless you have to. |
 
-The merge of any change touching `terraform/` triggers `apply.yml` against
-every affected subscription. To re-apply *every* subscription after a
-platform change (e.g. tag baseline update), use **Actions → Apply → Run
-workflow → mode = all**.
+Changes to runtime engine files select all subscriptions for preview or
+deployment. To re-apply *every* subscription after a platform change, use
+**Actions → Apply → Run workflow → mode = all**.
 
 ---
 

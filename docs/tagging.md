@@ -56,8 +56,8 @@ broader CAF guidance.
 
 ### Mandatory tag defaults
 
-Set in `bootstrap/variables.tf`, written into the seeded
-`terraform/terraform.auto.tfvars`:
+Set in `bootstrap/variables.tf` and written into the selected engine
+configuration. Terraform uses HCL:
 
 ```hcl
 mandatory_tags = {
@@ -69,9 +69,10 @@ mandatory_tags = {
 
 Set the platform-wide default at bootstrap time by adding
 `mandatory_tags = { ... }` to your `bootstrap/terraform.tfvars`. After
-the initial bootstrap, change them by editing `mandatory_tags` directly in
-the seeded repo's `terraform/terraform.auto.tfvars` via a PR — the bootstrap
-is one-shot and is **not** re-run for this.
+the initial bootstrap, change `mandatory_tags` in
+`terraform/terraform.auto.tfvars` or `mandatoryTags` in
+`bicep/platform.json` via PR. The Bicep bootstrap overrides the default
+`managedby` value to `bicep`.
 
 ---
 
@@ -89,9 +90,9 @@ Organizations track cost differently:
 
 The skeleton supports all of these via three operator inputs. At
 **initial bootstrap** they live in `bootstrap/terraform.tfvars` and flow into
-`terraform.auto.tfvars` in the seeded repo. Post-bootstrap, change them by
-editing the seeded repo's `terraform/terraform.auto.tfvars` directly via a
-PR — the bootstrap is one-shot and is **not** re-run for value rotations.
+the selected engine configuration in the seeded repo. Post-bootstrap, change
+them directly in `terraform/terraform.auto.tfvars` or `bicep/platform.json`
+via PR. The bootstrap is one-shot and is **not** re-run for value rotations.
 
 ```hcl
 cost_allocation_tag = {
@@ -116,8 +117,8 @@ costAllocationCode: PC016083   # → emitted as <name>=PC016083
 ### Migration note
 
 When a sub already exists in Azure and you change `cost_allocation_tag.name`,
-the **old** tag key persists on the Azure side until removed. The next
-`terraform apply` writes the **new** key but does not delete the old one.
+the **old** tag key persists on the Azure side until removed. The next engine
+deployment writes the **new** key but does not delete the old one.
 Run a one-off cleanup with the Azure CLI:
 
 ```bash
