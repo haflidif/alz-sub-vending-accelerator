@@ -34,6 +34,11 @@
     "hubNetworkResourceId": {
       "type": "string"
     },
+    "hubNetworkUseRemoteGateways": {
+      "description": "Use a gateway in the hub VNet from spoke peerings. Keep false unless the hub has a virtual network gateway configured for transit.",
+      "type": "boolean",
+      "default": false
+    },
     "mandatoryTags": {
       "type": "object",
       "additionalProperties": {

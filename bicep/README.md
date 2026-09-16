@@ -76,6 +76,11 @@ The pinned default provider map is stored in
 `default-resource-providers.json` so the wrapper remains deterministic for AVM
 version 0.8.0.
 
+Hub peering defaults `hubNetworkUseRemoteGateways` to `false`. Set it to
+`true` in `platform.json` only when the hub VNet has a virtual network gateway
+configured for gateway transit. The upstream AVM defaults this setting to
+`true`, which causes peering creation to fail for gateway-less hubs.
+
 The wrapper also exposes `existingSubscriptionId` for non-creating validation
 and future adoption scenarios. Normal vending leaves it empty and creates a
 new subscription alias.

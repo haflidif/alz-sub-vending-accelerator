@@ -333,6 +333,7 @@ function ConvertTo-BicepSubscriptionParameters {
   }
 
   $hubNetworkResourceId = [string](Get-MapValue -Map $Platform -Key 'hubNetworkResourceId' -Default '')
+  $hubNetworkUseRemoteGateways = [bool](Get-MapValue -Map $Platform -Key 'hubNetworkUseRemoteGateways' -Default $false)
   Assert-RequestValue (-not ($networkEnabled -and $hubPeeringEnabled) -or $hubNetworkResourceId -ne '') 'Hub peering is required but hubNetworkResourceId is not configured.'
 
   $budget = Get-MapValue -Map $Request -Key 'budget'
@@ -411,6 +412,7 @@ function ConvertTo-BicepSubscriptionParameters {
     virtualNetworkSubnets = @{ value = $subnets }
     virtualNetworkPeeringEnabled = @{ value = ($networkEnabled -and $hubPeeringEnabled) }
     hubNetworkResourceId = @{ value = if ($networkEnabled -and $hubPeeringEnabled) { $hubNetworkResourceId } else { '' } }
+    virtualNetworkUseRemoteGateways = @{ value = ($networkEnabled -and $hubPeeringEnabled -and $hubNetworkUseRemoteGateways) }
     roleAssignments = @{ value = $roleAssignments }
     userAssignedIdentityResourceGroupName = @{ value = $managedIdentityResourceGroupName }
     userAssignedManagedIdentities = @{ value = $managedIdentities }

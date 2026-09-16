@@ -9,6 +9,7 @@
     "sandbox": "/providers/Microsoft.Management/managementGroups/REPLACE-sandbox"
   },
   "hubNetworkResourceId": "",
+  "hubNetworkUseRemoteGateways": false,
   "mandatoryTags": {
     "managedby": "bicep",
     "source": "avm-ptn-lz-sub-vending",

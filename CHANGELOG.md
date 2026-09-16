@@ -90,6 +90,8 @@ template itself, not the AVM module pinned by the engine (see
   existing subscription, including hub peering and a custom NSG rule.
 - Preserved a single budget contact as an array in generated Bicep parameters
   so owner-only budget requests pass ARM template validation.
+- Defaulted Bicep spoke peerings to not use remote gateways, with an explicit
+  platform opt-in for hubs configured with gateway transit.
 
 ## [0.1.0] - 2026-06-01
 

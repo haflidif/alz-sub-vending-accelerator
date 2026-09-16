@@ -1093,7 +1093,16 @@ function Configure-Network {
     param([hashtable] $Inputs)
 
     $current = $Inputs.hub_virtual_network_resource_id
-    $summary = if ($current) { @("hub_virtual_network_resource_id = $current") } else { @('(no hub VNet configured)') }
+    $useRemoteGateways = [bool]($Inputs.hub_virtual_network_use_remote_gateways ?? $false)
+    $summary = if ($current) {
+        @(
+            "hub_virtual_network_resource_id = $current"
+            "hub_virtual_network_use_remote_gateways = $useRemoteGateways"
+        )
+    }
+    else {
+        @('(no hub VNet configured)')
+    }
     if (-not (Edit-Group -Title 'Hub VNet (optional)' -SummaryLines $summary)) { return }
 
     $Inputs.hub_virtual_network_resource_id = Read-PromptString `
@@ -1101,6 +1110,15 @@ function Configure-Network {
         -Default ($current ?? '') `
         -HelpText 'Full resource ID of the platform hub VNet. Leave empty if no hub.' `
         -AllowEmpty
+    $Inputs.hub_virtual_network_use_remote_gateways = if ($Inputs.hub_virtual_network_resource_id) {
+        Read-PromptBool `
+            -Label 'Use a virtual network gateway in the hub?' `
+            -Default $useRemoteGateways `
+            -HelpText 'Enable only when the hub VNet has a gateway configured for gateway transit.'
+    }
+    else {
+        $false
+    }
 }
 
 function Configure-Tags {
