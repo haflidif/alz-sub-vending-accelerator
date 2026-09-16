@@ -24,34 +24,35 @@ support options see the support guide (`SUPPORT.md`).
 2. **Create a YAML file** under `landingzones/<archetype>/` named per the
    [naming convention](docs/naming-convention.md), e.g.
    `landingzones/corp/prod-corp-erp-001.yaml`.
-3. **Author the contract** — this is the only file you need. The schema is
+3. **Author the contract.** This is the only file you need. The schema is
    documented in [`docs/architecture.md`](docs/architecture.md#sub-yaml-schema).
    Required fields: `archetype`, `location`, `owner`.
 4. **Open a PR.** CI will:
    - Detect that you changed `landingzones/<archetype>/<your-sub>.yaml`
-   - Run `terraform fmt -check` and `terraform validate`
-   - Run `terraform plan` against your new sub only
-   - Post the plan as a PR comment
-5. **Approval** required from:
-   - Archetype CODEOWNER (platform team)
-   - Subscription owner listed in the YAML
+   - Validate the shared YAML schema
+   - Run Terraform plan or Bicep validate and what-if for your request
+   - Post the engine preview as a PR comment
+5. **Review** requires the archetype CODEOWNER. Follow your organization's
+   process for confirming the request with the subscription owner listed in
+   the YAML.
 6. **Merge to `main`** triggers the `Apply` workflow. After approval in the
    `production` GitHub Environment, your sub is applied.
 
 ## Modifying an archetype default
 
-Changes to `terraform/archetypes.tf` affect **every existing subscription** in
-that archetype on next apply. Treat with care:
+Archetype rules live in `terraform/archetypes.tf` and the `$archetypes` map in
+`bicep/SubscriptionVending.Bicep.psm1`. Change the adapter for the engine you
+support. Treat the change as repository-wide because runtime engine changes
+select every existing request:
 
 1. Open an RFC issue describing the change and the blast radius.
-2. PR must include the output of the `Apply` workflow run with `mode=all`
-   in a non-prod tenant (or an attached plan from `terraform plan` for at least
-   one representative sub per affected archetype).
+2. Include a `mode=all` result from a non-production tenant, or attach
+   Terraform plan or Bicep what-if output for representative requests.
 3. Requires sign-off from the platform lead.
 
-## Bumping the AVM module version
+## Bumping an AVM module version
 
-The version pin lives in [`terraform/main.tf`](terraform/main.tf):
+Each engine has an exact AVM pin:
 
 ```hcl
 module "subscription" {
@@ -61,19 +62,28 @@ module "subscription" {
 }
 ```
 
-The pin is **exact** (not pessimistic) — every AVM module bump is
-explicit and reviewed, because the AVM module's input contract is still
-pre-1.0 and minor versions sometimes change schema.
+```bicep
+module subscription 'br/public:avm/ptn/lz/sub-vending:0.8.0' = {
+  // ...
+}
+```
+
+The Terraform pin lives in `terraform/main.tf`. The Bicep pin lives in
+`bicep/main.bicep`. Both are exact
+because the upstream input contracts are pre-1.0 and can change between minor
+versions.
 
 Process:
 1. Read the upstream changelog and its README diff.
-2. Update the `version` string to the new exact pin.
-3. Open a PR — CI will plan against changed subs.
-4. After merge, run `Apply` with `mode=all` to roll out across every sub.
+2. Update one engine pin.
+3. Update that engine's adapter and tests for any contract changes.
+4. Open a PR. CI selects every subscription for the changed engine.
+5. After merge, run `Apply` with `mode=all` to roll out across every sub.
 
 ## Code style
 
 - Terraform: `terraform fmt -recursive` (CI enforces).
+- Bicep: `az bicep build --file bicep/main.bicep`.
 - YAML: 2-space indent, keys in `lowerCamelCase`.
 - PowerShell helpers: PascalCase function names, `[CmdletBinding()]`,
   `$ErrorActionPreference = 'Stop'`.
@@ -85,15 +95,20 @@ Conventional Commits:
 - `feat(corp): vend prod-corp-erp-001`
 - `fix(online): correct address space for prod-online-web-001`
 - `chore(archetypes): bump AVM module to 0.3.1`
+- `chore(bicep): bump sub-vending AVM to 0.9.0`
 - `docs(onboarding): clarify MCA invoice section lookup`
 
 ## Tests / pre-commit
 
-There is no test suite — the system's correctness is enforced by:
+Run the smallest relevant checks before you open a PR:
 
-- `terraform validate` (CI)
-- `terraform fmt -check` (CI)
-- `terraform plan` per changed sub (CI; review in the PR comment)
+- `tests/PowerShell/SubscriptionVending.Tests.ps1`
+- `tests/PowerShell/BicepStarter.Tests.ps1`
+- `tests/scripts/discover-subs.Tests.sh`
+- JSON Schema validation for subscription requests and Bicep platform config
+- `terraform fmt -check` and `terraform validate`
+- `az bicep build --file bicep/main.bicep`
+- Terraform plan or Bicep what-if per changed request in CI
 - Required reviews via CODEOWNERS
 - Required environment approval for `apply.yml`
 
@@ -102,4 +117,7 @@ If you want a local pre-commit hook, the simplest is:
 ```powershell
 # .git/hooks/pre-commit (PowerShell)
 terraform -chdir=terraform fmt -check -recursive
+az bicep build --file bicep/main.bicep
+pwsh -File tests/PowerShell/SubscriptionVending.Tests.ps1
+pwsh -File tests/PowerShell/BicepStarter.Tests.ps1
 ```

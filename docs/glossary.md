@@ -5,24 +5,19 @@ spell out the first time, then the short form is used.
 
 ## A
 
-**Archetype** — A named template that classifies a subscription (`corp`,
-`online`, `sandbox` out of the box). Each archetype maps to (a) a
-folder under `landingzones/`, (b) a key in `terraform/archetypes.tf`
-which sets defaults + guardrails (peering rules, budget requirements,
-extra tags), and (c) a destination Management Group via
-`management_group_ids`. Add new archetypes by editing all three. See
+**Archetype**: A named template that classifies a subscription (`corp`,
+`online`, or `sandbox` out of the box). Each archetype maps to a folder under
+`landingzones/`, rules in the selected engine adapter, and a destination
+management group in the selected platform configuration. See
 [`docs/archetypes.md`](archetypes.md).
 
-**AVM** — Azure Verified Modules. Microsoft-curated Terraform modules
-with consistent input contracts, telemetry, and a CI-tested release
-process. This skeleton wraps exactly one:
-`Azure/avm-ptn-alz-sub-vending/azure` (the `-ptn-` infix means "pattern"
-— a higher-level module that composes lower-level AVM resources).
+**AVM**: Azure Verified Modules. Microsoft-curated Terraform and Bicep modules
+with consistent input contracts, telemetry, and tested release processes.
+The accelerator wraps one subscription-vending pattern for each engine.
 
-**AVM module pin** — The version constraint in `terraform/main.tf`.
-Pinned to `0.3.1` **exact** (no `~>`), because the AVM module's input
-contract is still pre-1.0 and minor versions sometimes change schema —
-every bump should be explicit and reviewed.
+**AVM module pin**: The exact upstream version in `terraform/main.tf` or
+`bicep/main.bicep`. Terraform uses `0.3.1`; Bicep uses `0.8.0`. Review every
+bump because both input contracts are pre-1.0.
 
 ## B
 
@@ -33,21 +28,21 @@ subscriptions are billed. Format varies by agreement type: EA →
 `billingProfiles/<x>/invoiceSections/<y>`, MPA → `customers/<id>`. See
 [`docs/billing-scopes.md`](billing-scopes.md).
 
-**`billingScopeKey`** — Optional field in `sub.yaml` that picks an entry
-from the `billing_scopes` map (default key: `default`). Lets a single
-vending repo span multiple billing scopes (e.g. one MCA for production,
-one EA enrollment for sandbox).
+**`billingScopeKey`**: Optional field in `sub.yaml` that selects a configured
+billing scope and defaults to `default`. It lets one vending repository span
+multiple billing scopes, such as MCA for production and EA for sandbox.
 
-**Bootstrap** — One-shot Terraform module under `bootstrap/` that
+**Bootstrap**: One-shot Terraform module under `bootstrap/` that
 creates the pipeline UAMI, federated credentials, MG-scoped RBAC,
 GitHub repo / variables / environment / branch protection, and seeds
-the skeleton into the new repo. Run by an operator from a workstation.
+the selected Terraform or Bicep runtime into the new repo. Run by an operator
+from a workstation.
 Its Terraform state is **local** to the operator's machine; the
-bootstrap is **not** re-run for day-2 changes. See
-[`bootstrap/README.md`](../bootstrap/README.md).
+bootstrap is **not** re-run for day-2 changes. See the
+[bootstrap reference](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md).
 
-**Bootstrap wizard** — `bootstrap/Invoke-Bootstrap.ps1`. Interactive
-PowerShell wrapper around the bootstrap module — prompts, validates,
+**Bootstrap wizard**: `bootstrap/Invoke-Bootstrap.ps1`. Interactive
+PowerShell wrapper around the bootstrap module. It prompts, validates,
 persists, runs Terraform. See
 [`docs/bootstrap-wizard.md`](bootstrap-wizard.md).
 
@@ -72,7 +67,7 @@ required, and an optional regex. See
 
 ## D
 
-**Dependabot** — GitHub's automated dependency updater. The skeleton
+**Dependabot**: GitHub's automated dependency updater. The skeleton
 configures it for GitHub Actions pins (weekly) and the Terraform
 modules in `terraform/` (weekly) and `bootstrap/` (monthly). See
 [`.github/dependabot.yml`](../.github/dependabot.yml).
@@ -80,7 +75,7 @@ modules in `terraform/` (weekly) and `bootstrap/` (monthly). See
 **DevTest** — Azure subscription offer with reduced rates for
 non-production workloads. Opt-in via `workload: DevTest` in `sub.yaml`.
 Requires your EA/MCA billing scope to be entitled for the
-offer (`MS-AZR-0148P` on EA). Otherwise the AVM module returns
+offer (`MS-AZR-0148P` on EA). Otherwise the selected AVM returns
 `EntitlementNotFound`.
 
 **Drift detection** — In the wizard, the `# SourceHash:` marker
@@ -120,11 +115,11 @@ The wizard resolves this from `$env:GITHUB_TOKEN` or `gh auth token` —
 
 ## H
 
-**Hub VNet** — Platform team's connectivity hub virtual network.
+**Hub VNet**: Platform team's connectivity hub virtual network.
 Spoke subscriptions (typically `corp`) peer to it for shared egress,
 ExpressRoute / VPN, and central firewall. Bootstrap's
-`hub_virtual_network_resource_id` input flows to
-`terraform.auto.tfvars`; per-sub `network.hubPeering` opts in. The
+`hub_virtual_network_resource_id` input flows to the selected engine
+configuration; per-sub `network.hubPeering` opts in. The
 pipeline UAMI receives `Network Contributor` **RG-scoped to the hub
 VNet's RG** (not subscription-wide).
 
@@ -137,10 +132,10 @@ VNet's RG** (not subscription-wide).
 
 ## J
 
-**JSON Schema** — `landingzones/sub.schema.json` (Draft 2020-12).
+**JSON Schema**: `landingzones/sub.schema.json` (Draft 2020-12).
 Validates every `sub.yaml` in your editor (via `# yaml-language-server`
-directive), in CI (`schema-validate` job), and at plan time (belt-and-
-suspenders `_assert_*` locals). See
+directive), in CI (`schema-validate` job), and again through the selected
+engine's validation. See
 [`docs/schema-validation.md`](schema-validation.md).
 
 ## L
@@ -156,9 +151,10 @@ subscriptions for inherited policy + RBAC. Archetype MGs (e.g.
 `corp` / `online` / `sandbox`) descend from a common root MG (where the
 pipeline UAMI receives `Management Group Contributor`).
 
-**Mandatory tags** — Platform-wide tags applied to every vended
-subscription. CAF-aligned defaults: `managedby=terraform`,
-`source=avm-ptn-alz-sub-vending`,
+**Mandatory tags**: Platform-wide tags applied to every vended subscription.
+CAF-aligned defaults use `managedby=terraform` for Terraform repositories and
+`managedby=bicep` for Bicep repositories, plus
+an engine-specific `source` value and
 `deployedby=subscription-vending-pipeline`. Configurable via
 `bootstrap/`'s `mandatory_tags` input. See
 [`docs/tagging.md`](tagging.md).
@@ -191,9 +187,9 @@ later, day-2 PRs against the seeded vending repo). Distinct from
 
 ## P
 
-**Platform subscription** — The subscription that owns the pipeline
-UAMI and the Terraform state SA. Often called the "management"
-subscription. The bootstrap's `platform_subscription_id` input.
+**Platform subscription**: The subscription that owns the pipeline UAMI and
+the bootstrap's state storage account. Often called the management
+subscription. The bootstrap uses `platform_subscription_id` for this value.
 
 **Pre-bootstrap** — The green-field prerequisites that must exist before
 `bootstrap/` runs: a root MG hierarchy, a platform subscription, a state
@@ -213,7 +209,7 @@ per-group with `.bak` rotation. Gitignored. The wizard re-renders
 pushes to a new vending GitHub repo. Distinct from the **vending repo**
 (see below).
 
-**State key** — Per-subscription Terraform state blob name:
+**Terraform state key**: Per-subscription Terraform state blob name:
 `<archetype>/<sub-name>.tfstate`. Set via `terraform init
 -backend-config="key=..."` so each subscription has its own state file
 in the shared `subvending-tfstate` container.

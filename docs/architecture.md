@@ -63,13 +63,13 @@ PowerShell request compiler, and `bicep/platform.json`. The workflow compiles
 each YAML request into ARM parameters, validates it, runs what-if, and creates
 a management-group deployment after approval.
 
-### Why this layout
+### Terraform layout properties
 
 | Goal | How it's achieved |
 |---|---|
 | DRY | One AVM module call. Archetype rules are data, not code |
 | Per-subscription state | `terraform init -backend-config="key=<archetype>/<sub>.tfstate"` per CI job |
-| Add new archetype | Append to `local.archetype_config` in `archetypes.tf` + add MG ID |
+| Add new archetype | Update the Terraform archetype data, schema, and platform configuration |
 | Add new sub | New `landingzones/<archetype>/<sub-name>.yaml`, open PR |
 | Wide upgrade (e.g. bump module version) | `apply.yml` `workflow_dispatch` with `mode=all` |
 | Guardrails | Archetype config can force workload, force hub peering, require budget |
@@ -85,13 +85,13 @@ becomes the default `aliasName` and `displayName`.
 | `archetype`          | yes      | string     | One of `corp`, `online`, `sandbox` |
 | `location`           | yes      | string     | Azure region; **no default** |
 | `owner`              | yes      | string     | Email/DL — emitted as `businessowner` tag, used for budget alerts |
-| `costAllocationCode` | cond.    | string     | Operator-configurable (see [tagging.md](tagging.md)). Required only when `cost_allocation_required = true` at bootstrap. |
+| `costAllocationCode` | cond.    | string     | Operator-configurable (see [tagging.md](tagging.md)). Required only when enabled by platform policy. |
 | `displayName`        | no       | string     | Defaults to filename (without `.yaml`) |
 | `aliasName`          | no       | string     | Defaults to filename (without `.yaml`); **immutable after creation** |
 | `workload`           | no       | string     | `Production` (default — always available) or `DevTest` (requires EA/MCA Dev/Test entitlement) |
 | `costCenter`         | no       | string     | Stamped as `costcenter` tag |
-| `billingScopeKey`    | no       | string     | Selects an entry from `billing_scopes`; defaults to `default`. See [billing-scopes.md](billing-scopes.md). |
-| `tags`                 | no       | map      | Free-form tags merged BELOW mandatory + archetype + identity tags. Reserved keys rejected at plan time. |
+| `billingScopeKey`    | no       | string     | Selects a configured billing scope; defaults to `default`. See [billing-scopes.md](billing-scopes.md). |
+| `tags`                 | no       | map      | Free-form tags merged below mandatory, archetype, and identity tags. Reserved keys are rejected during engine validation. |
 | `technicalResponsible` | no       | string   | Email; emitted as `technicalcontact` tag. Defaults to `owner` |
 | `workloadName`         | no       | string   | Free-text workload/service name; emitted as `workloadname` tag. Defaults to `aliasName` |
 | `network.enabled`      | no       | bool     | Default `false` |
@@ -113,13 +113,13 @@ Merged in this order (later wins on conflict — governed tags ALWAYS win):
 ```
 caller tags            (sub YAML `tags` map — free-form, reserved keys rejected)
    ↓
-mandatory_tags         managedby, source, deployedby (CAF defaults)
+mandatory tags         managedby, source, deployedby (CAF defaults)
    ↓
 archetype.extra_tags   archetype = corp | online | sandbox
    ↓
 identity_tags          businessowner, technicalcontact,
                        costcenter, workloadname, environment,
-                       <cost_allocation_tag_key> (when set)
+                       configured cost-allocation tag (when set)
 ```
 
 See [docs/tagging.md](tagging.md) for the full CAF baseline and customization
@@ -137,14 +137,13 @@ guide.
 ## Engine module references
 
 The Terraform engine wraps **`Azure/avm-ptn-alz-sub-vending/azure`**, pinned to `0.3.1`
-exact in [`terraform/main.tf`](../terraform/main.tf) (no upper-bound
+exact in `terraform/main.tf` (no upper-bound
 constraint — every bump is an explicit, reviewed change because the AVM
 module's input contract is still pre-1.0). The mapping from the sub YAML
 to AVM inputs lives in `terraform/locals.tf`. The full upstream input
 reference: <https://registry.terraform.io/modules/Azure/avm-ptn-alz-sub-vending/azure/latest>.
 
 The Bicep engine wraps
-**`br/public:avm/ptn/lz/sub-vending:0.8.0`** in
-[`bicep/main.bicep`](../bicep/main.bicep). Its adapter normalizes the shared
+**`br/public:avm/ptn/lz/sub-vending:0.8.0`** in `bicep/main.bicep`. Its adapter normalizes the shared
 YAML contract to the supported Bicep AVM inputs and rejects fields that the
 pinned AVM version cannot preserve.

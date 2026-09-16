@@ -156,4 +156,5 @@ Grant-SubscriptionCreatorRole `
 * [docs/onboarding.md](onboarding.md) — full operator onboarding flow
 * [docs/tagging.md](tagging.md) — cost-allocation tag configuration
 * [Terraform AVM module: `subscription_billing_scope`](https://registry.terraform.io/modules/Azure/avm-ptn-alz-sub-vending/azure/latest)
+* [Bicep AVM subscription-vending pattern](https://github.com/Azure/bicep-registry-modules/tree/main/avm/ptn/lz/sub-vending)
 * [Azure billing — billing account API](https://learn.microsoft.com/rest/api/billing/2020-05-01/billing-accounts)

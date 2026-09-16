@@ -23,17 +23,16 @@ wins** (governed tags always win):
 
 | Order | Layer                | Source                                              | Notes                                                 |
 | ----: | -------------------- | --------------------------------------------------- | ----------------------------------------------------- |
-|     1 | **caller-supplied**  | `tags:` map in `landingzones/<arch>/<sub>.yaml`     | Free-form; reserved keys rejected at plan time        |
-|     2 | **mandatory**        | `var.mandatory_tags` (terraform/variables.tf)       | Platform-wide defaults; CAF-aligned                   |
-|     3 | **archetype extras** | `local.archetype_config[<arch>].extra_tags`         | E.g. `archetype = "corp"`                             |
+|     1 | **caller-supplied**  | `tags:` map in `landingzones/<arch>/<sub>.yaml`     | Free-form; reserved keys rejected during validation   |
+|     2 | **mandatory**        | Selected engine platform configuration              | Platform-wide defaults; CAF-aligned                   |
+|     3 | **archetype**        | Selected engine archetype rules                      | Adds the governed archetype tag and engine defaults   |
 |     4 | **identity**         | derived from sub.yaml fields + cost-allocation tag  | Always wins                                           |
 
 ### Caller-tag collision check
 
 If a sub.yaml's `tags:` map contains a key that also appears in any governed
-layer (identity, mandatory, archetype, or `cost_allocation_tag_key`), Terraform
-fails at plan time with the offending keys listed. Add only **net-new**
-free-form tags in the `tags:` map.
+layer, the selected engine rejects the request and lists the offending keys.
+Add only **net-new** free-form tags in the `tags:` map.
 
 ---
 
@@ -50,9 +49,9 @@ broader CAF guidance.
 | `costcenter`       | `costCenter`                  | no       | Finance cost-center code; emits `unassigned` when omitted                   |
 | `workloadname`    | `workloadName`                | no       | Human-friendly workload name; defaults to alias                             |
 | `environment`      | `workload` (Production/DevTest) | yes    | Lifecycle classifier for FinOps + Cost Management                           |
-| `archetype`        | `local.archetype_config`      | yes      | Custom but consistent — identifies the landing-zone archetype               |
-| **mandatory_tags** | bootstrap-set defaults        | yes      | Platform-wide constants — `managedby` / `source` / `deployedby`             |
-| `<cost-alloc>`    | `costAllocationCode`          | configurable | Operator-configurable; key set via `cost_allocation_tag_key`             |
+| `archetype`        | Selected engine archetype rules | yes      | Identifies the landing-zone archetype                                      |
+| Mandatory tags    | Platform configuration          | yes      | Platform-wide constants: `managedby`, `source`, and `deployedby`            |
+| Cost allocation   | `costAllocationCode`            | configurable | Operator-configurable tag key and validation policy                      |
 
 ### Mandatory tag defaults
 
@@ -64,6 +63,18 @@ mandatory_tags = {
   managedby  = "terraform"
   source     = "avm-ptn-alz-sub-vending"
   deployedby = "subscription-vending-pipeline"
+}
+```
+
+The equivalent Bicep configuration is:
+
+```json
+{
+  "mandatoryTags": {
+    "managedby": "bicep",
+    "source": "avm-ptn-lz-sub-vending",
+    "deployedby": "subscription-vending-pipeline"
+  }
 }
 ```
 
@@ -98,7 +109,19 @@ via PR. The bootstrap is one-shot and is **not** re-run for value rotations.
 cost_allocation_tag = {
   name     = "activitycode"             # Tag KEY (lowercase, no separators)
   required = true                       # Fail-fast if a sub.yaml omits costAllocationCode
-  pattern  = "^[A-Z]{1,4}[0-9]{4,8}$"   # Optional Terraform regex (anchors recommended)
+  pattern  = "^[A-Z]{1,4}[0-9]{4,8}$"   # Optional regex; anchors recommended
+}
+```
+
+The equivalent Bicep configuration is:
+
+```json
+{
+  "costAllocation": {
+    "name": "activitycode",
+    "required": true,
+    "pattern": "^[A-Z]{1,4}[0-9]{4,8}$"
+  }
 }
 ```
 
@@ -106,7 +129,7 @@ cost_allocation_tag = {
 | ---------- | ------------- | ----------------------------------------------------------------------------------------- |
 | `name`     | `projectcode` | Azure tag key for the cost-allocation tag                                                 |
 | `required` | `false`       | When `true`, every `sub.yaml` must include `costAllocationCode`                           |
-| `pattern`  | `null`        | Optional regex applied at plan time; `null` accepts any non-empty string                 |
+| `pattern`  | `null`        | Optional regex applied during engine validation; `null` accepts any non-empty string    |
 
 ### In sub.yaml
 

@@ -58,8 +58,8 @@ repository.
     `AZURE_DEPLOYMENT_LOCATION`
   - `BACKEND_RESOURCE_GROUP_NAME`, `BACKEND_STORAGE_ACCOUNT_NAME`, `BACKEND_CONTAINER_NAME`
 - `production` Environment with required reviewers and `protected_branches` policy
-- **Seeds the repo with the runtime skeleton**: `terraform/`, `landingzones/`
-  examples, operator docs, `.github/workflows/`, `README.md`,
+- **Seeds the repo with the runtime skeleton**: the selected engine package,
+  `landingzones/` examples, operator docs, `.github/workflows/`, `README.md`,
   `CONTRIBUTING.md`, and `.gitignore`. Accelerator development files such as
   `powershell/`, `starters/`, `tests/`, and proposals are excluded.
   Shared files are combined with the engine package selected by
@@ -117,9 +117,14 @@ adding a `backend "azurerm"` block.
 
 ## After bootstrap
 
-The bootstrap renders **`terraform/terraform.auto.tfvars`** directly into
-the seeded repo with all platform context (tenant/billing/MGs/hub VNet/tags),
-so workflows can `terraform plan` without any operator post-processing.
+The bootstrap renders the selected engine configuration directly into the
+seeded repository:
+
+- Terraform: `terraform/terraform.auto.tfvars`
+- Bicep: `bicep/platform.json`
+
+Both contain the tenant, billing, management-group, networking, and tagging
+context needed by the GitHub workflows.
 
 You only need to do **one** thing manually:
 
@@ -131,11 +136,10 @@ That's it — open a PR against an example YAML in `landingzones/` to verify
 the pipeline end-to-end. See [`docs/first-vend.md`](../docs/first-vend.md).
 
 > **Day-2 changes go to the seeded repo, not back here.** The bootstrap is
-> one-shot — its Terraform state lives on the operator workstation that ran it
+> one-shot. Its Terraform state lives on the operator workstation that ran it
 > and is **not** reapplied to rotate values. Anything in
-> `terraform/terraform.auto.tfvars` in the seeded repo (tenant ID, MG IDs,
-> hub VNet, billing scopes, mandatory tags, cost-allocation tag config) is
-> changed by editing that file directly via PR. See
+> `terraform/terraform.auto.tfvars` or `bicep/platform.json` in the seeded repo
+> is changed by editing that file directly via PR. See
 > [`docs/onboarding.md` → "Updating platform inputs after bootstrap"](../docs/onboarding.md#updating-platform-inputs-after-bootstrap)
 > for the full table. Re-running `bootstrap/` is reserved for recovery
 > (rebuilding the UAMI / repo).
@@ -177,7 +181,7 @@ Source layout under `bootstrap/`:
 | [`variables.tf`](variables.tf) | ~20 inputs across identity/location, state, RBAC, GitHub repo, branch protection, production env, billing scopes (map with EA/MCA/MPA per entry), MG IDs, cost allocation, mandatory tags, CODEOWNERS, skeleton seeding. Validation rules enforce billing-scope structure, MG ID format, GitHub handles, tag-key naming. |
 | [`locals.tf`](locals.tf) | Resolves each `billing_scopes` entry into the full Azure billing scope path string. EA → `enrollmentAccounts/...`, MCA → `billingProfiles/.../invoiceSections/...`, MPA → `customers/...`. |
 | [`main.tf`](main.tf) | UAMI + 3 FICs (branch / PR / production env) + state container + 4 role assignments (Storage Blob Data Contributor on the container, MG Contributor + optional UAA on the ALZ root MG, Network Contributor RG-scoped on the hub VNet's RG) + optional `github_repository` create + Actions variables + `production` environment + branch protection. |
-| [`files.tf`](files.tf) | Three `github_repository_file` resources: (a) shared skeleton files plus only the selected starter package; (b) `terraform/terraform.auto.tfvars` rendered with platform context; (c) `.github/CODEOWNERS` rendered from `templates/CODEOWNERS.tftpl`. |
+| [`files.tf`](files.tf) | Seeds shared runtime files plus the selected engine package, renders `terraform/terraform.auto.tfvars` or `bicep/platform.json`, and renders `.github/CODEOWNERS`. |
 | [`outputs.tf`](outputs.tf) | Selected starter, UAMI identifiers, state container, GitHub repository, and `next_step_billing_role` (a pre-filled `Grant-SubscriptionCreatorRole` snippet per billing scope). |
 | [`templates/CODEOWNERS.tftpl`](templates/CODEOWNERS.tftpl) | Single template rendered with the operator's `codeowners_default_team` + `codeowners_archetype_teams`. Only the **rendered** file lands in the seeded repo. |
 | [`Invoke-Bootstrap.ps1`](Invoke-Bootstrap.ps1) | The interactive wizard. Handles both **create** (bootstrap; default) and **destroy** (`-Destroy`; with optional `-IncludeStateContainer`, `-IncludeGitHubRepo`, `-CleanBootstrapFolder`, standard `-WhatIf`). 9 + 1 sections; see [`docs/bootstrap-wizard.md → Implementation notes`](../docs/bootstrap-wizard.md#implementation-notes) and [`docs/bootstrap-wizard.md → Destroying / undoing a bootstrap`](../docs/bootstrap-wizard.md#destroying--undoing-a-bootstrap). |

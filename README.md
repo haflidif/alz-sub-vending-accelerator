@@ -4,9 +4,11 @@ Azure subscription-vending accelerator with **Terraform and Bicep engines**,
 one shared YAML request contract, and GitHub Actions delivery. Terraform uses
 [`Azure/avm-ptn-alz-sub-vending/azure`][avm] with isolated per-subscription
 state. Bicep uses the Azure Verified Modules subscription-vending pattern with
-management-group deployments.
+management-group deployments through
+[`br/public:avm/ptn/lz/sub-vending:0.8.0`][bicep-avm].
 
 [avm]: https://registry.terraform.io/modules/Azure/avm-ptn-alz-sub-vending/azure/latest
+[bicep-avm]: https://github.com/Azure/bicep-registry-modules/tree/main/avm/ptn/lz/sub-vending
 
 ---
 
@@ -15,7 +17,7 @@ management-group deployments.
 | You are... | Start here |
 |---|---|
 | **New here** and want the shortest path to a working vend | → [`QUICKSTART.md`](QUICKSTART.md) (day 1 / day 7 / day 30 quick-start) |
-| **Platform operator** standing this up for the first time | → [`docs/onboarding.md`](docs/onboarding.md) (one-time setup), then [`bootstrap/README.md`](bootstrap/README.md) |
+| **Platform operator** standing this up for the first time | See [`docs/onboarding.md`](docs/onboarding.md), then the [bootstrap reference][bootstrap-reference] |
 | **App / workload team** who has been told "vend yourself a subscription" | → [`docs/first-vend.md`](docs/first-vend.md) (open a PR with one YAML file) |
 | **Curious: how does this thing work?** | → [`docs/architecture.md`](docs/architecture.md) |
 
@@ -111,7 +113,7 @@ sub-vending/
 │   ├── repository-layout.md       # full directory tree + skeleton vs vending repo
 │   ├── bootstrap-wizard.md        # Invoke-Bootstrap.ps1 reference
 │   ├── archetypes.md              # corp / online / sandbox + how to add more
-│   ├── billing-scopes.md          # EA / MCA / MPA path formats + billing_scopes map
+│   ├── billing-scopes.md          # EA / MCA / MPA paths and engine configuration
 │   ├── tagging.md                 # CAF tag baseline + cost-allocation tag
 │   ├── naming-convention.md
 │   ├── schema-validation.md
@@ -168,7 +170,8 @@ engines, the workflow matrix isolates each request.
 **Read [`docs/onboarding.md`](docs/onboarding.md) first** — it lists the 6
 prerequisites and walks through the 3-step setup.
 
-The shared [`bootstrap/`](bootstrap/) layer uses one Terraform apply to
+The shared [`bootstrap/` layer](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/tree/main/bootstrap)
+uses one Terraform apply to
 prepare either runtime engine:
 
 - Pipeline UAMI + 3 GitHub OIDC federated credentials (branch / PR / environment)
@@ -227,8 +230,8 @@ The vending repo is the source of truth — the bootstrap is one-shot and is
 **not** re-run for day-2 changes. Open a PR against the seeded vending repo
 that updates the engine rules and shared contract:
 
-1. Add the archetype rules to [`terraform/archetypes.tf`](terraform/archetypes.tf)
-   or `bicep/SubscriptionVending.Bicep.psm1`.
+1. Add the archetype rules to `terraform/archetypes.tf` or
+   `bicep/SubscriptionVending.Bicep.psm1`, depending on the selected engine.
 2. Add the matching MG ID to the selected engine configuration:
    `terraform/terraform.auto.tfvars` or `bicep/platform.json`.
 3. Create `landingzones/<archetype>/` and add at least one example `<sub-name>.yaml`
@@ -237,7 +240,7 @@ that updates the engine rules and shared contract:
 
 See [docs/archetypes.md](docs/archetypes.md) for the full walkthrough,
 and [docs/schema-validation.md](docs/schema-validation.md) for how YAML
-files are validated against the schema (in your editor, in CI, and at plan time).
+files are validated in your editor, in CI, and by the selected engine.
 
 ---
 
@@ -259,8 +262,8 @@ Per-layer references (each folder has its own README):
 
 | Folder | Reference |
 |---|---|
-| `bootstrap/` | [`bootstrap/README.md`](bootstrap/README.md) — what the bootstrap module creates + manual flow |
-| `terraform/` | [`terraform/README.md`](terraform/README.md) — engine file-by-file |
+| `bootstrap/` | [Bootstrap reference][bootstrap-reference] |
+| Selected engine | Read `terraform/README.md` or `bicep/README.md`, whichever exists in the vending repository |
 | `landingzones/` | [`landingzones/README.md`](landingzones/README.md) — consumer reference for `sub.yaml` |
 | `.github/` | [`.github/CICD.md`](.github/CICD.md) — CI/CD workflows, OIDC, Dependabot |
 | `scripts/` | [`scripts/README.md`](scripts/README.md) — local helper scripts |
@@ -279,16 +282,21 @@ Topic-by-topic docs in `docs/`:
 | JSON Schema validation rules | [`docs/schema-validation.md`](docs/schema-validation.md) |
 | Tag layering + cost-allocation tag | [`docs/tagging.md`](docs/tagging.md) |
 | Billing scopes (EA / MCA / MPA + per-sub `billingScopeKey`) | [`docs/billing-scopes.md`](docs/billing-scopes.md) |
-| Backend container + per-sub state key | [`docs/state-storage.md`](docs/state-storage.md) |
+| Terraform backend container + per-sub state key | [`docs/state-storage.md`](docs/state-storage.md) |
 | Retire a single vended subscription | [`docs/teardown.md`](docs/teardown.md) |
 | Undo a botched bootstrap (different from above) | [`docs/bootstrap-wizard.md#destroying--undoing-a-bootstrap`](docs/bootstrap-wizard.md#destroying--undoing-a-bootstrap) |
 | Every term defined in one place | [`docs/glossary.md`](docs/glossary.md) |
-| Terraform and Bicep starter capability contract | [`docs/starter-contract.md`](docs/starter-contract.md) |
-| Proposed dual-engine accelerator direction (not implemented) | [`docs/proposals/subscription-vending-accelerator.md`](docs/proposals/subscription-vending-accelerator.md) |
-| Proposed delivery milestones and local PoC | [`docs/proposals/subscription-vending-delivery-plan.md`](docs/proposals/subscription-vending-delivery-plan.md) |
+| Terraform and Bicep starter capability contract | [Starter contract][starter-contract] |
+| Extended product vision and scope decisions | [Product vision][product-vision] |
+| Historical delivery roadmap | [Delivery roadmap][delivery-roadmap] |
 
 ---
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+[bootstrap-reference]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md
+[starter-contract]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/docs/starter-contract.md
+[product-vision]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/docs/proposals/subscription-vending-accelerator.md
+[delivery-roadmap]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/docs/proposals/subscription-vending-delivery-plan.md

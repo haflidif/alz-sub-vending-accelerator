@@ -40,7 +40,7 @@ Bicep platform configuration.
 | To re-collect inputs without touching Terraform | `Invoke-Bootstrap.ps1 -Phase configure` |
 | A dry-run plan with no apply | `Invoke-Bootstrap.ps1 -PlanOnly` |
 | Destroy an existing Terraform bootstrap | `Invoke-Bootstrap.ps1 -Destroy` |
-| To drive Terraform yourself from a non-PowerShell environment | Manual flow — see [`bootstrap/README.md`](../bootstrap/README.md#usage) |
+| To drive Terraform yourself from a non-PowerShell environment | See the [manual bootstrap flow](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md#usage) |
 
 The module, legacy wizard, and manual Terraform flow leave **identical
 Terraform state** behind. The module is now the stable product boundary while
@@ -101,7 +101,7 @@ than one group.
 | 5 | `BranchProtection` | `enforce_branch_protection`, `branch_protection_required_status_checks`, `branch_protection_required_approving_review_count` | Non-empty check names |
 | 6 | `ProductionEnv` | `production_environment_name`, reviewer team handles + user handles | Resolves handles → numeric IDs via GitHub API |
 | 7 | `BillingScopes` | One entry per scope: key, `agreement_type` (EA/MCA/MPA), matching nested fields. Must include a `default` key. | `default` present, agreement-type ↔ nested-object consistency, path-string format on render |
-| 8 | `ManagementGroups` | `management_group_ids` map — one entry per archetype declared in your `terraform/archetypes.tf` | Full MG resource ID format |
+| 8 | `ManagementGroups` | `management_group_ids` map with one entry per supported archetype | Full MG resource ID format |
 | 9 | `Network` | `hub_virtual_network_resource_id` (optional) | `/subscriptions/<guid>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<name>` regex |
 | 10 | `Tags` | `mandatory_tags` map (defaults to CAF: `managedby`/`source`/`deployedby`) | Tag-key naming (lowercase, no separators) |
 | 11 | `CostAllocation` | `cost_allocation_tag` object: `name` / `required` / `pattern` | Tag-key naming for `name`, optional regex compiles |
@@ -453,7 +453,7 @@ when triaging unexpected behaviour.
 
 ## See also
 
-- [`bootstrap/README.md`](../bootstrap/README.md) — what `bootstrap/` actually creates
+- [Bootstrap reference](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md)
 - [`docs/onboarding.md`](onboarding.md) — operator setup (where the wizard fits in)
 - [`docs/billing-scopes.md`](billing-scopes.md) — `billing_scopes` map format
 - [`docs/tagging.md`](tagging.md) — `cost_allocation_tag` + `mandatory_tags`

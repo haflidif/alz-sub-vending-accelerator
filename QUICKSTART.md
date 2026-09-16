@@ -80,7 +80,7 @@ In the newly created GitHub repo:
 ## Day 30: operationalize
 
 - Review Dependabot PRs for GitHub Actions and Terraform dependencies
-- Bump the AVM module pin when a new version ships
+- Review and bump the selected engine's AVM pin when a new version ships
   ([`CONTRIBUTING.md`](CONTRIBUTING.md#bumping-the-avm-module-pin))
 - Add new archetypes if your MG hierarchy needs them
   ([`CONTRIBUTING.md`](CONTRIBUTING.md#adding-a-new-archetype))

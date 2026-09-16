@@ -1,14 +1,15 @@
 # Archetypes
 
-An **archetype** is a class of subscription with shared defaults and guardrails.
-The set of available archetypes is defined in
-[`terraform/archetypes.tf`](../terraform/archetypes.tf) — it's pure data, no code.
+An **archetype** is a class of subscription with shared defaults and
+guardrails. Terraform defines the rules in `terraform/archetypes.tf`. Bicep
+defines the equivalent rules in the `$archetypes` map in
+`bicep/SubscriptionVending.Bicep.psm1`.
 
 ## Built-in archetypes
 
 ### `corp`
 
-**Internal workloads.** Mandatory hub peering when networking is enabled —
+**Internal workloads.** Mandatory hub peering when networking is enabled.
 this is the standard pattern for line-of-business systems that need to reach
 on-prem or shared services through the platform hub.
 
@@ -24,7 +25,7 @@ Use for: ERP, CRM, internal APIs, data platforms, AD/identity-bound apps.
 
 ### `online`
 
-**Internet-facing workloads.** Hub peering is optional — many online workloads
+**Internet-facing workloads.** Hub peering is optional. Many online workloads
 run isolated and use App Gateway / Front Door / CDN for ingress instead of
 traversing the hub.
 
@@ -51,9 +52,9 @@ and to keep experiments off the production network.
 | Budget required | **yes**. Engine validation fails without it |
 | Budget alerts | actual ≥ 50%, actual ≥ 90%, forecast ≥ 100% |
 
-> **DevTest entitlement** — Opting in to `workload: DevTest` requires the
+> **DevTest entitlement:** Opting in to `workload: DevTest` requires the
 > EA/MCA billing scope to be entitled for the Dev/Test offer (`MS-AZR-0148P`
-> on EA). If the enrollment isn't enabled the AVM module returns
+> on EA). If the enrollment is not enabled, the selected AVM returns
 > `EntitlementNotFound`. Defaulting to `Production` works on every billing
 > scope.
 
@@ -63,7 +64,7 @@ Sub.yaml authors should set an `expiry` tag for cleanup automation.
 ## Adding a new archetype
 
 The vending repo is the source of truth post-bootstrap. Day-2 archetype
-changes are a regular PR — **do not** re-run the bootstrap module (its state
+changes are a regular PR. **Do not** re-run the bootstrap module because its state
 is one-shot and local to the operator workstation that ran it).
 
 1. Add the new rules to `terraform/archetypes.tf`. If the Bicep starter must
@@ -82,6 +83,22 @@ is one-shot and local to the operator workstation that ran it).
    }
    ```
 
+   The equivalent Bicep compiler entry uses the supported PowerShell keys:
+
+   ```powershell
+   identity = @{
+     HubPeeringDefault = $true
+     HubPeeringAllowFalse = $false
+     BudgetRequired = $false
+     BudgetActualThresholds = @(80)
+     BudgetForecastThresholds = @(100)
+   }
+   ```
+
+   If the new archetype needs behavior that is not represented in the Bicep
+   map, extend the compiler and its tests rather than silently dropping the
+   rule.
+
 2. Add the matching MG ID directly to the selected engine configuration:
    `terraform/terraform.auto.tfvars` (`management_group_ids`) or
    `bicep/platform.json` (`managementGroupIds`).
@@ -95,11 +112,22 @@ is one-shot and local to the operator workstation that ran it).
    }
    ```
 
+   ```json
+   {
+     "managementGroupIds": {
+       "corp": "...",
+       "online": "...",
+       "sandbox": "...",
+       "identity": "/providers/Microsoft.Management/managementGroups/mycompany-identity"
+     }
+   }
+   ```
+
    > The pipeline UAMI must already have the right RBAC at the parent MG
    > scope. If the new archetype lives outside the original
    > `alz_root_management_group_id` from the bootstrap, grant Management
-   > Group Contributor (and User Access Administrator if you use
-   > `roleAssignments` in sub.yaml files) on the new scope **manually** —
+   > Group Contributor and, if needed, User Access Administrator on the new
+   > scope **manually**. The bootstrap does
    > the bootstrap will not back-fill these.
 
 3. Create `landingzones/<archetype>/` and add at least one example YAML file.
@@ -114,10 +142,10 @@ that the PR also added.
 
 ## Modifying an existing archetype
 
-Edit the relevant entry in `terraform/archetypes.tf`. Treat with care: any
-change re-plans every existing subscription in that archetype on next apply.
+Edit the relevant engine rule. Treat with care because a runtime engine change
+selects every request in the repository on the next preview and deployment.
 
 Recommended PR checklist:
 - [ ] `workflow_dispatch` of `apply.yml` with `mode=all` in a non-prod tenant first
-- [ ] Plan output reviewed by platform lead
+- [ ] Terraform plan or Bicep what-if reviewed by the platform lead
 - [ ] Communicated to subscription owners listed in affected YAML files
