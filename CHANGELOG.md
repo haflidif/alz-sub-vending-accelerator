@@ -25,6 +25,11 @@ template itself, not the AVM module pinned by the engine (see
 - Engine package roots and manifest-driven starter package declarations.
 - Initial Bicep runtime package with an Azure Verified Modules sub-vending
   wrapper, platform schema, and deterministic request compiler.
+- Bicep subnet normalization for service endpoints, delegation, private
+  endpoint policies, outbound settings, IPAM allocations, and custom network
+  security groups.
+- Bicep role-assignment normalization for resource-group scope, principal
+  type, description, and supported conditional assignment templates.
 
 ### Changed
 
@@ -77,6 +82,12 @@ template itself, not the AVM module pinned by the engine (see
   existing subscription in an ALZ hierarchy.
 - Added a Bicep subscription budget module that preserves separate actual and
   forecast notification thresholds in one budget resource.
+- Rejected subnet and role-assignment properties that the pinned Bicep AVM
+  cannot preserve instead of silently discarding them.
+- Rejected multiple subnet prefixes because the Bicep AVM 0.8.0 sub-vending
+  wrapper declares but does not forward them to its VNet module.
+- Completed non-creating networking and RBAC validation and what-if against an
+  existing subscription, including hub peering and a custom NSG rule.
 
 ## [0.1.0] - 2026-06-01
 

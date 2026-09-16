@@ -109,9 +109,28 @@
             "required": ["address_prefixes"],
             "properties": {
               "address_prefixes": {
+                "description": "Terraform supports its AVM subnet contract. The pinned Bicep AVM 0.8.0 currently requires exactly one prefix because its sub-vending wrapper drops additional prefixes.",
                 "type": "array",
                 "items": { "type": "string" },
                 "minItems": 1
+              },
+              "ipam_pool_prefix_allocations": {
+                "type": "array",
+                "items": { "type": "object" }
+              },
+              "service_endpoints": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "delegation": { "type": "string", "minLength": 1 },
+              "private_endpoint_network_policies": {
+                "type": "string",
+                "enum": ["Disabled", "Enabled", "NetworkSecurityGroupEnabled", "RouteTableEnabled"]
+              },
+              "default_outbound_access": { "type": "boolean" },
+              "network_security_group": {
+                "type": "object",
+                "additionalProperties": true
               }
             }
           }
@@ -136,7 +155,7 @@
     },
 
     "roleAssignments": {
-      "description": "Subscription-scoped role assignments. Keys are arbitrary and values are normalized for the selected AVM engine.",
+      "description": "Subscription- or resource-group-scoped role assignments. Keys are arbitrary and values are normalized for the selected AVM engine.",
       "type": "object",
       "additionalProperties": {
         "type": "object",
@@ -144,7 +163,21 @@
         "additionalProperties": true,
         "properties": {
           "principal_id":               { "type": "string", "minLength": 1 },
-          "role_definition_id_or_name": { "type": "string", "minLength": 1 }
+          "role_definition_id_or_name": { "type": "string", "minLength": 1 },
+          "relative_scope": {
+            "description": "Empty for subscription scope, or /resourceGroups/<name> for resource-group scope.",
+            "type": "string",
+            "pattern": "^$|^/resourceGroups/[^/]+$"
+          },
+          "principal_type": {
+            "type": "string",
+            "enum": ["Group", "ServicePrincipal", "User"]
+          },
+          "description": { "type": "string" },
+          "role_assignment_condition": {
+            "type": "object",
+            "additionalProperties": true
+          }
         }
       }
     },

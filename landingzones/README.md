@@ -46,7 +46,7 @@ Most-used optional fields:
 - `tags` — free-form tag map merged on top of governed layers. **Reserved keys** (identity, mandatory, archetype, cost-allocation) cannot appear here.
 - `network` — `{ enabled, addressSpace, hubPeering, subnets }`. When `enabled: true`, `addressSpace` is required.
 - `budget` — `{ amount, contacts }`. **Required for `sandbox`** (schema-enforced).
-- `roleAssignments` — map of `{ principal_id, role_definition_id_or_name, ... }` passed straight to the AVM module.
+- `roleAssignments` — map of `{ principal_id, role_definition_id_or_name, ... }`. Terraform passes the map to its AVM; Bicep normalizes supported scope, principal, description, and condition fields for its pinned AVM.
 - `managedIdentity` — `{ name, resourceGroupName? }` to provision a UAMI alongside the subscription.
 
 Full schema reference: [`docs/schema-validation.md`](../docs/schema-validation.md).

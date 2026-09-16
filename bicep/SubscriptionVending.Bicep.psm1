@@ -45,6 +45,143 @@ function Assert-RequestValue {
   }
 }
 
+function Assert-MapKeys {
+  param(
+    [Parameter(Mandatory)]
+    [System.Collections.IDictionary] $Map,
+
+    [Parameter(Mandatory)]
+    [string[]] $AllowedKeys,
+
+    [Parameter(Mandatory)]
+    [string] $Context
+  )
+
+  $unsupportedKeys = @($Map.Keys | Where-Object { $_ -notin $AllowedKeys })
+  Assert-RequestValue ($unsupportedKeys.Count -eq 0) "$Context contains properties that the Bicep starter does not support: $($unsupportedKeys -join ', ')."
+}
+
+function ConvertTo-BicepNetworkSecurityGroup {
+  param(
+    [Parameter(Mandatory)]
+    [System.Collections.IDictionary] $NetworkSecurityGroup,
+
+    [Parameter(Mandatory)]
+    [string] $SubnetName
+  )
+
+  Assert-MapKeys `
+    -Map $NetworkSecurityGroup `
+    -AllowedKeys @('name', 'location', 'tags', 'security_rules') `
+    -Context "Subnet '$SubnetName' network_security_group"
+
+  $result = [ordered]@{}
+  foreach ($mapping in @(
+    @{ Source = 'name'; Target = 'name' }
+    @{ Source = 'location'; Target = 'location' }
+    @{ Source = 'tags'; Target = 'tags' }
+  )) {
+    if (Test-MapKey -Map $NetworkSecurityGroup -Key $mapping.Source) {
+      $result[$mapping.Target] = $NetworkSecurityGroup[$mapping.Source]
+    }
+  }
+
+  if (Test-MapKey -Map $NetworkSecurityGroup -Key 'security_rules') {
+    $securityRuleMap = $NetworkSecurityGroup['security_rules']
+    Assert-RequestValue ($securityRuleMap -is [System.Collections.IDictionary]) "Subnet '$SubnetName' network_security_group.security_rules must be an object."
+    $securityRules = @()
+    $propertyMappings = [ordered]@{
+      access = 'access'
+      description = 'description'
+      destination_address_prefix = 'destinationAddressPrefix'
+      destination_address_prefixes = 'destinationAddressPrefixes'
+      destination_application_security_group_resource_ids = 'destinationApplicationSecurityGroupResourceIds'
+      destination_port_range = 'destinationPortRange'
+      destination_port_ranges = 'destinationPortRanges'
+      direction = 'direction'
+      priority = 'priority'
+      protocol = 'protocol'
+      source_address_prefix = 'sourceAddressPrefix'
+      source_address_prefixes = 'sourceAddressPrefixes'
+      source_application_security_group_resource_ids = 'sourceApplicationSecurityGroupResourceIds'
+      source_port_range = 'sourcePortRange'
+      source_port_ranges = 'sourcePortRanges'
+    }
+
+    foreach ($ruleName in $securityRuleMap.Keys) {
+      $rule = $securityRuleMap[$ruleName]
+      Assert-RequestValue ($rule -is [System.Collections.IDictionary]) "Subnet '$SubnetName' security rule '$ruleName' must be an object."
+      Assert-MapKeys -Map $rule -AllowedKeys @($propertyMappings.Keys) -Context "Subnet '$SubnetName' security rule '$ruleName'"
+      foreach ($requiredKey in @('access', 'direction', 'priority', 'protocol')) {
+        Assert-RequestValue (Test-MapKey -Map $rule -Key $requiredKey) "Subnet '$SubnetName' security rule '$ruleName' is missing required field: $requiredKey."
+      }
+
+      $properties = [ordered]@{}
+      foreach ($sourceKey in $propertyMappings.Keys) {
+        if (Test-MapKey -Map $rule -Key $sourceKey) {
+          $properties[$propertyMappings[$sourceKey]] = $rule[$sourceKey]
+        }
+      }
+      $securityRules += [ordered]@{
+        name = [string]$ruleName
+        properties = $properties
+      }
+    }
+    $result['securityRules'] = $securityRules
+  }
+
+  return $result
+}
+
+function ConvertTo-BicepRoleAssignmentCondition {
+  param(
+    [Parameter(Mandatory)]
+    [System.Collections.IDictionary] $Condition,
+
+    [Parameter(Mandatory)]
+    [string] $AssignmentName
+  )
+
+  Assert-MapKeys `
+    -Map $Condition `
+    -AllowedKeys @('role_condition_type', 'condition_version', 'delegation_code') `
+    -Context "Role assignment '$AssignmentName' role_assignment_condition"
+
+  $result = [ordered]@{}
+  if (Test-MapKey -Map $Condition -Key 'condition_version') {
+    $conditionVersion = [string]$Condition['condition_version']
+    Assert-RequestValue ($conditionVersion -eq '2.0') "Role assignment '$AssignmentName' condition_version must be '2.0'."
+    $result['conditionVersion'] = $conditionVersion
+  }
+  if (Test-MapKey -Map $Condition -Key 'delegation_code') {
+    $result['delegationCode'] = [string]$Condition['delegation_code']
+  }
+  if (Test-MapKey -Map $Condition -Key 'role_condition_type') {
+    $conditionType = $Condition['role_condition_type']
+    Assert-RequestValue ($conditionType -is [System.Collections.IDictionary]) "Role assignment '$AssignmentName' role_condition_type must be an object."
+    $templateName = [string](Get-MapValue -Map $conditionType -Key 'template_name' -Default '')
+    Assert-RequestValue ($templateName -in @('excludeRoles', 'constrainRoles', 'constrainRolesAndPrincipalTypes', 'constrainRolesAndPrincipals')) "Role assignment '$AssignmentName' has unsupported condition template '$templateName'."
+
+    $templateMappings = @{
+      excludeRoles = [ordered]@{ template_name = 'templateName'; excluded_roles = 'excludedRoles' }
+      constrainRoles = [ordered]@{ template_name = 'templateName'; roles_to_assign = 'rolesToAssign' }
+      constrainRolesAndPrincipalTypes = [ordered]@{ template_name = 'templateName'; roles_to_assign = 'rolesToAssign'; principal_types_to_assign = 'principleTypesToAssign' }
+      constrainRolesAndPrincipals = [ordered]@{ template_name = 'templateName'; roles_to_assign = 'rolesToAssign'; principals_to_assign_to = 'principalsToAssignTo' }
+    }
+    $mapping = $templateMappings[$templateName]
+    Assert-MapKeys -Map $conditionType -AllowedKeys @($mapping.Keys) -Context "Role assignment '$AssignmentName' role_condition_type"
+
+    $normalizedType = [ordered]@{}
+    foreach ($sourceKey in $mapping.Keys) {
+      Assert-RequestValue (Test-MapKey -Map $conditionType -Key $sourceKey) "Role assignment '$AssignmentName' condition template '$templateName' is missing required field: $sourceKey."
+      $normalizedType[$mapping[$sourceKey]] = $conditionType[$sourceKey]
+    }
+    $result['roleConditionType'] = $normalizedType
+  }
+
+  return $result
+}
+
 function ConvertTo-BicepSubscriptionParameters {
   [CmdletBinding()]
   param(
@@ -160,14 +297,38 @@ function ConvertTo-BicepSubscriptionParameters {
     Assert-RequestValue ($addressSpace.Count -gt 0) 'network.addressSpace is required when networking is enabled.'
 
     $subnetMap = Get-MapValue -Map $network -Key 'subnets' -Default @{}
+    Assert-RequestValue ($subnetMap -is [System.Collections.IDictionary]) 'network.subnets must be an object.'
+    $subnetMappings = [ordered]@{
+      ipam_pool_prefix_allocations = 'ipamPoolPrefixAllocations'
+      delegation = 'delegation'
+      private_endpoint_network_policies = 'privateEndpointNetworkPolicies'
+      service_endpoints = 'serviceEndpoints'
+      default_outbound_access = 'defaultOutboundAccess'
+    }
     foreach ($subnetName in $subnetMap.Keys) {
       $subnet = $subnetMap[$subnetName]
+      Assert-RequestValue ($subnet -is [System.Collections.IDictionary]) "Subnet '$subnetName' must be an object."
+      Assert-MapKeys `
+        -Map $subnet `
+        -AllowedKeys (@('address_prefixes', 'network_security_group') + @($subnetMappings.Keys)) `
+        -Context "Subnet '$subnetName'"
       $prefixes = @(Get-MapValue -Map $subnet -Key 'address_prefixes' -Default @())
-      Assert-RequestValue ($prefixes.Count -eq 1) "Subnet '$subnetName' must declare exactly one address prefix for the Bicep starter."
-      $subnets += [ordered]@{
+      Assert-RequestValue ($prefixes.Count -eq 1) "Subnet '$subnetName' must declare exactly one address prefix for Bicep AVM 0.8.0."
+      $normalizedSubnet = [ordered]@{
         name = [string]$subnetName
         addressPrefix = [string]$prefixes[0]
       }
+      foreach ($sourceKey in $subnetMappings.Keys) {
+        if (Test-MapKey -Map $subnet -Key $sourceKey) {
+          $normalizedSubnet[$subnetMappings[$sourceKey]] = $subnet[$sourceKey]
+        }
+      }
+      if (Test-MapKey -Map $subnet -Key 'network_security_group') {
+        $networkSecurityGroup = $subnet['network_security_group']
+        Assert-RequestValue ($networkSecurityGroup -is [System.Collections.IDictionary]) "Subnet '$subnetName' network_security_group must be an object."
+        $normalizedSubnet['networkSecurityGroup'] = ConvertTo-BicepNetworkSecurityGroup -NetworkSecurityGroup $networkSecurityGroup -SubnetName $subnetName
+      }
+      $subnets += $normalizedSubnet
     }
   }
 
@@ -187,11 +348,37 @@ function ConvertTo-BicepSubscriptionParameters {
   Assert-RequestValue ($requestRoleAssignments -is [System.Collections.IDictionary]) 'roleAssignments must be an object.'
   foreach ($assignmentName in $requestRoleAssignments.Keys) {
     $assignment = $requestRoleAssignments[$assignmentName]
-    $roleAssignments += [ordered]@{
-      principalId = [string](Get-MapValue -Map $assignment -Key 'principal_id')
-      definition = [string](Get-MapValue -Map $assignment -Key 'role_definition_id_or_name')
-      relativeScope = ''
+    Assert-RequestValue ($assignment -is [System.Collections.IDictionary]) "Role assignment '$assignmentName' must be an object."
+    Assert-MapKeys `
+      -Map $assignment `
+      -AllowedKeys @('principal_id', 'role_definition_id_or_name', 'relative_scope', 'principal_type', 'description', 'role_assignment_condition') `
+      -Context "Role assignment '$assignmentName'"
+    $principalId = [string](Get-MapValue -Map $assignment -Key 'principal_id' -Default '')
+    $definition = [string](Get-MapValue -Map $assignment -Key 'role_definition_id_or_name' -Default '')
+    $relativeScope = [string](Get-MapValue -Map $assignment -Key 'relative_scope' -Default '')
+    Assert-RequestValue ($principalId -ne '') "Role assignment '$assignmentName' is missing required field: principal_id."
+    Assert-RequestValue ($definition -ne '') "Role assignment '$assignmentName' is missing required field: role_definition_id_or_name."
+    Assert-RequestValue ($relativeScope -eq '' -or $relativeScope -match '^/resourceGroups/[^/]+$') "Role assignment '$assignmentName' relative_scope must be empty or '/resourceGroups/<name>'."
+
+    $normalizedAssignment = [ordered]@{
+      principalId = $principalId
+      definition = $definition
+      relativeScope = $relativeScope
     }
+    if (Test-MapKey -Map $assignment -Key 'principal_type') {
+      $principalType = [string]$assignment['principal_type']
+      Assert-RequestValue ($principalType -in @('Group', 'ServicePrincipal', 'User')) "Role assignment '$assignmentName' has unsupported principal_type '$principalType'."
+      $normalizedAssignment['principalType'] = $principalType
+    }
+    if (Test-MapKey -Map $assignment -Key 'description') {
+      $normalizedAssignment['description'] = [string]$assignment['description']
+    }
+    if (Test-MapKey -Map $assignment -Key 'role_assignment_condition') {
+      $condition = $assignment['role_assignment_condition']
+      Assert-RequestValue ($condition -is [System.Collections.IDictionary]) "Role assignment '$assignmentName' role_assignment_condition must be an object."
+      $normalizedAssignment['roleAssignmentCondition'] = ConvertTo-BicepRoleAssignmentCondition -Condition $condition -AssignmentName $assignmentName
+    }
+    $roleAssignments += $normalizedAssignment
   }
 
   $managedIdentity = Get-MapValue -Map $Request -Key 'managedIdentity'
