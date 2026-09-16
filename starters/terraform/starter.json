@@ -1,0 +1,54 @@
+{
+  "$schema": "../starter.schema.json",
+  "schemaVersion": "1.0",
+  "name": "terraform",
+  "displayName": "Terraform",
+  "availability": "Available",
+  "description": "GitHub Actions and Terraform AVM subscription-vending starter.",
+  "bootstrap": {
+    "entryPoint": "bootstrap/Invoke-Bootstrap.ps1"
+  },
+  "runtime": {
+    "enginePath": "terraform",
+    "requestPath": "landingzones",
+    "requestSchemaPath": "landingzones/sub.schema.json",
+    "previewWorkflowPath": ".github/workflows/pr-validate.yml",
+    "deploymentWorkflowPath": ".github/workflows/apply.yml",
+    "discoveryScriptPath": ".github/scripts/discover-subs.sh",
+    "previewMode": "terraform-plan",
+    "deploymentMode": "terraform-apply",
+    "stateMode": "terraform-state-per-subscription"
+  },
+  "capabilities": {
+    "implemented": [
+      "prerequisite-validation",
+      "bootstrap-configuration-validation",
+      "resumable-bootstrap",
+      "github-repository-bootstrap",
+      "repository-seeding",
+      "branch-protection",
+      "deployment-environment",
+      "managed-identity",
+      "github-oidc",
+      "github-actions",
+      "yaml-subscription-contract",
+      "schema-validation",
+      "changed-request-discovery",
+      "deployment-preview",
+      "approval-gate",
+      "governed-deployment",
+      "per-subscription-isolation",
+      "billing-scope-selection",
+      "management-group-placement",
+      "resource-provider-registration",
+      "subscription-tags",
+      "subscription-budget",
+      "role-assignments",
+      "managed-identity-request",
+      "optional-spoke-networking",
+      "bootstrap-destroy"
+    ],
+    "planned": [],
+    "unsupported": []
+  }
+}

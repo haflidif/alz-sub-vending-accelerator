@@ -72,7 +72,57 @@ jobs:
         run: bash .github/scripts/discover-subs.sh
 
   # ---------------------------------------------------------------------------
-  # 2) Plan each affected subscription in its own job (per-state isolation)
+  # 2) Validate accelerator sources when this is the accelerator repository
+  # ---------------------------------------------------------------------------
+  accelerator-validate:
+    name: Accelerator validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Detect accelerator sources
+        id: accelerator
+        shell: bash
+        run: |
+          if [[ ! -e powershell && ! -e starters && ! -e tests ]]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Accelerator sources are absent; skipping accelerator tests."
+            exit 0
+          fi
+          [[ -d powershell ]] || { echo "::error::powershell/ is missing"; exit 1; }
+          [[ -d starters ]] || { echo "::error::starters/ is missing"; exit 1; }
+          [[ -f tests/PowerShell/SubscriptionVending.Tests.ps1 ]] \
+            || { echo "::error::PowerShell accelerator test is missing"; exit 1; }
+          [[ -f tests/scripts/discover-subs.Tests.sh ]] \
+            || { echo "::error::discovery test is missing"; exit 1; }
+          echo "available=true" >> "$GITHUB_OUTPUT"
+
+      - name: Test SubscriptionVending PowerShell module
+        if: steps.accelerator.outputs.available == 'true'
+        shell: pwsh
+        run: ./tests/PowerShell/SubscriptionVending.Tests.ps1
+
+      - name: Test subscription discovery
+        if: steps.accelerator.outputs.available == 'true'
+        shell: bash
+        run: bash tests/scripts/discover-subs.Tests.sh
+
+      - uses: hashicorp/setup-terraform@v4
+        if: hashFiles('bootstrap/**') != ''
+        with:
+          terraform_version: 1.15.5
+          terraform_wrapper: false
+
+      - name: Validate bootstrap Terraform
+        if: hashFiles('bootstrap/**') != ''
+        working-directory: bootstrap
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false
+          terraform validate
+
+  # ---------------------------------------------------------------------------
+  # 3) Plan each affected subscription in its own job (per-state isolation)
   # ---------------------------------------------------------------------------
   plan:
     name: Plan ${{ matrix.archetype }}/${{ matrix.name }}
@@ -153,21 +203,29 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
-  # 3) Final gate — fails the check if any matrix job failed
+  # 4) Final gate - fails the check if any required job failed
   # ---------------------------------------------------------------------------
   result:
     name: PR Validate Result
-    needs: [schema-validate, plan]
+    needs: [schema-validate, discover, accelerator-validate, plan]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - run: |
-          if [[ "${{ needs.schema-validate.result }}" == "failure" ]]; then
-            echo "Schema validation failed."
+          if [[ "${{ needs.schema-validate.result }}" == "failure" || "${{ needs.schema-validate.result }}" == "cancelled" ]]; then
+            echo "Schema validation failed or was cancelled."
+            exit 1
+          fi
+          if [[ "${{ needs.discover.result }}" == "failure" || "${{ needs.discover.result }}" == "cancelled" ]]; then
+            echo "Subscription discovery failed or was cancelled."
+            exit 1
+          fi
+          if [[ "${{ needs.accelerator-validate.result }}" == "failure" || "${{ needs.accelerator-validate.result }}" == "cancelled" ]]; then
+            echo "Accelerator validation failed or was cancelled."
             exit 1
           fi
           if [[ "${{ needs.plan.result }}" == "failure" || "${{ needs.plan.result }}" == "cancelled" ]]; then
-            echo "One or more plan jobs failed."
+            echo "One or more plan jobs failed or were cancelled."
             exit 1
           fi
           echo "All checks completed."

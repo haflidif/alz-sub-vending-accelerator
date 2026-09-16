@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0",
+  "requiredCapabilities": [
+    "prerequisite-validation",
+    "bootstrap-configuration-validation",
+    "resumable-bootstrap",
+    "github-repository-bootstrap",
+    "repository-seeding",
+    "branch-protection",
+    "deployment-environment",
+    "managed-identity",
+    "github-oidc",
+    "github-actions",
+    "yaml-subscription-contract",
+    "schema-validation",
+    "changed-request-discovery",
+    "deployment-preview",
+    "approval-gate",
+    "governed-deployment",
+    "per-subscription-isolation",
+    "billing-scope-selection",
+    "management-group-placement",
+    "resource-provider-registration",
+    "subscription-tags",
+    "subscription-budget",
+    "role-assignments",
+    "managed-identity-request",
+    "optional-spoke-networking",
+    "bootstrap-destroy"
+  ]
+}

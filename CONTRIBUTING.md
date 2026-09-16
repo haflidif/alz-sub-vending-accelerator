@@ -56,7 +56,7 @@ The version pin lives in [`terraform/main.tf`](terraform/main.tf):
 ```hcl
 module "subscription" {
   source  = "Azure/avm-ptn-alz-sub-vending/azure"
-  version = "0.2.1"
+  version = "0.3.1"
   ...
 }
 ```
@@ -84,7 +84,7 @@ Conventional Commits:
 
 - `feat(corp): vend prod-corp-erp-001`
 - `fix(online): correct address space for prod-online-web-001`
-- `chore(archetypes): bump AVM module to 0.3.0`
+- `chore(archetypes): bump AVM module to 0.3.1`
 - `docs(onboarding): clarify MCA invoice section lookup`
 
 ## Tests / pre-commit

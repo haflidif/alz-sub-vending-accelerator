@@ -1,0 +1,54 @@
+{
+  "$schema": "../starter.schema.json",
+  "schemaVersion": "1.0",
+  "name": "bicep",
+  "displayName": "Bicep",
+  "availability": "Planned",
+  "description": "Planned GitHub Actions and Bicep AVM subscription-vending starter.",
+  "bootstrap": {
+    "entryPoint": null
+  },
+  "runtime": {
+    "enginePath": null,
+    "requestPath": "landingzones",
+    "requestSchemaPath": "landingzones/sub.schema.json",
+    "previewWorkflowPath": null,
+    "deploymentWorkflowPath": null,
+    "discoveryScriptPath": null,
+    "previewMode": null,
+    "deploymentMode": null,
+    "stateMode": null
+  },
+  "capabilities": {
+    "implemented": [],
+    "planned": [
+      "prerequisite-validation",
+      "bootstrap-configuration-validation",
+      "resumable-bootstrap",
+      "github-repository-bootstrap",
+      "repository-seeding",
+      "branch-protection",
+      "deployment-environment",
+      "managed-identity",
+      "github-oidc",
+      "github-actions",
+      "yaml-subscription-contract",
+      "schema-validation",
+      "changed-request-discovery",
+      "deployment-preview",
+      "approval-gate",
+      "governed-deployment",
+      "per-subscription-isolation",
+      "billing-scope-selection",
+      "management-group-placement",
+      "resource-provider-registration",
+      "subscription-tags",
+      "subscription-budget",
+      "role-assignments",
+      "managed-identity-request",
+      "optional-spoke-networking",
+      "bootstrap-destroy"
+    ],
+    "unsupported": []
+  }
+}

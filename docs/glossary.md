@@ -20,7 +20,7 @@ process. This skeleton wraps exactly one:
 — a higher-level module that composes lower-level AVM resources).
 
 **AVM module pin** — The version constraint in `terraform/main.tf`.
-Pinned to `0.2.1` **exact** (no `~>`), because the AVM module's input
+Pinned to `0.3.1` **exact** (no `~>`), because the AVM module's input
 contract is still pre-1.0 and minor versions sometimes change schema —
 every bump should be explicit and reviewed.
 

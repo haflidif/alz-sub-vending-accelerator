@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/sub-vending/starter.schema.json",
+  "title": "Subscription-vending starter manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "name",
+    "displayName",
+    "availability",
+    "description",
+    "bootstrap",
+    "runtime",
+    "capabilities"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "availability": {
+      "type": "string",
+      "enum": ["Available", "Planned"]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "bootstrap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entryPoint"],
+      "properties": {
+        "entryPoint": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enginePath",
+        "requestPath",
+        "requestSchemaPath",
+        "previewWorkflowPath",
+        "deploymentWorkflowPath",
+        "discoveryScriptPath",
+        "previewMode",
+        "deploymentMode",
+        "stateMode"
+      ],
+      "properties": {
+        "enginePath": {
+          "type": ["string", "null"]
+        },
+        "requestPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestSchemaPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "previewWorkflowPath": {
+          "type": ["string", "null"]
+        },
+        "deploymentWorkflowPath": {
+          "type": ["string", "null"]
+        },
+        "discoveryScriptPath": {
+          "type": ["string", "null"]
+        },
+        "previewMode": {
+          "type": ["string", "null"]
+        },
+        "deploymentMode": {
+          "type": ["string", "null"]
+        },
+        "stateMode": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implemented", "planned", "unsupported"],
+      "properties": {
+        "implemented": {
+          "$ref": "#/$defs/capabilityList"
+        },
+        "planned": {
+          "$ref": "#/$defs/capabilityList"
+        },
+        "unsupported": {
+          "$ref": "#/$defs/capabilityList"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "availability": {
+            "const": "Available"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "bootstrap": {
+            "properties": {
+              "entryPoint": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "runtime": {
+            "properties": {
+              "enginePath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "previewWorkflowPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "deploymentWorkflowPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "discoveryScriptPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "previewMode": {
+                "type": "string",
+                "minLength": 1
+              },
+              "deploymentMode": {
+                "type": "string",
+                "minLength": 1
+              },
+              "stateMode": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "capabilityList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "uniqueItems": true
+    }
+  }
+}

@@ -203,6 +203,9 @@ if ($IncludeGitHubRepo -and -not $Destroy) {
 if ($Destroy -and $PlanOnly) {
     throw '-Destroy and -PlanOnly are mutually exclusive. Use -Destroy -WhatIf for a destroy dry-run.'
 }
+if ($WhatIfPreference -and -not $Destroy -and -not $CleanBootstrapFolder) {
+    throw '-WhatIf is supported only for destroy or local cleanup. Use -PlanOnly to preview bootstrap changes.'
+}
 
 
 # =============================================================================
@@ -456,7 +459,8 @@ function Test-ToolVersion {
         [string] $Tool,
         [string] $VersionArg = '--version',
         [scriptblock] $VersionExtractor,
-        [version] $MinVersion
+        [version] $MinVersion,
+        [version] $MaxVersionExclusive
     )
     $cmd = Get-Command -Name $Tool -ErrorAction SilentlyContinue
     if (-not $cmd) {
@@ -479,7 +483,17 @@ function Test-ToolVersion {
         Write-Fail "$Tool version $extracted is older than required $MinVersion."
         return $false
     }
-    Write-Ok "$Tool $extracted (>= $MinVersion)"
+    if ($MaxVersionExclusive -and $extracted -ge $MaxVersionExclusive) {
+        Write-Fail "$Tool version $extracted is outside the supported range >= $MinVersion and < $MaxVersionExclusive."
+        return $false
+    }
+    $supportedRange = if ($MaxVersionExclusive) {
+        ">= $MinVersion and < $MaxVersionExclusive"
+    }
+    else {
+        ">= $MinVersion"
+    }
+    Write-Ok "$Tool $extracted ($supportedRange)"
     return $true
 }
 
@@ -492,7 +506,8 @@ function Invoke-Preflight {
 
     $ok = (Test-ToolVersion -Tool 'terraform' `
             -VersionArg 'version' `
-            -MinVersion '1.10.0' `
+            -MinVersion '1.15.5' `
+            -MaxVersionExclusive '1.16.0' `
             -VersionExtractor {
             param($out)
             if ($out -match 'Terraform v?(\d+\.\d+\.\d+)') { return [version] $Matches[1] }
@@ -500,7 +515,7 @@ function Invoke-Preflight {
 
     $ok = (Test-ToolVersion -Tool 'az' `
             -VersionArg '--version' `
-            -MinVersion '2.50.0' `
+            -MinVersion '2.64.0' `
             -VersionExtractor {
             param($out)
             if ($out -match 'azure-cli\s+(\d+\.\d+\.\d+)') { return [version] $Matches[1] }
@@ -508,7 +523,7 @@ function Invoke-Preflight {
 
     $ok = (Test-ToolVersion -Tool 'gh' `
             -VersionArg '--version' `
-            -MinVersion '2.0.0' `
+            -MinVersion '2.50.0' `
             -VersionExtractor {
             param($out)
             if ($out -match 'gh version (\d+\.\d+\.\d+)') { return [version] $Matches[1] }

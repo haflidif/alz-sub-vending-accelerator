@@ -5,22 +5,24 @@ to run the sub-vending pipeline. Inspired by the
 [ALZ accelerator GitHub bootstrap](https://github.com/Azure/accelerator-bootstrap-modules/tree/main/alz/github),
 trimmed down to **only what this repo needs**.
 
-> ⚡ **Prefer the interactive wizard.** This README documents the manual
-> Terraform flow. For day-to-day use, run
-> [`Invoke-Bootstrap.ps1`](Invoke-Bootstrap.ps1) instead — it prompts for
-> every input, validates against Azure + GitHub APIs, persists answers
-> between runs, and is resumable from failure. Full reference:
+> ⚡ **Prefer the SubscriptionVending PowerShell module.** This README
+> documents the manual Terraform flow. For day-to-day use, import
+> [`SubscriptionVending.psd1`](../powershell/SubscriptionVending/SubscriptionVending.psd1)
+> and run `Initialize-SubscriptionVending -Engine Terraform`. The module
+> currently delegates to [`Invoke-Bootstrap.ps1`](Invoke-Bootstrap.ps1), which
+> prompts for every input, validates against Azure + GitHub APIs, persists
+> answers between runs, and is resumable from failure. Full reference:
 > [`docs/bootstrap-wizard.md`](../docs/bootstrap-wizard.md).
 
-## Two ways to drive bootstrap
+## Three ways to drive bootstrap
 
 | You want… | Entry point |
 |---|---|
-| Guided UX, input validation, resumability, drift detection, **and built-in destroy mode** | **Wizard** — `pwsh ./Invoke-Bootstrap.ps1` → see [`docs/bootstrap-wizard.md`](../docs/bootstrap-wizard.md) |
-| Direct Terraform invocation (e.g. inside a non-PowerShell CI runner) | **Manual** — `terraform init / plan / apply` → see [Usage](#usage) below |
+| Guided UX, engine selection, input validation, resumability, and drift detection | **Module:** `Initialize-SubscriptionVending -Engine Terraform` |
+| Terraform compatibility or built-in destroy mode | **Legacy wizard:** `pwsh ./Invoke-Bootstrap.ps1`; see [`docs/bootstrap-wizard.md`](../docs/bootstrap-wizard.md) |
+| Direct Terraform invocation (e.g. inside a non-PowerShell CI runner) | **Manual:** `terraform init / plan / apply`; see [Usage](#usage) below |
 
-Both leave **identical Terraform state** behind; the wizard is just a
-convenience.
+All three leave **identical Terraform state** behind.
 
 > 🧹 **Need to undo a bootstrap?** The same wizard also tears down what
 > it created — `pwsh ./Invoke-Bootstrap.ps1 -Destroy -WhatIf` for a
@@ -51,7 +53,10 @@ convenience.
   - `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`
   - `BACKEND_RESOURCE_GROUP_NAME`, `BACKEND_STORAGE_ACCOUNT_NAME`, `BACKEND_CONTAINER_NAME`
 - `production` Environment with required reviewers and `protected_branches` policy
-- **Seeds the repo with the entire skeleton** — `terraform/`, `landingzones/` examples, `docs/`, `.github/workflows/`, `README.md`, `CONTRIBUTING.md`, `.gitignore`.
+- **Seeds the repo with the runtime skeleton**: `terraform/`, `landingzones/`
+  examples, operator docs, `.github/workflows/`, `README.md`,
+  `CONTRIBUTING.md`, and `.gitignore`. Accelerator development files such as
+  `powershell/`, `starters/`, `tests/`, and proposals are excluded.
   Done with `github_repository_file` per file (same pattern as the upstream
   ALZ accelerator's `alz/github` module). Only `bootstrap/` itself, ephemeral
   Terraform state, and the root `terraform.tfvars` (consumer-specific
@@ -158,7 +163,7 @@ Source layout under `bootstrap/`:
 
 | File | Purpose |
 |---|---|
-| [`terraform.tf`](terraform.tf) | Provider pins for the bootstrap layer (all **exact**, no `~>`): `azurerm 4.74.0`, `azuread 3.8.0`, `github 6.12.1`; `required_version = "1.15.5"`. Configures `azurerm` against `platform_subscription_id` + `storage_use_azuread`. Configures `azuread` pinned to `tenant_id`. `github` reads `GITHUB_TOKEN` from env. |
+| [`terraform.tf`](terraform.tf) | Bootstrap provider pins: `azurerm 5.0.0`, `azuread 3.9.0`, and `github 6.13.0`. Terraform Core uses the compatible patch constraint `~> 1.15.5`. Configures `azurerm` against `platform_subscription_id` with `storage_use_azuread`, pins `azuread` to `tenant_id`, and reads `GITHUB_TOKEN` from the environment. |
 | [`variables.tf`](variables.tf) | ~20 inputs across identity/location, state, RBAC, GitHub repo, branch protection, production env, billing scopes (map with EA/MCA/MPA per entry), MG IDs, cost allocation, mandatory tags, CODEOWNERS, skeleton seeding. Validation rules enforce billing-scope structure, MG ID format, GitHub handles, tag-key naming. |
 | [`locals.tf`](locals.tf) | Resolves each `billing_scopes` entry into the full Azure billing scope path string. EA → `enrollmentAccounts/...`, MCA → `billingProfiles/.../invoiceSections/...`, MPA → `customers/...`. |
 | [`main.tf`](main.tf) | UAMI + 3 FICs (branch / PR / production env) + state container + 4 role assignments (Storage Blob Data Contributor on the container, MG Contributor + optional UAA on the ALZ root MG, Network Contributor RG-scoped on the hub VNet's RG) + optional `github_repository` create + Actions variables + `production` environment + branch protection. |
