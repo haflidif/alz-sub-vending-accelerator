@@ -29,13 +29,15 @@ az login --tenant <your-tenant-id>
 $env:GITHUB_TOKEN = "<your PAT>"   # or rely on `gh auth login`
 
 Import-Module ./powershell/SubscriptionVending/SubscriptionVending.psd1
-Initialize-SubscriptionVending -Engine Terraform
+Get-SubscriptionVendingEngine
+Initialize-SubscriptionVending -Engine Terraform # or Bicep
 ```
 
-The PowerShell module is the accelerator entry point. The Terraform starter
-currently delegates to the proven `bootstrap/Invoke-Bootstrap.ps1` workflow,
-which prompts for every input, validates each value against Azure and GitHub
-APIs, and runs `terraform init / plan / apply`. When it finishes, it prints:
+The PowerShell module is the accelerator entry point. Both available starters
+delegate repository and identity setup to the shared
+`bootstrap/Invoke-Bootstrap.ps1` workflow. It prompts for every input,
+validates values against Azure and GitHub APIs, and uses Terraform for the
+one-time bootstrap. When it finishes, it prints:
 
 - `uami_principal_id` (needed for the billing-role grant below)
 - `github_repository_full_name` (your new vending repo)
@@ -45,18 +47,8 @@ APIs, and runs `terraform init / plan / apply`. When it finishes, it prints:
 
 Full bootstrap reference: [`docs/bootstrap-wizard.md`](docs/bootstrap-wizard.md)
 
-To see starter availability:
-
-```powershell
-Get-SubscriptionVendingEngine
-```
-
-Both Terraform and Bicep starters are available. Select the engine during
-bootstrap:
-
-```powershell
-Initialize-SubscriptionVending -Engine Bicep
-```
+The selected engine is persisted for the generated repository and cannot be
+switched in place.
 
 ---
 
@@ -87,7 +79,7 @@ In the newly created GitHub repo:
 
 ## Day 30: operationalize
 
-- Review Dependabot PRs (arrives weekly for Terraform providers)
+- Review Dependabot PRs for GitHub Actions and Terraform dependencies
 - Bump the AVM module pin when a new version ships
   ([`CONTRIBUTING.md`](CONTRIBUTING.md#bumping-the-avm-module-pin))
 - Add new archetypes if your MG hierarchy needs them
@@ -114,9 +106,9 @@ In the newly created GitHub repo:
 
 ## Need help?
 
-If something goes wrong during bootstrap, the wizard is resumable. Just
-re-run `Initialize-SubscriptionVending -Engine Terraform` and it picks up
-where it left off.
+If something goes wrong during bootstrap, the wizard is resumable. Re-run
+`Initialize-SubscriptionVending` with the same engine and it picks up where
+it left off.
 
 To undo a bootstrap that went sideways, use destroy mode:
 

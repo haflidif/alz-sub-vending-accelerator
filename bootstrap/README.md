@@ -1,14 +1,15 @@
 # Bootstrap
 
-One-shot Terraform module that prepares the platform tenant + GitHub repo
-to run the sub-vending pipeline. Inspired by the
+One-shot Terraform bootstrap that prepares the platform tenant and a GitHub
+repository to run either vending engine. Inspired by the
 [ALZ accelerator GitHub bootstrap](https://github.com/Azure/accelerator-bootstrap-modules/tree/main/alz/github),
 trimmed down to **only what this repo needs**.
 
 > ⚡ **Prefer the SubscriptionVending PowerShell module.** This README
 > documents the manual Terraform flow. For day-to-day use, import
 > [`SubscriptionVending.psd1`](../powershell/SubscriptionVending/SubscriptionVending.psd1)
-> and run `Initialize-SubscriptionVending -Engine Terraform`. The module
+> and run `Initialize-SubscriptionVending -Engine Terraform` or
+> `Initialize-SubscriptionVending -Engine Bicep`. Both starters
 > currently delegates to [`Invoke-Bootstrap.ps1`](Invoke-Bootstrap.ps1), which
 > prompts for every input, validates against Azure + GitHub APIs, persists
 > answers between runs, and is resumable from failure. Full reference:
@@ -18,11 +19,13 @@ trimmed down to **only what this repo needs**.
 
 | You want… | Entry point |
 |---|---|
-| Guided UX, engine selection, input validation, resumability, and drift detection | **Module:** `Initialize-SubscriptionVending -Engine Terraform` |
+| Guided UX, engine selection, input validation, resumability, and drift detection | **Module:** `Initialize-SubscriptionVending -Engine Terraform` or `Initialize-SubscriptionVending -Engine Bicep` |
 | Terraform compatibility or built-in destroy mode | **Legacy wizard:** `pwsh ./Invoke-Bootstrap.ps1`; see [`docs/bootstrap-wizard.md`](../docs/bootstrap-wizard.md) |
 | Direct Terraform invocation (e.g. inside a non-PowerShell CI runner) | **Manual:** `terraform init / plan / apply`; see [Usage](#usage) below |
 
-All three leave **identical Terraform state** behind.
+All three use the same Terraform bootstrap state. The selected runtime engine
+controls which package and platform configuration are seeded into the vending
+repository.
 
 > 🧹 **Need to undo a bootstrap?** The same wizard also tears down what
 > it created — `pwsh ./Invoke-Bootstrap.ps1 -Destroy -WhatIf` for a

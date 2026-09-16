@@ -1,9 +1,10 @@
 # Azure Subscription Vending
 
-Subscription vending repository built on top of
-[`Azure/avm-ptn-alz-sub-vending/azure`][avm], with
-**per-subscription Terraform state** and **YAML-driven** subscription
-contracts. CI/CD runs on **GitHub Actions**.
+Azure subscription-vending accelerator with **Terraform and Bicep engines**,
+one shared YAML request contract, and GitHub Actions delivery. Terraform uses
+[`Azure/avm-ptn-alz-sub-vending/azure`][avm] with isolated per-subscription
+state. Bicep uses the Azure Verified Modules subscription-vending pattern with
+management-group deployments.
 
 [avm]: https://registry.terraform.io/modules/Azure/avm-ptn-alz-sub-vending/azure/latest
 
@@ -28,10 +29,10 @@ contracts. CI/CD runs on **GitHub Actions**.
    [naming convention](docs/naming-convention.md):
    `<env>-<archetype>-<workload>[-<seq>].yaml`, e.g. `prod-corp-erp-001.yaml`
 3. Fill in the contract — see any example file for the schema
-4. Open a PR — CI runs `terraform plan` for your sub only and posts it as a comment
+4. Open a PR. CI runs Terraform plan or Bicep what-if for your sub and posts the preview as a comment
 5. Get review from CODEOWNERS + the workload owner
-6. Merge → `Apply` workflow runs `terraform apply` after approval in the
-   `production` GitHub Environment
+6. Merge → `Apply` runs the selected engine after approval in the `production`
+   GitHub Environment
 
 ---
 
@@ -41,9 +42,9 @@ contracts. CI/CD runs on **GitHub Actions**.
 > - **Template repo** (this one) — what operators start from. Contains
 >   `bootstrap/` for one-time platform setup.
 > - **Vending repo** — created by `bootstrap/` in your GitHub org. Contains
->   everything below **except** `bootstrap/`, plus
->   `terraform/terraform.auto.tfvars` rendered with the platform's
->   tenant/MG/billing/hub VNet/tags.
+>   everything below **except** accelerator development assets, plus the
+>   selected engine configuration: `terraform/terraform.auto.tfvars` or
+>   `bicep/platform.json`.
 
 ```text
 sub-vending/
@@ -66,7 +67,7 @@ sub-vending/
 │   ├── Invoke-Bootstrap.ps1       # Terraform compatibility implementation
 │   ├── terraform.tf, variables.tf
 │   ├── main.tf                    # UAMI + OIDC + RBAC + state container + GitHub config
-│   ├── files.tf                   # seeds skeleton + renders terraform.auto.tfvars
+│   ├── files.tf                   # seeds selected engine + renders platform config
 │   ├── outputs.tf
 │   ├── templates/CODEOWNERS.tftpl
 │   ├── terraform.tfvars.example
@@ -126,7 +127,7 @@ sub-vending/
     ├── CODEOWNERS                 # ← rendered by bootstrap (NOT in the skeleton)
     ├── PULL_REQUEST_TEMPLATE.md
     ├── dependabot.yml
-    ├── README.md                  # CI/CD reference
+    ├── CICD.md                    # CI/CD reference
     ├── scripts/
     │   └── discover-subs.sh       # produces the matrix used by both workflows
     └── workflows/
@@ -147,10 +148,11 @@ to build the per-subscription job matrix. Three modes:
 | **`single`** | `workflow_dispatch` with `mode=single` + `sub_path=landingzones/corp/prod-corp-erp-001.yaml` (the `.yaml` suffix is optional) | Operates on exactly one subscription |
 | **`all`** | `workflow_dispatch` with `mode=all` | Iterates every `landingzones/*/*.yaml` — use for wide upgrades (e.g. AVM module bump, archetype default change) |
 
-Each subscription gets its **own state file** at
+Terraform repositories give each subscription its **own state file** at
 `<container>/<archetype>/<sub-name>.tfstate`, set via
-`terraform init -backend-config="key=..."`. One bad PR cannot churn the plan
-of unrelated subs.
+`terraform init -backend-config="key=..."`. Bicep repositories use
+management-group deployments and do not maintain Terraform state. In both
+engines, the workflow matrix isolates each request.
 
 ---
 
@@ -166,8 +168,8 @@ of unrelated subs.
 **Read [`docs/onboarding.md`](docs/onboarding.md) first** — it lists the 6
 prerequisites and walks through the 3-step setup.
 
-The [`bootstrap/`](bootstrap/) Terraform module does the lot in one
-`terraform apply`:
+The shared [`bootstrap/`](bootstrap/) layer uses one Terraform apply to
+prepare either runtime engine:
 
 - Pipeline UAMI + 3 GitHub OIDC federated credentials (branch / PR / environment)
 - `subvending-tfstate` container in your **existing** platform SA
@@ -176,8 +178,8 @@ The [`bootstrap/`](bootstrap/) Terraform module does the lot in one
   Network Contributor on the **hub VNet's resource group** (not subscription-wide)
 - GitHub repo + Actions variables + `production` environment with required reviewers
 - Branch protection on `main` (PR + status checks + linear history)
-- Seeds the entire skeleton, including a pre-rendered
-  `terraform/terraform.auto.tfvars` carrying tenant/billing/MGs/hub/tags
+- Seeds the selected engine package and renders its platform configuration:
+  `terraform/terraform.auto.tfvars` or `bicep/platform.json`
 
 The only step it **cannot** do is grant `SubscriptionCreator` on the
 billing scope — run the upstream
@@ -190,10 +192,9 @@ prints the exact command with the UAMI principal ID pre-filled.
 
 ## Local usage (developing the skeleton, or break-glass plan)
 
-CI handles all routine plan/apply via the workflows. You normally don't
-need to run Terraform locally. If you do — e.g. to debug a plan that's
-behaving oddly in CI — run from inside the **vending repo** that bootstrap
-created:
+CI handles routine previews and deployments. You normally do not need to run
+an engine locally. For Terraform break-glass planning, run from inside the
+**vending repo** that bootstrap created:
 
 ```powershell
 # Prerequisites
@@ -224,13 +225,12 @@ account (by any means), then iterate on `bootstrap/` against it.
 
 The vending repo is the source of truth — the bootstrap is one-shot and is
 **not** re-run for day-2 changes. Open a PR against the seeded vending repo
-that touches three places:
+that updates the engine rules and shared contract:
 
-1. Append an entry to `local.archetype_config` in
-   [`terraform/archetypes.tf`](terraform/archetypes.tf)
-2. Add the matching MG ID to **the seeded repo's** `terraform/terraform.auto.tfvars`
-   under `management_group_ids` (this file is committed in the seeded repo;
-   edit it directly via PR)
+1. Add the archetype rules to [`terraform/archetypes.tf`](terraform/archetypes.tf)
+   or `bicep/SubscriptionVending.Bicep.psm1`.
+2. Add the matching MG ID to the selected engine configuration:
+   `terraform/terraform.auto.tfvars` or `bicep/platform.json`.
 3. Create `landingzones/<archetype>/` and add at least one example `<sub-name>.yaml`
 4. Add the new archetype to the `enum` in
    [`landingzones/sub.schema.json`](landingzones/sub.schema.json)

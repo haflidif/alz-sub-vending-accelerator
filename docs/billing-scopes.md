@@ -1,18 +1,18 @@
 # Billing scopes
 
-The AVM module `Azure/avm-ptn-alz-sub-vending/azure` requires a single billing
-scope path per subscription it creates. This skeleton lets you declare **one
-or more** billing scopes — initially at bootstrap time, and any time after via
-direct PR to the seeded repo — and lets each `sub.yaml` opt into the right one
-via `billingScopeKey:`.
+Both vending engines require a single billing scope path per subscription
+they create. This skeleton lets you declare **one or more** billing scopes,
+initially at bootstrap time and later by PR to the seeded repository. Each
+request selects one through `billingScopeKey:`.
 
 > **Path strings are case-sensitive end-to-end.** Use the discovery commands
 > below to copy the canonical form.
 
 > **Day-2 changes go to the seeded repo.** The bootstrap is one-shot. To add,
 > remove, or rotate a billing scope after the initial bootstrap, edit the
-> seeded repo's `terraform/terraform.auto.tfvars` (`billing_scopes` map)
-> directly via PR. See
+> selected engine configuration directly via PR:
+> `terraform/terraform.auto.tfvars` (`billing_scopes`) or
+> `bicep/platform.json` (`billingScopes`). See
 > [`docs/onboarding.md` → "Updating platform inputs after bootstrap"](onboarding.md#updating-platform-inputs-after-bootstrap).
 
 ---
@@ -35,9 +35,8 @@ via `billingScopeKey:`.
 
 Declared in `bootstrap/terraform.tfvars` for the **first** apply only. The
 bootstrap derives the canonical path string and writes the resolved map into
-the seeded repo's `terraform/terraform.auto.tfvars`. After bootstrap, edit
-that rendered file directly in the seeded repo (via PR) to add or change
-scopes.
+the selected engine configuration. After bootstrap, edit that rendered file
+directly in the seeded repository via PR to add or change scopes.
 
 ```hcl
 billing_scopes = {
@@ -148,7 +147,7 @@ Grant-SubscriptionCreatorRole `
 | `EnrollmentAccountOwnerNotFound`                                                | The principal granting the role isn't the EA enrollment account owner. Check `az billing enrollment-account show ... --query principalName`.  |
 | MCA `400 Bad Request` on create                                                | Wrong invoice-section permissions — the UAMI needs *Azure subscription creator* on the invoice section, not just the billing profile.       |
 | MPA create fails silently                                                       | Partner needs *Indirect Buyer* + *Admin agent* roles on the customer tenant.                                                                |
-| `billingScopeKey 'foo' not found in billing_scopes`                             | Per-sub key doesn't exist in the seeded repo's `terraform/terraform.auto.tfvars`. Add it to the `billing_scopes` map directly via PR (the bootstrap is one-shot and is not re-run for this). |
+| `billingScopeKey 'foo' not found`                                               | The key does not exist in `terraform/terraform.auto.tfvars` or `bicep/platform.json`. Add it to the selected engine configuration via PR. |
 
 ---
 
@@ -156,5 +155,5 @@ Grant-SubscriptionCreatorRole `
 
 * [docs/onboarding.md](onboarding.md) — full operator onboarding flow
 * [docs/tagging.md](tagging.md) — cost-allocation tag configuration
-* [AVM module — `subscription_billing_scope`](https://registry.terraform.io/modules/Azure/avm-ptn-alz-sub-vending/azure/latest)
+* [Terraform AVM module: `subscription_billing_scope`](https://registry.terraform.io/modules/Azure/avm-ptn-alz-sub-vending/azure/latest)
 * [Azure billing — billing account API](https://learn.microsoft.com/rest/api/billing/2020-05-01/billing-accounts)

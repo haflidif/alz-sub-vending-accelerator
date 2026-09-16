@@ -12,7 +12,7 @@ The schema-validation and plan jobs will run automatically.
 - [ ] New subscription (added a YAML under `landingzones/<archetype>/`)
 - [ ] Modified existing subscription (changed an existing YAML)
 - [ ] Removed subscription (deleted a YAML — note: this does not delete the Azure sub)
-- [ ] Skeleton change (Terraform, workflows, scripts, schema, docs)
+- [ ] Accelerator change (Terraform/Bicep, workflows, scripts, schema, docs)
 - [ ] Other (describe)
 
 ## Subscription change checklist

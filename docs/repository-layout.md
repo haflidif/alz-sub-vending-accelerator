@@ -4,7 +4,7 @@ Two views of this codebase to keep straight:
 
 1. **Skeleton repo** (this checkout) — the template you start from.
    Contains `bootstrap/`, sample `landingzones/<arch>/` YAMLs, the
-   Terraform engine, docs, CI workflows, PowerShell module, and starter
+   Terraform and Bicep engines, docs, CI workflows, PowerShell module, and starter
    manifests. An operator
    uses this (via "Use this template", or by cloning) to stand up a new
    vending repo.
@@ -12,10 +12,9 @@ Two views of this codebase to keep straight:
    (or configures) in your GitHub org. Contains everything
    the runtime skeleton ships. Accelerator development assets such as
    `bootstrap/`, `powershell/`, `starters/`, `tests/`, and proposals are
-   excluded. The vending repo also receives a rendered
-   `terraform/terraform.auto.tfvars` carrying platform context, plus
-   a generated `.github/CODEOWNERS`. This is where day-to-day vending
-   happens.
+   excluded. The vending repo receives only the selected engine package and
+   its rendered platform configuration, plus a generated
+   `.github/CODEOWNERS`. This is where day-to-day vending happens.
 
 For a green-field tenant you also need an MG hierarchy, a platform
 subscription, and a state storage account in place before running
@@ -35,13 +34,13 @@ subscription-vending/
 │
 ├── .github/
 │   ├── PULL_REQUEST_TEMPLATE.md     # PR description scaffold
-│   ├── README.md                    # ★ CI/CD reference (workflows + scripts)
+│   ├── CICD.md                      # ★ CI/CD reference (workflows + scripts)
 │   ├── dependabot.yml               # Weekly/monthly dependency updates
 │   ├── scripts/
 │   │   └── discover-subs.sh         # Matrix builder consumed by both workflows
 │   └── workflows/
-│       ├── apply.yml                # Push to main + dispatch → terraform apply
-│       └── pr-validate.yml          # PR → schema validate + fmt + plan
+│       ├── apply.yml                # Push to main + dispatch → selected engine deploy
+│       └── pr-validate.yml          # PR → schema + contract + engine preview
 │
 ├── powershell/                      # Accelerator bootstrap interface
 │   └── SubscriptionVending/
@@ -56,7 +55,7 @@ subscription-vending/
 │   └── bicep/starter.json           # Available Bicep starter
 │
 ├── bootstrap/                       # ★ Skeleton-only. Operator runs ONCE.
-│   ├── Invoke-Bootstrap.ps1         # Terraform compatibility implementation
+│   ├── Invoke-Bootstrap.ps1         # Shared bootstrap implementation
 │   ├── README.md                    # Bootstrap module reference
 │   ├── terraform.tf                 # Provider versions for the bootstrap layer
 │   ├── locals.tf                    # Billing-scope path string resolution
@@ -79,6 +78,14 @@ subscription-vending/
 │   ├── main.tf                      # ONE call to Azure/avm-ptn-alz-sub-vending/azure
 │   ├── outputs.tf                   # Subscription ID + effective tags
 │   └── (terraform.auto.tfvars)      # Rendered by bootstrap, only in vending repo
+│
+├── bicep/                           # ★ Bicep vending engine
+│   ├── main.bicep                   # Pinned AVM wrapper
+│   ├── SubscriptionVending.Bicep.psm1 # YAML request compiler
+│   ├── modules/                     # Budget deployment helpers
+│   ├── default-resource-providers.json
+│   ├── platform.schema.json
+│   └── (platform.json)              # Rendered by bootstrap, only in vending repo
 │
 ├── landingzones/                    # ★ One file = one subscription
 │   ├── README.md                    # Consumer-facing reference
@@ -111,8 +118,11 @@ subscription-vending/
 │   └── Reset-LocalState.ps1         # Wipe local operator state
 │
 └── tests/
-    └── PowerShell/
-        └── SubscriptionVending.Tests.ps1
+    ├── PowerShell/
+    │   ├── SubscriptionVending.Tests.ps1
+    │   └── BicepStarter.Tests.ps1
+    └── scripts/
+        └── discover-subs.Tests.sh
 ```
 
 ⭐ = start here for each persona.
@@ -125,7 +135,8 @@ subscription-vending/
 | `bootstrap/` | Present (operator runs it locally) | **Excluded** by `bootstrap/files.tf` from the seed |
 | `powershell/`, `starters/`, `tests/` | Accelerator development and bootstrap assets | **Excluded** |
 | `docs/proposals/`, `docs/starter-contract.md` | Accelerator design material | **Excluded** |
-| `terraform/terraform.auto.tfvars` | Absent (gitignored) | **Rendered by `bootstrap/files.tf`** with platform context |
+| Selected engine configuration | Absent (`terraform/terraform.auto.tfvars` or `bicep/platform.json`) | **Rendered by `bootstrap/files.tf`** with platform context |
+| Unselected engine package | Present in the accelerator skeleton | **Excluded** |
 | `.github/CODEOWNERS` | Absent | **Rendered from `bootstrap/templates/CODEOWNERS.tftpl`** with operator-chosen teams |
 | Runtime files (`terraform/`, `landingzones/`, operator docs, `scripts/`, `.github/`, `README.md`, etc.) | Source of truth | Verbatim copy via `github_repository_file` |
 
@@ -140,11 +151,11 @@ subscription-vending/
 | You want to… | Edit here | Then… |
 |---|---|---|
 | Vend a new subscription | `landingzones/<arch>/<sub>.yaml` (in the **vending repo**) | Open a PR |
-| Modify an archetype's defaults | `terraform/archetypes.tf` (in the **vending repo**) | PR + plan + apply with `mode=all` |
-| Add a new archetype | `terraform/archetypes.tf` + `landingzones/<arch>/` + `landingzones/sub.schema.json` (enum) + `terraform/terraform.auto.tfvars` (`management_group_ids`) — all in the **vending repo** | See [`docs/archetypes.md`](archetypes.md) |
-| Rotate platform inputs (tenant, billing scopes, MG IDs, hub VNet, tags, cost-allocation tag) | `terraform/terraform.auto.tfvars` (in the **vending repo**) | PR + apply with `mode=all` if existing subs need to pick up the new values |
-| Add a new optional YAML field | `landingzones/sub.schema.json` + `terraform/locals.tf` + `terraform/README.md` + `docs/schema-validation.md` (in the **skeleton**) | New PR to the skeleton, then propagate via PR to existing vending repos |
-| Bump the AVM module version | `terraform/main.tf` (in the **skeleton**, then propagate) | Test with `mode=all` in a non-prod tenant first |
+| Modify archetype defaults | Terraform: `terraform/archetypes.tf`; Bicep: `bicep/SubscriptionVending.Bicep.psm1` | PR + preview + apply with `mode=all` |
+| Add a new archetype | Engine rules + `landingzones/<arch>/` + schema enum + selected engine configuration | See [`docs/archetypes.md`](archetypes.md) |
+| Rotate platform inputs | `terraform/terraform.auto.tfvars` or `bicep/platform.json` in the vending repo | PR + apply with `mode=all` if existing subscriptions need the new values |
+| Add a new optional YAML field | Schema + both engine adapters + engine docs + tests | New PR to the accelerator, then propagate via PR to existing vending repos |
+| Bump the AVM module version | `terraform/main.tf` or `bicep/main.bicep` | Test with `mode=all` in a non-production tenant first |
 | Bump GitHub Actions / Terraform provider versions | Wait for Dependabot, or edit `terraform/versions.tf` / `.github/workflows/*.yml` / `bootstrap/terraform.tf` | See [`.github/CICD.md → Dependabot cadence`](../.github/CICD.md#dependabot-cadence) |
 | Tune CI behaviour (branch protection, required reviewers, env name) | `bootstrap/variables.tf` defaults — but only matters for the next bootstrap. For an existing vending repo, edit directly in GitHub Settings or via `github_branch_protection` / `github_repository_environment` in your own day-2 IaC. | See [`.github/CICD.md → Required status checks`](../.github/CICD.md#required-status-checks) |
 | Skeleton iteration (this repo) | Anywhere | Verify in a throwaway tenant; ship via PR to the vending repo |

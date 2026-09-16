@@ -35,6 +35,8 @@ printf '{}\n' > "$test_root/landingzones/corp/corp-one.yaml"
 printf '{}\n' > "$test_root/landingzones/online/online-one.yaml"
 printf 'terraform {}\n' > "$test_root/terraform/main.tf"
 printf 'targetScope = '\''managementGroup'\''\n' > "$test_root/bicep/main.bicep"
+printf '{}\n' > "$test_root/bicep/platform.json"
+printf '{}\n' > "$test_root/bicep/default-resource-providers.json"
 git -C "$test_root" add .
 git -C "$test_root" commit -qm "Initial fixture"
 base="$(git -C "$test_root" rev-parse HEAD)"
@@ -99,6 +101,32 @@ assert_count 2 "$output"
 grep -q 'corp-one' "$output" || fail "Bicep change omitted corp subscription"
 grep -q 'online-one' "$output" || fail "Bicep change omitted online subscription"
 
+base="$head"
+printf ' \n' >> "$test_root/bicep/platform.json"
+git -C "$test_root" add .
+git -C "$test_root" commit -qm "Change Bicep platform configuration"
+head="$(git -C "$test_root" rev-parse HEAD)"
+output="$test_root/bicep-platform-output.txt"
+(
+  cd "$test_root"
+  MODE=changed VENDING_ENGINE=bicep BASE="$base" HEAD="$head" GITHUB_OUTPUT="$output" \
+    bash .github/scripts/discover-subs.sh
+)
+assert_count 2 "$output"
+
+base="$head"
+printf ' \n' >> "$test_root/bicep/default-resource-providers.json"
+git -C "$test_root" add .
+git -C "$test_root" commit -qm "Change Bicep provider defaults"
+head="$(git -C "$test_root" rev-parse HEAD)"
+output="$test_root/bicep-providers-output.txt"
+(
+  cd "$test_root"
+  MODE=changed VENDING_ENGINE=bicep BASE="$base" HEAD="$head" GITHUB_OUTPUT="$output" \
+    bash .github/scripts/discover-subs.sh
+)
+assert_count 2 "$output"
+
 output="$test_root/invalid-base-output.txt"
 if (
   cd "$test_root"
@@ -108,5 +136,15 @@ if (
   fail "invalid BASE succeeded"
 fi
 [[ ! -s "$output" ]] || fail "invalid BASE emitted successful outputs"
+
+output="$test_root/invalid-engine-output.txt"
+if (
+  cd "$test_root"
+  MODE=all VENDING_ENGINE=invalid GITHUB_OUTPUT="$output" \
+    bash .github/scripts/discover-subs.sh
+); then
+  fail "invalid VENDING_ENGINE succeeded"
+fi
+[[ ! -s "$output" ]] || fail "invalid VENDING_ENGINE emitted successful outputs"
 
 echo "discover-subs tests passed."

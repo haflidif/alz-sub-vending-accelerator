@@ -14,21 +14,21 @@ This document describes how subscription vending works end-to-end in this repo.
                                      ▼
                     ┌─────────────────────────────────────────────┐
                     │ pr-validate.yml — discover changed subs     │
-                    │  → matrix job: terraform plan per sub       │
-                    │  → posts plan as PR comment                 │
+                    │  → Terraform plan or Bicep what-if per sub  │
+                    │  → posts preview as PR comment              │
                     └────────────────┬────────────────────────────┘
                                      │ merge to main
                                      ▼
                     ┌─────────────────────────────────────────────┐
                     │ apply.yml — discover changed subs           │
-                    │  → matrix job: terraform apply per sub      │
+                    │  → selected engine deploys per sub          │
                     │  → uses GitHub Environment "production"     │
                     │    for required-reviewer approval           │
                     └────────────────┬────────────────────────────┘
                                      │
                                      ▼
                     ┌─────────────────────────────────────────────┐
-                    │  Azure/avm-ptn-alz-sub-vending/azure         │
+                    │  Azure Verified Modules vending pattern     │
                     │   • creates subscription alias              │
                     │   • associates with management group        │
                     │   • registers resource providers            │
@@ -37,7 +37,11 @@ This document describes how subscription vending works end-to-end in this repo.
                     └─────────────────────────────────────────────┘
 ```
 
-## Single-folder Terraform layout
+## Engine layouts
+
+The generated vending repository contains one selected runtime engine.
+Terraform repositories use the single-folder layout below and maintain
+isolated state per subscription.
 
 ```text
 terraform/
@@ -53,6 +57,11 @@ terraform/
 
 There are **no per-archetype Terraform modules**. All archetype behaviour is
 data in `archetypes.tf`; the engine in `locals.tf` and `main.tf` is generic.
+
+Bicep repositories contain `bicep/main.bicep`, nested budget modules, the
+PowerShell request compiler, and `bicep/platform.json`. The workflow compiles
+each YAML request into ARM parameters, validates it, runs what-if, and creates
+a management-group deployment after approval.
 
 ### Why this layout
 
@@ -116,18 +125,26 @@ identity_tags          businessowner, technicalcontact,
 See [docs/tagging.md](tagging.md) for the full CAF baseline and customization
 guide.
 
-## State storage
+## State and deployment records
 
-- **Same storage account** as the platform's Terraform state, **dedicated container** `subvending-tfstate`
-- Per-subscription state key: `<archetype>/<sub-name>.tfstate`
-- Container-scoped RBAC: pipeline SPN gets **Storage Blob Data Contributor** on this container only
-- See [state-storage.md](state-storage.md)
+- Terraform uses the platform state storage account with a dedicated
+  `subvending-tfstate` container and a per-subscription key:
+  `<archetype>/<sub-name>.tfstate`.
+- Bicep uses Azure management-group deployment history and does not use the
+  Terraform state container for day-2 vending.
+- See [state-storage.md](state-storage.md) for the Terraform backend.
 
-## Module reference
+## Engine module references
 
-This repo wraps **`Azure/avm-ptn-alz-sub-vending/azure`**, pinned to `0.3.1`
+The Terraform engine wraps **`Azure/avm-ptn-alz-sub-vending/azure`**, pinned to `0.3.1`
 exact in [`terraform/main.tf`](../terraform/main.tf) (no upper-bound
 constraint — every bump is an explicit, reviewed change because the AVM
 module's input contract is still pre-1.0). The mapping from the sub YAML
 to AVM inputs lives in `terraform/locals.tf`. The full upstream input
 reference: <https://registry.terraform.io/modules/Azure/avm-ptn-alz-sub-vending/azure/latest>.
+
+The Bicep engine wraps
+**`br/public:avm/ptn/lz/sub-vending:0.8.0`** in
+[`bicep/main.bicep`](../bicep/main.bicep). Its adapter normalizes the shared
+YAML contract to the supported Bicep AVM inputs and rejects fields that the
+pinned AVM version cannot preserve.

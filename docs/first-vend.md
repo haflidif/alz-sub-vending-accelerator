@@ -5,7 +5,8 @@ sub-vending is a YAML-and-PR loop. This page walks you through it once.
 
 > Prereqs: you completed [`onboarding.md`](onboarding.md) — repo exists,
 > pipeline UAMI has roles, `production` environment has reviewers, and
-> `terraform/terraform.auto.tfvars` is present in the repo.
+> the selected engine configuration (`terraform/terraform.auto.tfvars` or
+> `bicep/platform.json`) is present in the repo.
 
 ## 1. Pick an archetype
 
@@ -61,9 +62,9 @@ gh pr create --fill
 Two checks run automatically:
 
 1. **Validate sub YAML schema** — fast, fails on missing/bad fields.
-2. **Plan changed subscriptions** — runs `terraform plan` with OIDC, posts
-   the plan as an artifact and a sticky comment on the PR. Read this before
-   approving.
+2. **Preview changed subscriptions**. Runs Terraform plan or Bicep what-if
+   with OIDC, then posts the output as an artifact and PR comment. Read this
+   before approving.
 
 ## 4. Merge → apply
 
@@ -72,11 +73,12 @@ When the PR is merged to `main`:
 - The push to `main` triggers `apply.yml`.
 - Discovery diffs the merge against the previous commit and produces a matrix
   of changed YAMLs.
-- The job pauses on the `production` environment gate — the configured
-  reviewers (set in `bootstrap/terraform.tfvars`) get a notification.
-- After approval, `terraform apply` runs **per subscription, in parallel**,
-  with isolated state (`landingzones/<arch>/<name>.tfstate` in
-  `subvending-tfstate`).
+- The job pauses on the `production` environment gate. The reviewers
+  configured during bootstrap get a notification.
+- After approval, the selected engine deploys **per subscription, in
+  parallel**. Terraform uses isolated state
+  (`<arch>/<name>.tfstate` in `subvending-tfstate`); Bicep uses
+  management-group deployments.
 
 Each apply takes ~3–8 minutes for a fresh subscription (creating the alias,
 moving it under the MG, registering providers, optional VNet + peering, role
@@ -107,4 +109,4 @@ follows the same merge → environment gate path.
 | `BillingAccountIdMissing` / `403` on alias creation | Pipeline UAMI is missing `SubscriptionCreator` on the billing scope. Re-run `Grant-SubscriptionCreatorRole` (see onboarding doc). |
 | `Subscription_NotFound` mid-apply | Azure Resource Manager hasn't fully propagated the new sub yet. The AzAPI provider retries automatically; if it still fails after 60m, re-run the matrix item. |
 | Apply hangs at "Waiting for review" | Check Settings → Environments → `production`; required reviewers must explicitly approve. |
-| `terraform plan` produces an empty diff on a PR | `discover-subs.sh` couldn't see the YAML change. Confirm the file is at `landingzones/<archetype>/<name>.yaml` (exactly two directory levels). |
+| The preview matrix is empty on a PR | `discover-subs.sh` could not see the YAML or selected-engine change. Confirm the request is at `landingzones/<archetype>/<name>.yaml` and `VENDING_ENGINE` is `terraform` or `bicep`. |

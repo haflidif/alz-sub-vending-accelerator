@@ -233,6 +233,11 @@ platform context: `tenant_id`, `vending_subscription_id`,
 editing it directly via PR in the seeded repo — the bootstrap is not
 re-run for value rotations.
 
+**`platform.json`**: Bicep engine configuration at
+`bicep/platform.json`. Rendered by `bootstrap/files.tf` and committed to the
+seeded vending repository. Carries tenant, billing, management-group,
+network, tag, and resource-provider settings.
+
 ## U
 
 **UAMI** — User-Assigned Managed Identity. Azure RBAC identity with
@@ -243,12 +248,12 @@ credentials.
 ## V
 
 **Vending repo** — The GitHub repo that `bootstrap/` creates (or
-configures) in your GitHub org. Receives a seeded copy of the
-skeleton plus the rendered `terraform.auto.tfvars`. Day-2 vending +
-platform changes happen via PR here, not in the skeleton.
+configures) in your GitHub org. Receives the shared runtime files, one selected
+engine package, and that engine's rendered platform configuration. Day-2
+vending and platform changes happen via PR here, not in the skeleton.
 
-**Vending sub** — The subscription being vended by a single Terraform
-run. Each `sub.yaml` produces one of these.
+**Vending sub**: The subscription represented by one YAML request and one
+Terraform or Bicep deployment matrix item.
 
 ## W
 
