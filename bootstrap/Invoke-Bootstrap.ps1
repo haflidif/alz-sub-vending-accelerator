@@ -68,6 +68,10 @@
     Bootstrap-mode phase(s) to run. Default 'all'. Ignored in -Destroy mode
     (destroy always runs preflight -> discover -> destroy in one shot).
 
+.PARAMETER Engine
+    Starter engine to package into the generated vending repository. Terraform
+    is the current default and only available starter. Bicep is planned.
+
 .PARAMETER Destroy
     Switch to destroy/teardown mode. Reverses what the bootstrap created.
     See DESCRIPTION for the two paths and safety rails.
@@ -117,12 +121,16 @@
 .PARAMETER TfvarsPath
     Rendered tfvars path. Default: <script-dir>/terraform.tfvars.json
 
+.PARAMETER StarterRoot
+    Directory containing starter-contract.json and the engine manifests.
+    Defaults to the repository's starters directory.
+
 .PARAMETER ScriptRoot
     Bootstrap module directory. Defaults to the script's own folder. Only
     override for unusual layouts.
 
 .EXAMPLE
-    pwsh ./Invoke-Bootstrap.ps1
+    pwsh ./Invoke-Bootstrap.ps1 -Engine Terraform
     Run the full wizard interactively (bootstrap mode).
 
 .EXAMPLE
@@ -163,6 +171,9 @@
 #>
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
+    [ValidateSet('Terraform', 'Bicep')]
+    [string] $Engine = 'Terraform',
+
     [ValidateSet('preflight', 'configure', 'validate', 'terraform', 'all')]
     [string] $Phase = 'all',
 
@@ -185,6 +196,7 @@ param(
 
     [string] $InputsPath,
     [string] $TfvarsPath,
+    [string] $StarterRoot,
     [string] $ScriptRoot = $PSScriptRoot
 )
 
@@ -192,6 +204,14 @@ $ErrorActionPreference = 'Stop'
 
 if (-not $InputsPath) { $InputsPath = Join-Path $ScriptRoot '.bootstrap-inputs.json' }
 if (-not $TfvarsPath) { $TfvarsPath = Join-Path $ScriptRoot 'terraform.tfvars.json' }
+if (-not $StarterRoot) { $StarterRoot = Join-Path (Split-Path -Parent $ScriptRoot) 'starters' }
+
+$starterName = $Engine.ToLowerInvariant()
+$starterManifestPath = Join-Path $StarterRoot "$starterName/starter.json"
+if (-not (Test-Path -LiteralPath $starterManifestPath -PathType Leaf)) {
+    throw "Starter manifest not found at '$starterManifestPath'."
+}
+$starterManifest = Get-Content -LiteralPath $starterManifestPath -Raw | ConvertFrom-Json
 
 # Mutually-exclusive flag validation
 if ($IncludeStateContainer -and -not $Destroy) {
@@ -1916,12 +1936,24 @@ $mode = if ($Destroy) { 'DESTROY' } elseif ($CleanBootstrapFolder -and -not $PSB
 
 Write-Banner "Sub-Vending Wizard -- mode: $mode"
 Write-Host "  ScriptRoot:  $ScriptRoot"
+Write-Host "  Engine:      $Engine"
 Write-Host "  InputsPath:  $InputsPath"
 Write-Host "  TfvarsPath:  $TfvarsPath"
 if ($mode -eq 'BOOTSTRAP') { Write-Host "  Phase:       $Phase" }
 if ($WhatIfPreference)     { Write-Warn 'Running in -WhatIf mode: no changes will be made.' }
 
 $Inputs = Get-Inputs -Path $InputsPath
+$starterWasPersisted = $Inputs.Contains('starter_name')
+if ($starterWasPersisted -and $Inputs.starter_name -ne $starterName) {
+    throw "The saved bootstrap uses starter '$($Inputs.starter_name)'. Engine changes require a separate migration or a new bootstrap configuration."
+}
+if ($starterManifest.availability -ne 'Available') {
+    throw "The $($starterManifest.displayName) starter is $($starterManifest.availability.ToLowerInvariant()) and cannot be selected."
+}
+$Inputs.starter_name = $starterName
+if (-not $starterWasPersisted -and (Test-Path -LiteralPath $InputsPath -PathType Leaf)) {
+    Save-Inputs -Path $InputsPath -Inputs $Inputs
+}
 
 try {
     switch ($mode) {

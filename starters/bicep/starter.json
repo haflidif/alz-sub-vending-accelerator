@@ -8,6 +8,11 @@
   "bootstrap": {
     "entryPoint": null
   },
+  "package": {
+    "includePrefixes": [
+      "bicep/"
+    ]
+  },
   "runtime": {
     "enginePath": null,
     "requestPath": "landingzones",

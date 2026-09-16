@@ -16,6 +16,7 @@
 # -----------------------------------------------------------------------------
 # Identity & location
 # -----------------------------------------------------------------------------
+starter_name             = "terraform"
 platform_subscription_id = "REPLACE-platform-subscription-id"
 uami_resource_group_name = "rg-platform-identity-prod"
 uami_name                = "id-subvending-pipeline"
