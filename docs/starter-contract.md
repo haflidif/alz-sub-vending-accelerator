@@ -52,8 +52,8 @@ package:
 
 The Terraform starter selects `terraform/`, which preserves the generated
 repository contents from version 0.1. The Bicep starter reserves `bicep/` but
-remains unavailable until its runtime workflows and bootstrap rendering are
-verified and the remaining parity gaps are closed. Its current package
+is available after its runtime workflows, bootstrap rendering, subscription
+creation, governance, networking, and RBAC paths were verified. Its package
 contains a pinned AVM wrapper, request compiler, platform schema, and
 engine-routed workflow integration.
 
@@ -69,8 +69,9 @@ mechanics.
 | Isolation | Terraform state per subscription | Deployment identity and request tracking |
 | Resource implementation | Terraform AVM pattern | Bicep AVM pattern |
 
-The Bicep manifest remains `Planned` until all baseline capabilities are
-implemented and verified. Unsupported input must produce an explicit error.
+The Bicep manifest is `Available` because all baseline capabilities are
+implemented and its core Azure paths have been verified. Unsupported input
+must produce an explicit error.
 
 Starter manifests and the accelerator PowerShell module are development and
 bootstrap assets. They are not copied into generated vending repositories.

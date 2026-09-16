@@ -60,7 +60,7 @@ sub-vending/
 │   ├── starter-contract.json       # capabilities every available starter needs
 │   ├── starter.schema.json         # versioned starter manifest schema
 │   ├── terraform/starter.json      # current Terraform starter declaration
-│   └── bicep/starter.json          # planned Bicep starter declaration
+│   └── bicep/starter.json          # available Bicep starter declaration
 │
 ├── bootstrap/                     # ← skeleton-only. Operator runs ONCE.
 │   ├── Invoke-Bootstrap.ps1       # Terraform compatibility implementation
@@ -85,7 +85,7 @@ sub-vending/
 │   └── terraform.auto.tfvars      # ← RENDERED by bootstrap (NOT in the skeleton).
 │                                  #   Holds tenant/billing/MGs/hub/tags.
 │
-├── bicep/                         # ← planned Bicep engine package
+├── bicep/                         # ← available Bicep engine package
 │   ├── main.bicep                 # pinned AVM sub-vending wrapper
 │   ├── SubscriptionVending.Bicep.psm1
 │   ├── default-resource-providers.json

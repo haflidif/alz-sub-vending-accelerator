@@ -8,8 +8,8 @@ variable "starter_name" {
   description = "Starter package selected by the PowerShell accelerator."
 
   validation {
-    condition     = var.starter_name == "terraform"
-    error_message = "Only the Terraform starter is currently available."
+    condition     = contains(["terraform", "bicep"], var.starter_name)
+    error_message = "starter_name must be either terraform or bicep."
   }
 }
 

@@ -60,9 +60,9 @@ All three leave **identical Terraform state** behind.
   `CONTRIBUTING.md`, and `.gitignore`. Accelerator development files such as
   `powershell/`, `starters/`, `tests/`, and proposals are excluded.
   Shared files are combined with the engine package selected by
-  `starter_name`. The available Terraform starter includes `terraform/` and
-  renders `terraform/terraform.auto.tfvars`. The planned Bicep starter is
-  prepared to include `bicep/` and render `bicep/platform.json`. Every other
+  `starter_name`. The Terraform starter includes `terraform/` and renders
+  `terraform/terraform.auto.tfvars`. The Bicep starter includes `bicep/` and
+  renders `bicep/platform.json`. Every other
   declared engine package root is excluded.
   Done with `github_repository_file` per file (same pattern as the upstream
   ALZ accelerator's `alz/github` module). Only `bootstrap/` itself, ephemeral

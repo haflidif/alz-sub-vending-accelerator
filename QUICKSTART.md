@@ -51,8 +51,12 @@ To see starter availability:
 Get-SubscriptionVendingEngine
 ```
 
-The Bicep starter is planned and is reported explicitly as unavailable until
-it implements the same bootstrap and vending capabilities.
+Both Terraform and Bicep starters are available. Select the engine during
+bootstrap:
+
+```powershell
+Initialize-SubscriptionVending -Engine Bicep
+```
 
 ---
 

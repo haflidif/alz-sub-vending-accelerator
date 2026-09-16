@@ -5,10 +5,10 @@ wraps the official Azure Verified Modules pattern
 `br/public:avm/ptn/lz/sub-vending:0.8.0` and preserves the repository's existing
 YAML subscription contract.
 
-The starter is still marked `Planned`. The template, request compiler, shared
-GitHub Actions routing, discovery, and bootstrap platform rendering are in
-place. A safe billing scope for a real new-subscription vend and bootstrap
-enablement are still required before the starter can be selected.
+The starter is marked `Available`. The template, request compiler, shared
+GitHub Actions routing, discovery, and bootstrap platform rendering have been
+validated through a real EA subscription vend and a governed networking and
+RBAC deployment.
 
 ## Build the template
 

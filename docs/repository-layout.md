@@ -53,7 +53,7 @@ subscription-vending/
 │   ├── starter-contract.json        # Required capabilities
 │   ├── starter.schema.json          # Starter manifest schema
 │   ├── terraform/starter.json       # Available Terraform starter
-│   └── bicep/starter.json           # Planned Bicep starter
+│   └── bicep/starter.json           # Available Bicep starter
 │
 ├── bootstrap/                       # ★ Skeleton-only. Operator runs ONCE.
 │   ├── Invoke-Bootstrap.ps1         # Terraform compatibility implementation

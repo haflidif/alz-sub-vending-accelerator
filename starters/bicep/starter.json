@@ -3,10 +3,10 @@
   "schemaVersion": "1.0",
   "name": "bicep",
   "displayName": "Bicep",
-  "availability": "Planned",
-  "description": "Planned GitHub Actions and Bicep AVM subscription-vending starter.",
+  "availability": "Available",
+  "description": "GitHub Actions and Bicep AVM subscription-vending starter.",
   "bootstrap": {
-    "entryPoint": null
+    "entryPoint": "bootstrap/Invoke-Bootstrap.ps1"
   },
   "package": {
     "includePrefixes": [
@@ -25,8 +25,7 @@
     "stateMode": "azure-deployment-per-subscription"
   },
   "capabilities": {
-    "implemented": [],
-    "planned": [
+    "implemented": [
       "prerequisite-validation",
       "bootstrap-configuration-validation",
       "resumable-bootstrap",
@@ -54,6 +53,7 @@
       "optional-spoke-networking",
       "bootstrap-destroy"
     ],
+    "planned": [],
     "unsupported": []
   }
 }

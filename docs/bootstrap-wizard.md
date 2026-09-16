@@ -7,7 +7,8 @@ sequence with a guided, resumable flow inspired by the ALZ Accelerator.
 
 > 🚀 **TL;DR:** import
 > `powershell/SubscriptionVending/SubscriptionVending.psd1`, then run
-> `Initialize-SubscriptionVending -Engine Terraform`. The module selects the
+> `Initialize-SubscriptionVending -Engine Terraform` or
+> `Initialize-SubscriptionVending -Engine Bicep`. The module selects the
 > starter and delegates to the existing Terraform wizard. It walks through
 > every input, validates everything against Azure and GitHub APIs, then runs
 > `terraform init / plan / apply`. Re-run the same command to resume.
@@ -18,12 +19,9 @@ Get-SubscriptionVendingEngine
 Initialize-SubscriptionVending -Engine Terraform
 ```
 
-The Bicep engine is visible as `Planned` but cannot be selected yet. It will
-be enabled only after its identities, GitHub Actions, YAML request handling,
-preview, deployment behavior, and remaining Terraform parity are verified
-end to end.
-The bootstrap configuration already carries the selected engine into GitHub
-repository variables and has an engine-specific platform rendering boundary.
+Both engines are available. The bootstrap configuration carries the selected
+engine into GitHub repository variables and renders either Terraform tfvars or
+Bicep platform configuration.
 
 > 🧹 **Need to undo a bootstrap** (wrong tenant, wrong repo, typo,
 > abandoned POC)? The same wizard handles teardown — run
@@ -36,8 +34,8 @@ repository variables and has an engine-specific platform rendering boundary.
 
 | You want… | Use |
 |---|---|
-| First-time bootstrap through the accelerator interface | `Initialize-SubscriptionVending -Engine Terraform` |
-| See available and planned engines | `Get-SubscriptionVendingEngine` |
+| First-time bootstrap through the accelerator interface | `Initialize-SubscriptionVending -Engine Terraform` or `Initialize-SubscriptionVending -Engine Bicep` |
+| See available engines | `Get-SubscriptionVendingEngine` |
 | Validate an existing sidecar against Azure and GitHub | `Test-SubscriptionVendingConfiguration -InputsPath <path>` |
 | To re-collect inputs without touching Terraform | `Invoke-Bootstrap.ps1 -Phase configure` |
 | A dry-run plan with no apply | `Invoke-Bootstrap.ps1 -PlanOnly` |
@@ -72,7 +70,7 @@ is `all`.
 
 | Parameter | Type | Default | Effect |
 |---|---|---|---|
-| `-Engine` | `Terraform` / `Bicep` | `Terraform` | Selects the starter package. Bicep is currently planned and is rejected. |
+| `-Engine` | `Terraform` / `Bicep` | `Terraform` | Selects the starter package and generated runtime. |
 | `-Phase` | `preflight` / `configure` / `validate` / `terraform` / `all` | `all` | Which phase(s) to run. |
 | `-NonInteractive` | switch | off | Disable prompts. Required values that aren't in the JSON sidecar cause the script to fail. **Does NOT imply apply** — combine with `-AutoApprove`. |
 | `-AutoApprove` | switch | off | Skip the `terraform apply` confirmation prompt. Without this flag, the script always asks (interactive) or refuses to apply (non-interactive). |

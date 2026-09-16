@@ -92,6 +92,9 @@ template itself, not the AVM module pinned by the engine (see
   so owner-only budget requests pass ARM template validation.
 - Defaulted Bicep spoke peerings to not use remote gateways, with an explicit
   platform opt-in for hubs configured with gateway transit.
+- Made the Bicep starter available after real Azure verification of
+  subscription creation, management-group placement, tags, budgets,
+  networking, hub peering, and role assignments.
 
 ## [0.1.0] - 2026-06-01
 

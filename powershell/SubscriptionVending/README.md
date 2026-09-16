@@ -9,7 +9,7 @@ starter.
 | Engine | Status | Implementation |
 |---|---|---|
 | Terraform | Available | Delegates to `bootstrap/Invoke-Bootstrap.ps1` |
-| Bicep | Planned | Fails explicitly until the Bicep starter is implemented |
+| Bicep | Available | Uses the shared bootstrap and deploys through the pinned Bicep AVM |
 
 ## Usage
 
@@ -19,6 +19,7 @@ Import-Module ./powershell/SubscriptionVending/SubscriptionVending.psd1
 Get-SubscriptionVendingEngine
 Test-SubscriptionVendingStarter
 Initialize-SubscriptionVending -Engine Terraform
+Initialize-SubscriptionVending -Engine Bicep
 ```
 
 Starter availability comes from the versioned manifests under `starters/`.
