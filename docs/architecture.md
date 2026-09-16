@@ -91,7 +91,7 @@ becomes the default `aliasName` and `displayName`.
 | `network.subnets`      | no       | map      | Passed through to the AVM module |
 | `budget.amount`        | cond.    | number   | Required for sandbox; optional otherwise |
 | `budget.contacts`      | no       | list     | Extra emails (owner is added automatically) |
-| `roleAssignments`      | no       | map      | Passed straight to AVM `role_assignments` |
+| `roleAssignments`      | no       | map      | Passed to Terraform AVM or normalized to the supported Bicep AVM shape |
 | `managedIdentity`      | no       | object   | `{ name, resourceGroupName? }` to create a UMI |
 
 ## Tag layering

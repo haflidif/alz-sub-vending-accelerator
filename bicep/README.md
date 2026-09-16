@@ -7,8 +7,8 @@ YAML subscription contract.
 
 The starter is still marked `Planned`. The template, request compiler, shared
 GitHub Actions routing, discovery, and bootstrap platform rendering are in
-place. Cloud deployment verification, remaining Terraform parity, and
-bootstrap enablement are still required before the starter can be selected.
+place. A safe billing scope for a real new-subscription vend and bootstrap
+enablement are still required before the starter can be selected.
 
 ## Build the template
 
@@ -42,8 +42,24 @@ ignored locally.
 
 The compiler currently covers subscription creation, management-group
 placement, governed tags, billing-scope selection, resource-provider
-registration, subscription-scoped role assignments, one requested managed
-identity, one spoke virtual network, hub peering, and one subscription budget.
+registration, subscription- or resource-group-scoped role assignments, one
+requested managed identity, one spoke virtual network, hub peering, and one
+subscription budget.
+
+Subnet normalization supports one address prefix, service endpoints,
+delegation, private endpoint network policies, default outbound access, IPAM
+allocations, and custom network security groups with security rules.
+
+The AVM 0.8.0 public subnet type declares multiple prefixes and additional
+advanced properties, but its internal sub-vending wrapper does not forward
+them to the VNet module. The compiler therefore rejects multiple prefixes and
+unsupported subnet properties rather than silently dropping them. Terraform
+requests can continue using its AVM's wider subnet contract.
+
+Role-assignment normalization supports principal type, description, relative
+resource-group scope, and the conditional-assignment shapes exposed by the
+pinned AVM. The shared YAML schema remains extensible for Terraform AVM input,
+but the Bicep compiler rejects properties that version 0.8.0 cannot preserve.
 
 The upstream Bicep AVM accepts one budget threshold type per deployment. The
 accelerator disables that limited budget path and deploys one subscription
@@ -89,3 +105,12 @@ operations. No deployment was applied.
 Budget parity was also validated against the existing Sandbox subscription.
 The resulting budget contained the expected `actual50`, `actual90`, and
 `forecast100` notification thresholds in one resource.
+
+Networking and RBAC parity were validated with a second non-creating what-if.
+It produced only the expected network resource group, VNet, subnets, custom
+and default NSGs, bidirectional hub peering, resource-group-scoped role
+assignment, management-group association, and tag operations. The payload
+confirmed the single address prefix, service endpoints, delegation, private
+endpoint policies, custom security rules, disabled default outbound access,
+role-assignment description, and requested relative scope. No deployment was
+applied.
