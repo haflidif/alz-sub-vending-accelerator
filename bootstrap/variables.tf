@@ -2,6 +2,17 @@
 # Identity & state location
 ###############################################################################
 
+variable "starter_name" {
+  type        = string
+  default     = "terraform"
+  description = "Starter package selected by the PowerShell accelerator."
+
+  validation {
+    condition     = var.starter_name == "terraform"
+    error_message = "Only the Terraform starter is currently available."
+  }
+}
+
 variable "platform_subscription_id" {
   type        = string
   description = "Subscription that owns the platform Terraform state SA and the pipeline UAMI."

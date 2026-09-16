@@ -8,6 +8,11 @@
   "bootstrap": {
     "entryPoint": "bootstrap/Invoke-Bootstrap.ps1"
   },
+  "package": {
+    "includePrefixes": [
+      "terraform/"
+    ]
+  },
   "runtime": {
     "enginePath": "terraform",
     "requestPath": "landingzones",

@@ -57,6 +57,9 @@ All three leave **identical Terraform state** behind.
   examples, operator docs, `.github/workflows/`, `README.md`,
   `CONTRIBUTING.md`, and `.gitignore`. Accelerator development files such as
   `powershell/`, `starters/`, `tests/`, and proposals are excluded.
+  Shared files are combined with the engine package selected by
+  `starter_name`. The available Terraform starter includes `terraform/`;
+  every other declared engine package root is excluded.
   Done with `github_repository_file` per file (same pattern as the upstream
   ALZ accelerator's `alz/github` module). Only `bootstrap/` itself, ephemeral
   Terraform state, and the root `terraform.tfvars` (consumer-specific
@@ -167,8 +170,8 @@ Source layout under `bootstrap/`:
 | [`variables.tf`](variables.tf) | ~20 inputs across identity/location, state, RBAC, GitHub repo, branch protection, production env, billing scopes (map with EA/MCA/MPA per entry), MG IDs, cost allocation, mandatory tags, CODEOWNERS, skeleton seeding. Validation rules enforce billing-scope structure, MG ID format, GitHub handles, tag-key naming. |
 | [`locals.tf`](locals.tf) | Resolves each `billing_scopes` entry into the full Azure billing scope path string. EA → `enrollmentAccounts/...`, MCA → `billingProfiles/.../invoiceSections/...`, MPA → `customers/...`. |
 | [`main.tf`](main.tf) | UAMI + 3 FICs (branch / PR / production env) + state container + 4 role assignments (Storage Blob Data Contributor on the container, MG Contributor + optional UAA on the ALZ root MG, Network Contributor RG-scoped on the hub VNet's RG) + optional `github_repository` create + Actions variables + `production` environment + branch protection. |
-| [`files.tf`](files.tf) | Three `github_repository_file` resources: (a) every skeleton file except excluded prefixes (`bootstrap/`, `.git/`, `.terraform/`, etc.) and excluded patterns (state, plans, `.env`, etc.); (b) `terraform/terraform.auto.tfvars` rendered with platform context; (c) `.github/CODEOWNERS` rendered from `templates/CODEOWNERS.tftpl`. |
-| [`outputs.tf`](outputs.tf) | `uami_client_id`, `uami_principal_id`, `uami_resource_id`, `state_container_name`, `github_repository_full_name`, and `next_step_billing_role` (a pre-filled `Grant-SubscriptionCreatorRole` snippet per billing scope). |
+| [`files.tf`](files.tf) | Three `github_repository_file` resources: (a) shared skeleton files plus only the selected starter package; (b) `terraform/terraform.auto.tfvars` rendered with platform context; (c) `.github/CODEOWNERS` rendered from `templates/CODEOWNERS.tftpl`. |
+| [`outputs.tf`](outputs.tf) | Selected starter, UAMI identifiers, state container, GitHub repository, and `next_step_billing_role` (a pre-filled `Grant-SubscriptionCreatorRole` snippet per billing scope). |
 | [`templates/CODEOWNERS.tftpl`](templates/CODEOWNERS.tftpl) | Single template rendered with the operator's `codeowners_default_team` + `codeowners_archetype_teams`. Only the **rendered** file lands in the seeded repo. |
 | [`Invoke-Bootstrap.ps1`](Invoke-Bootstrap.ps1) | The interactive wizard. Handles both **create** (bootstrap; default) and **destroy** (`-Destroy`; with optional `-IncludeStateContainer`, `-IncludeGitHubRepo`, `-CleanBootstrapFolder`, standard `-WhatIf`). 9 + 1 sections; see [`docs/bootstrap-wizard.md → Implementation notes`](../docs/bootstrap-wizard.md#implementation-notes) and [`docs/bootstrap-wizard.md → Destroying / undoing a bootstrap`](../docs/bootstrap-wizard.md#destroying--undoing-a-bootstrap). |
 | [`terraform.tfvars.example`](terraform.tfvars.example) | Schema-correct example — copy to `terraform.tfvars` for the manual flow, or use the wizard which writes a JSON sidecar instead. |

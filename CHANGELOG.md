@@ -22,6 +22,7 @@ template itself, not the AVM module pinned by the engine (see
   accelerator.
 - Accelerator CI checks for the PowerShell module, starter manifests,
   discovery behavior, and bootstrap Terraform configuration.
+- Engine package roots and manifest-driven starter package declarations.
 
 ### Changed
 
@@ -39,6 +40,11 @@ template itself, not the AVM module pinned by the engine (see
   `~> 1.15.5` patch constraints.
 - Aligned bootstrap preflight with the supported Terraform range, from 1.15.5
   inclusive to 1.16.0 exclusive.
+- Made repository seeding select common runtime files plus only the package
+  declared by the selected starter. Terraform selection preserves the version
+  0.1 generated repository contents.
+- Forwarded engine selection through the PowerShell module and legacy
+  bootstrap, persisted `starter_name`, and exposed it as a Terraform output.
 
 ### Fixed
 
@@ -49,6 +55,8 @@ template itself, not the AVM module pinned by the engine (see
 - Made shared changes under `terraform/` select every subscription for preview
   and deployment.
 - Made discovery failures and cancellations fail the final PR validation gate.
+- Rejected attempts to change the starter bound to an existing bootstrap
+  sidecar.
 
 ## [0.1.0] - 2026-06-01
 

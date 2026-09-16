@@ -11,6 +11,7 @@
     "availability",
     "description",
     "bootstrap",
+    "package",
     "runtime",
     "capabilities"
   ],
@@ -44,6 +45,22 @@
       "properties": {
         "entryPoint": {
           "type": ["string", "null"]
+        }
+      }
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["includePrefixes"],
+      "properties": {
+        "includePrefixes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*/$"
+          }
         }
       }
     },

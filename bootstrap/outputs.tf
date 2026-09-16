@@ -1,3 +1,8 @@
+output "starter_name" {
+  value       = var.starter_name
+  description = "Starter package selected for the generated vending repository."
+}
+
 output "uami_client_id" {
   value       = azurerm_user_assigned_identity.pipeline.client_id
   description = "Pipeline UAMI client ID — also written to the AZURE_CLIENT_ID repo variable."

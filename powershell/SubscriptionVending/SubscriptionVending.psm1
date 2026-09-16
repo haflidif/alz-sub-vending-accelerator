@@ -92,6 +92,13 @@ function Invoke-LegacyTerraformBootstrap {
     [string] $ScriptPath,
 
     [Parameter(Mandatory)]
+    [ValidateSet('Terraform', 'Bicep')]
+    [string] $Engine,
+
+    [Parameter(Mandatory)]
+    [string] $StarterRoot,
+
+    [Parameter(Mandatory)]
     [ValidateSet('preflight', 'configure', 'validate', 'terraform', 'all')]
     [string] $Phase,
 
@@ -109,6 +116,8 @@ function Invoke-LegacyTerraformBootstrap {
   }
 
   $scriptParameters = @{
+    Engine = $Engine
+    StarterRoot = $StarterRoot
     Phase = $Phase
     ScriptRoot = Split-Path -Parent $ScriptPath
   }
@@ -128,7 +137,7 @@ function Invoke-LegacyTerraformBootstrap {
   & $ScriptPath @scriptParameters
   $exitCode = $LASTEXITCODE
   if ($exitCode -ne 0) {
-    throw "Terraform bootstrap exited with code $exitCode."
+    throw "$Engine bootstrap exited with code $exitCode."
   }
 }
 
@@ -187,6 +196,18 @@ function Test-SubscriptionVendingStarter {
       throw "Starter '$($starter.name)' uses contract version '$($starter.schemaVersion)', expected '$($contract.schemaVersion)'."
     }
 
+    $packageRoots = @($contract.packageRoots)
+    $invalidPackageRoots = @(
+      $packageRoots |
+        Where-Object { $_ -notmatch '^[a-z][a-z0-9-]*/$' }
+    )
+    if ($packageRoots.Count -eq 0 -or $invalidPackageRoots.Count -gt 0) {
+      throw "Starter contract contains invalid package roots: $($invalidPackageRoots -join ', ')."
+    }
+    if (@($packageRoots | Sort-Object -Unique).Count -ne $packageRoots.Count) {
+      throw 'Starter contract package roots must be unique.'
+    }
+
     $allCapabilities = @(
       $starter.capabilities.implemented
       $starter.capabilities.planned
@@ -201,6 +222,14 @@ function Test-SubscriptionVendingStarter {
     $missing = @($contract.requiredCapabilities | Where-Object { $_ -notin $declared })
     if ($missing.Count -gt 0) {
       throw "Starter '$($starter.name)' does not declare required capabilities: $($missing -join ', ')."
+    }
+
+    $unknownPackageRoots = @(
+      $starter.package.includePrefixes |
+        Where-Object { $_ -notin $contract.packageRoots }
+    )
+    if ($unknownPackageRoots.Count -gt 0) {
+      throw "Starter '$($starter.name)' declares unknown package roots: $($unknownPackageRoots -join ', ')."
     }
 
     if ($starter.availability -eq 'Available') {
@@ -228,6 +257,11 @@ function Test-SubscriptionVendingStarter {
         if (-not (Test-Path -LiteralPath $resolvedPath -PathType Container)) {
           throw "Available starter '$($starter.name)' requires missing directory '$relativePath'."
         }
+      }
+
+      $enginePrefix = "$($starter.runtime.enginePath)/"
+      if ($enginePrefix -notin $starter.package.includePrefixes) {
+        throw "Available starter '$($starter.name)' package does not include its engine path '$enginePrefix'."
       }
     }
 
@@ -274,6 +308,8 @@ function Initialize-SubscriptionVending {
 
   $invokeParameters = @{
     ScriptPath = $scriptPath
+    Engine = $Engine
+    StarterRoot = $StarterRoot
     Phase = $Phase
     NonInteractive = $NonInteractive
     AutoApprove = $AutoApprove
@@ -317,6 +353,8 @@ function Test-SubscriptionVendingConfiguration {
 
   Invoke-LegacyTerraformBootstrap `
     -ScriptPath $scriptPath `
+    -Engine $Engine `
+    -StarterRoot $StarterRoot `
     -Phase validate `
     -NonInteractive `
     -SkipPreflight:$SkipPreflight `

@@ -1,5 +1,9 @@
 {
   "schemaVersion": "1.0",
+  "packageRoots": [
+    "terraform/",
+    "bicep/"
+  ],
   "requiredCapabilities": [
     "prerequisite-validation",
     "bootstrap-configuration-validation",

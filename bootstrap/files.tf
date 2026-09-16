@@ -14,7 +14,11 @@
 ###############################################################################
 
 locals {
-  skeleton_root = abspath("${path.module}/${var.skeleton_source_path}")
+  skeleton_root             = abspath("${path.module}/${var.skeleton_source_path}")
+  starter_contract          = jsondecode(file("${local.skeleton_root}/starters/starter-contract.json"))
+  starter_manifest          = jsondecode(file("${local.skeleton_root}/starters/${var.starter_name}/starter.json"))
+  engine_package_prefixes   = local.starter_contract.packageRoots
+  selected_package_prefixes = local.starter_manifest.package.includePrefixes
 
   # Top-level prefixes we never want to push (forward slashes — fileset
   # always returns POSIX-style paths even on Windows).
@@ -57,6 +61,10 @@ locals {
     for f in local.skeleton_files_all : f
     if alltrue([for p in local.skeleton_excluded_prefixes : !startswith(f, p)])
     && alltrue([for r in local.skeleton_excluded_regexes : length(regexall(r, f)) == 0])
+    && (
+      alltrue([for p in local.engine_package_prefixes : !startswith(f, p)])
+      || anytrue([for p in local.selected_package_prefixes : startswith(f, p)])
+    )
   ]
 }
 

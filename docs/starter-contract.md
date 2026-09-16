@@ -8,9 +8,9 @@ required operator capabilities in `starters/starter-contract.json`.
 
 | Path | Purpose |
 |---|---|
-| `starters/starter-contract.json` | Contract version and required capabilities |
+| `starters/starter-contract.json` | Contract version, engine package roots, and required capabilities |
 | `starters/starter.schema.json` | JSON Schema for starter manifests |
-| `starters/<engine>/starter.json` | Engine availability, runtime model, and capability declaration |
+| `starters/<engine>/starter.json` | Engine availability, package selection, runtime model, and capability declaration |
 
 ## Required capabilities
 
@@ -36,6 +36,23 @@ For available starters, validation also checks that the declared bootstrap
 entry point, engine directory, request directory, request schema, discovery
 script, preview workflow, and deployment workflow exist inside the repository.
 Paths cannot escape the repository root.
+
+## Package selection
+
+Generated repositories combine shared runtime files with exactly one engine
+package:
+
+- `starters/starter-contract.json` declares every engine-owned package root,
+  currently `terraform/` and `bicep/`.
+- Each starter declares its selected roots in `package.includePrefixes`.
+- Bootstrap excludes all engine package roots from the common file set, then
+  adds back only the roots declared by the selected starter.
+- Available starters must include the package that contains their declared
+  runtime engine path.
+
+The Terraform starter selects `terraform/`, which preserves the generated
+repository contents from version 0.1. The Bicep starter reserves `bicep/` but
+remains unavailable until its runtime and workflows are implemented.
 
 ## Engine-specific behavior
 

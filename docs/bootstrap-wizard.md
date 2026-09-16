@@ -69,6 +69,7 @@ is `all`.
 
 | Parameter | Type | Default | Effect |
 |---|---|---|---|
+| `-Engine` | `Terraform` / `Bicep` | `Terraform` | Selects the starter package. Bicep is currently planned and is rejected. |
 | `-Phase` | `preflight` / `configure` / `validate` / `terraform` / `all` | `all` | Which phase(s) to run. |
 | `-NonInteractive` | switch | off | Disable prompts. Required values that aren't in the JSON sidecar cause the script to fail. **Does NOT imply apply** — combine with `-AutoApprove`. |
 | `-AutoApprove` | switch | off | Skip the `terraform apply` confirmation prompt. Without this flag, the script always asks (interactive) or refuses to apply (non-interactive). |
@@ -77,6 +78,7 @@ is `all`.
 | `-SkipPreflight` | switch | off | Bypass tool-version + auth checks. Escape hatch for environments where the checks return false negatives. |
 | `-InputsPath` | string | `<script-dir>/.bootstrap-inputs.json` | JSON sidecar location. |
 | `-TfvarsPath` | string | `<script-dir>/terraform.tfvars.json` | Rendered tfvars location. |
+| `-StarterRoot` | string | `<repository>/starters` | Starter contract and manifest directory. Override only for testing or custom repository layouts. |
 | `-ScriptRoot` | string | `$PSScriptRoot` | Bootstrap module directory. Only override for unusual layouts. |
 
 `-WhatIf` is accepted only with destroy or local cleanup. Bootstrap mode rejects
@@ -115,6 +117,10 @@ terraform.tfvars.json           ← rendered by `-Phase terraform`, replaced on 
 
 **Editing rules:**
 
+- 🔒 The sidecar records `starter_name`. A bootstrap cannot switch engines in
+  place because generated files and Terraform ownership would become
+  ambiguous. Start with a new sidecar and state, or perform an explicit
+  migration.
 - ✏️ **Edit `.bootstrap-inputs.json` directly** (or re-run the wizard) — this is the source of truth.
 - ❌ **Do NOT hand-edit `terraform.tfvars.json`.** The wizard replaces it on every `-Phase terraform` run; your edits will be lost.
 - 🛡️ The wizard adds a `# SourceHash:` marker to the rendered tfvars; on rerun, if the hash mismatches (i.e. you hand-edited the rendered file), the wizard warns and asks before overwriting.
@@ -148,7 +154,7 @@ the default tenant" foot-gun.
 
 ```powershell
 # First-time run, interactive, end-to-end
-pwsh ./Invoke-Bootstrap.ps1
+pwsh ./Invoke-Bootstrap.ps1 -Engine Terraform
 
 # Just re-collect inputs (no Terraform)
 pwsh ./Invoke-Bootstrap.ps1 -Phase configure

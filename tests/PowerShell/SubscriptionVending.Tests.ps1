@@ -53,6 +53,8 @@ try {
   Set-Content -LiteralPath (Join-Path $testRoot '.github/scripts/discover-subs.sh') -Value '# test'
   @'
 param(
+  [string] $Engine,
+  [string] $StarterRoot,
   [string] $Phase,
   [string] $ScriptRoot,
   [switch] $NonInteractive,
@@ -82,6 +84,23 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Equal 2 $starterResults.Count 'Unexpected starter validation result count.'
   Assert-Equal 26 ($starterResults | Where-Object Name -eq 'Terraform').ImplementedCapabilities 'Terraform capability count is incorrect.'
   Assert-Equal 0 ($starterResults | Where-Object Name -eq 'Bicep').ImplementedCapabilities 'Bicep should not report implemented capabilities yet.'
+  $terraformManifest = Get-Content -LiteralPath (Join-Path $starterRoot 'terraform/starter.json') -Raw | ConvertFrom-Json
+  Assert-Equal 'terraform/' $terraformManifest.package.includePrefixes[0] 'Terraform package prefix is incorrect.'
+  $starterContract = Get-Content -LiteralPath (Join-Path $starterRoot 'starter-contract.json') -Raw | ConvertFrom-Json
+  Assert-Equal $true ('terraform/' -in $starterContract.packageRoots) 'Terraform package root is missing from the contract.'
+  Assert-Equal $true ('bicep/' -in $starterContract.packageRoots) 'Bicep package root is missing from the contract.'
+  $sampleFiles = @('README.md', 'terraform/main.tf', 'bicep/main.bicep')
+  $terraformPackage = @(
+    $sampleFiles | Where-Object {
+      $file = $_
+      $isEngineFile = @($starterContract.packageRoots | Where-Object { $file.StartsWith($_) }).Count -gt 0
+      $isSelectedFile = @($terraformManifest.package.includePrefixes | Where-Object { $file.StartsWith($_) }).Count -gt 0
+      -not $isEngineFile -or $isSelectedFile
+    }
+  )
+  Assert-Equal $true ('README.md' -in $terraformPackage) 'Common files must be included in the Terraform package.'
+  Assert-Equal $true ('terraform/main.tf' -in $terraformPackage) 'Terraform files must be included in the Terraform package.'
+  Assert-Equal $false ('bicep/main.bicep' -in $terraformPackage) 'Non-selected Bicep files must be excluded from the Terraform package.'
 
   $invalidStarterRoot = Join-Path $testRoot 'invalid-starters'
   Copy-Item -LiteralPath $starterRoot -Destination $invalidStarterRoot -Recurse
@@ -108,6 +127,8 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
 
   $captured = Get-Content -LiteralPath $capturePath -Raw | ConvertFrom-Json
   Assert-Equal 'configure' $captured.Phase 'Phase was not forwarded.'
+  Assert-Equal 'Terraform' $captured.Engine 'Engine was not forwarded.'
+  Assert-Equal $testStarterRoot $captured.StarterRoot 'StarterRoot was not forwarded.'
   Assert-Equal $true $captured.NonInteractive 'NonInteractive was not forwarded.'
   Assert-Equal $true $captured.PlanOnly 'PlanOnly was not forwarded.'
   Assert-Equal 'inputs.json' $captured.InputsPath 'InputsPath was not forwarded.'
@@ -116,12 +137,38 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
     -Script { Initialize-SubscriptionVending -Engine Bicep -StarterRoot $testStarterRoot } `
     -MessagePattern '*Bicep starter is planned and cannot be selected*'
 
+  $newInputsPath = Join-Path $testRoot 'new-inputs.json'
+  '{}' | Set-Content -LiteralPath $newInputsPath
+  & pwsh -NoLogo -NoProfile -File $legacyBootstrapPath `
+    -Engine Terraform `
+    -Phase configure `
+    -NonInteractive `
+    -SkipPreflight `
+    -InputsPath $newInputsPath `
+    -TfvarsPath (Join-Path $testRoot 'new.tfvars.json') | Out-Null
+  Assert-Equal 0 $LASTEXITCODE 'Legacy bootstrap should accept the Terraform starter.'
+  $savedInputs = Get-Content -LiteralPath $newInputsPath -Raw | ConvertFrom-Json
+  Assert-Equal 'terraform' $savedInputs.starter_name 'Legacy bootstrap did not persist the normalized starter name.'
+
+  $mismatchInputsPath = Join-Path $testRoot 'mismatch-inputs.json'
+  '{"starter_name":"terraform"}' | Set-Content -LiteralPath $mismatchInputsPath
+  $mismatchOutput = & pwsh -NoLogo -NoProfile -File $legacyBootstrapPath `
+    -Engine Bicep `
+    -Phase configure `
+    -InputsPath $mismatchInputsPath `
+    -TfvarsPath (Join-Path $testRoot 'mismatch.tfvars.json') 2>&1
+  Assert-Equal 1 $LASTEXITCODE 'Legacy bootstrap must reject changing an existing starter.'
+  Assert-Equal $true (($mismatchOutput | Out-String) -like "*saved bootstrap uses starter 'terraform'*") 'Starter mismatch error was not reported.'
+  $global:LASTEXITCODE = 0
+
   Assert-Throws `
     -Script { Test-SubscriptionVendingConfiguration -InputsPath (Join-Path $testRoot 'missing.json') -BootstrapPath $bootstrapPath } `
     -MessagePattern '*Configuration file not found*'
 
   @'
 param(
+  [string] $Engine,
+  [string] $StarterRoot,
   [string] $Phase,
   [string] $ScriptRoot,
   [switch] $NonInteractive,
