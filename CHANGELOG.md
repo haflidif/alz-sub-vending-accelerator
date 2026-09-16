@@ -88,6 +88,8 @@ template itself, not the AVM module pinned by the engine (see
   wrapper declares but does not forward them to its VNet module.
 - Completed non-creating networking and RBAC validation and what-if against an
   existing subscription, including hub peering and a custom NSG rule.
+- Preserved a single budget contact as an array in generated Bicep parameters
+  so owner-only budget requests pass ARM template validation.
 
 ## [0.1.0] - 2026-06-01
 

@@ -140,6 +140,16 @@ try {
   Assert-Equal $false $result.parameters.enableTelemetry.value 'Telemetry setting is incorrect.'
   Assert-Equal 0 $result.parameters.resourceProviders.value.Count 'Explicit resource provider configuration was not preserved.'
 
+  $ownerOnlyBudgetRequest = $request.Clone()
+  $ownerOnlyBudgetRequest.budget = @{
+    amount = 500
+    contacts = @()
+  }
+  $ownerOnlyBudgetResult = ConvertTo-BicepSubscriptionParameters -Request $ownerOnlyBudgetRequest -Platform $platform -RequestName 'owner-only-budget'
+  Assert-Equal 'System.Object[]' $ownerOnlyBudgetResult.parameters.budgetContactEmails.value.GetType().FullName 'A single budget contact must remain an array.'
+  Assert-Equal 1 $ownerOnlyBudgetResult.parameters.budgetContactEmails.value.Count 'The owner-only budget contact array is incorrect.'
+  Assert-Equal 'owner@example.com' $ownerOnlyBudgetResult.parameters.budgetContactEmails.value[0] 'The owner-only budget contact is incorrect.'
+
   $invalidRequest = $request.Clone()
   $invalidRequest.costAllocationCode = 'INVALID'
   Assert-Throws `
