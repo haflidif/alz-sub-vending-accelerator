@@ -95,6 +95,9 @@ function ConvertTo-BicepSubscriptionParameters {
   $billingScopeKey = [string](Get-MapValue -Map $Request -Key 'billingScopeKey' -Default 'default')
   Assert-RequestValue (Test-MapKey -Map $billingScopes -Key $billingScopeKey) "Unknown billingScopeKey '$billingScopeKey'."
   Assert-RequestValue (Test-MapKey -Map $managementGroupIds -Key $archetype) "No management group is configured for archetype '$archetype'."
+  $managementGroupResourceId = [string]$managementGroupIds[$archetype]
+  $managementGroupId = ($managementGroupResourceId -split '/')[-1]
+  Assert-RequestValue ($managementGroupId -ne '') "The management group configured for archetype '$archetype' is invalid."
 
   $displayName = [string](Get-MapValue -Map $Request -Key 'displayName' -Default $RequestName)
   $aliasName = [string](Get-MapValue -Map $Request -Key 'aliasName' -Default $RequestName)
@@ -208,7 +211,7 @@ function ConvertTo-BicepSubscriptionParameters {
     subscriptionDisplayName = @{ value = $displayName }
     subscriptionBillingScope = @{ value = [string]$billingScopes[$billingScopeKey] }
     subscriptionWorkload = @{ value = $workload }
-    subscriptionManagementGroupId = @{ value = [string]$managementGroupIds[$archetype] }
+    subscriptionManagementGroupId = @{ value = $managementGroupId }
     subscriptionTags = @{ value = $effectiveTags }
     virtualNetworkEnabled = @{ value = $networkEnabled }
     virtualNetworkResourceGroupName = @{ value = if ($networkEnabled) { "rg-$aliasName-network" } else { '' } }
@@ -228,6 +231,11 @@ function ConvertTo-BicepSubscriptionParameters {
     budgetThresholds = @{ value = @($archetypeConfig.BudgetThresholds) }
     budgetThresholdType = @{ value = 'Forecasted' }
     enableTelemetry = @{ value = [bool](Get-MapValue -Map $Platform -Key 'enableTelemetry' -Default $true) }
+  }
+  if (Test-MapKey -Map $Platform -Key 'resourceProviders') {
+    $resourceProviders = $Platform['resourceProviders']
+    Assert-RequestValue ($resourceProviders -is [System.Collections.IDictionary]) 'resourceProviders must be an object.'
+    $parameters['resourceProviders'] = @{ value = $resourceProviders }
   }
 
   return [ordered]@{

@@ -7,6 +7,9 @@ targetScope = 'managementGroup'
 @maxLength(63)
 param subscriptionAliasName string
 
+@maxLength(36)
+param existingSubscriptionId string = ''
+
 @minLength(1)
 @maxLength(63)
 param subscriptionDisplayName string
@@ -50,12 +53,17 @@ param budgetThresholds array = [90]
 ])
 param budgetThresholdType string = 'Forecasted'
 
+param resourceProviders object?
+
 param enableTelemetry bool = true
+
+var defaultResourceProviders = loadJsonContent('./default-resource-providers.json')
 
 module subscriptionVending 'br/public:avm/ptn/lz/sub-vending:0.8.0' = {
   name: take('sub-vending-${subscriptionAliasName}-${uniqueString(subscriptionAliasName, deployment().name)}', 64)
   params: {
-    subscriptionAliasEnabled: true
+    subscriptionAliasEnabled: empty(existingSubscriptionId)
+    existingSubscriptionId: existingSubscriptionId
     subscriptionAliasName: subscriptionAliasName
     subscriptionDisplayName: subscriptionDisplayName
     subscriptionBillingScope: subscriptionBillingScope
@@ -67,7 +75,7 @@ module subscriptionVending 'br/public:avm/ptn/lz/sub-vending:0.8.0' = {
     virtualNetworkResourceGroupName: virtualNetworkResourceGroupName
     virtualNetworkResourceGroupLockEnabled: false
     virtualNetworkLocation: virtualNetworkLocation
-    virtualNetworkName: virtualNetworkName
+    virtualNetworkName: virtualNetworkEnabled ? virtualNetworkName : null
     virtualNetworkAddressSpace: virtualNetworkAddressSpace
     virtualNetworkSubnets: virtualNetworkSubnets
     virtualNetworkPeeringEnabled: virtualNetworkPeeringEnabled
@@ -82,6 +90,7 @@ module subscriptionVending 'br/public:avm/ptn/lz/sub-vending:0.8.0' = {
     budgetContactEmails: budgetContactEmails
     budgetThresholds: budgetThresholds
     budgetThresholdType: budgetThresholdType
+    resourceProviders: resourceProviders ?? defaultResourceProviders
     enableTelemetry: enableTelemetry
   }
 }

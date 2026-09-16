@@ -59,6 +59,15 @@
     },
     "enableTelemetry": {
       "type": "boolean"
+    },
+    "resourceProviders": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
     }
   }
 }

@@ -65,6 +65,16 @@ template itself, not the AVM module pinned by the engine (see
   deployment through the repository's selected engine.
 - Added bootstrap rendering for Bicep platform configuration and engine
   metadata repository variables.
+- Added a non-creating existing-subscription input to the Bicep wrapper for
+  cloud validation and future adoption scenarios.
+- Avoided passing an invalid empty virtual-network name to the upstream Bicep
+  AVM when networking is disabled.
+- Normalized full management-group resource IDs to the bare identifier
+  required by the Bicep AVM association implementation.
+- Made Bicep resource-provider registration configurable after cloud what-if
+  confirmed the AVM default deployment-script support footprint.
+- Completed non-creating management-group validation and what-if against an
+  existing subscription in an ALZ hierarchy.
 
 ## [0.1.0] - 2026-06-01
 
