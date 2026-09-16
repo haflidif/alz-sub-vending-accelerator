@@ -125,7 +125,7 @@ guide.
 
 ## Module reference
 
-This repo wraps **`Azure/avm-ptn-alz-sub-vending/azure`**, pinned to `0.2.1`
+This repo wraps **`Azure/avm-ptn-alz-sub-vending/azure`**, pinned to `0.3.1`
 exact in [`terraform/main.tf`](../terraform/main.tf) (no upper-bound
 constraint — every bump is an explicit, reviewed change because the AVM
 module's input contract is still pre-1.0). The mapping from the sub YAML

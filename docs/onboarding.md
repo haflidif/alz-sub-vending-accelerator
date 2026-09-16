@@ -17,6 +17,7 @@ vended. After this is done, day-to-day vending happens via PRs — see
 | 4 | **Optional: hub VNet** — full Azure resource ID if you peer corp/online subs to it | `az network vnet show --ids <id>` |
 | 5 | **GitHub org** + a **PAT** with `repo` (and `admin:org` if creating a new repo) | `gh auth status` |
 | 6 | **Az CLI logged in** to the platform tenant with rights to create UAMI, assign roles at MG scope, and create blob containers in the state SA | `az account show` |
+| 7 | **PowerShell 7.2+, Terraform `>= 1.15.5` and `< 1.16.0`, Azure CLI 2.64.0+, and GitHub CLI 2.50.0+** | `$PSVersionTable.PSVersion`; `terraform version`; `az version`; `gh version` |
 
 If you're missing item 1 or 2 (testing in a green-field tenant), create a
 minimal MG hierarchy, platform subscription, and state storage account by
@@ -43,22 +44,19 @@ entirely.
 
 ---
 
-## Step 1 — Run the bootstrap wizard
+## Step 1: Run the bootstrap module
 
-The `bootstrap/` module ships an interactive PowerShell wrapper —
-[`Invoke-Bootstrap.ps1`](../bootstrap/Invoke-Bootstrap.ps1) — that
-prompts you for every input it needs, validates each value, persists
-your answers between runs, and finally invokes `terraform init / plan /
-apply`. It is **resumable**: if anything fails (lost network, missing
-permission), re-run the same command and it picks up where it left off.
+The accelerator ships the `SubscriptionVending` PowerShell module as its
+operator entry point. The Terraform engine delegates to
+[`Invoke-Bootstrap.ps1`](../bootstrap/Invoke-Bootstrap.ps1), preserving the
+existing prompts, validation, saved answers, and resumability.
 
 ```powershell
-cd bootstrap
+az login --tenant <your-tenant-id>
+$env:GITHUB_TOKEN = "<your PAT>"
 
-az login --tenant <your-tenant-id>           # az session must match tenant_id below
-$env:GITHUB_TOKEN = "<your PAT>"             # or rely on `gh auth login`
-
-pwsh ./Invoke-Bootstrap.ps1                  # one command, end-to-end
+Import-Module ./powershell/SubscriptionVending/SubscriptionVending.psd1
+Initialize-SubscriptionVending -Engine Terraform
 ```
 
 The wizard runs four phases:

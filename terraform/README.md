@@ -25,7 +25,7 @@ terraform.auto.tfvars ───▶│  Platform context (tenant, MGs,      │
                           ┌────────────────▼─────────────────────┐
                           │  ONE module call →                   │
                           │  Azure/avm-ptn-alz-sub-vending/azure │
-                          │  pinned to v0.2.1                    │
+                          │  pinned to v0.3.1                    │
                           └──────────────────────────────────────┘
 ```
 
@@ -33,13 +33,13 @@ terraform.auto.tfvars ───▶│  Platform context (tenant, MGs,      │
 
 | File | Purpose | Edit when… |
 |---|---|---|
-| [`main.tf`](main.tf) | The **single** `module "subscription"` call into `Azure/avm-ptn-alz-sub-vending/azure` (pinned to `0.2.1` exact). All inputs are pulled from `locals.tf`. | Bumping the AVM module version (always test with `mode=all` first), or exposing a new AVM input. |
+| [`main.tf`](main.tf) | The **single** `module "subscription"` call into `Azure/avm-ptn-alz-sub-vending/azure` (pinned to `0.3.1` exact). All inputs are pulled from `locals.tf`. | Bumping the AVM module version (always test with `mode=all` first), or exposing a new AVM input. |
 | [`archetypes.tf`](archetypes.tf) | Declarative table `local.archetype_config` — per-archetype defaults and guardrails: `force_workload`, `hub_peering_default`, `hub_peering_allow_false`, `budget_required`, `budget_thresholds_*`, `extra_tags`. **This is the only file you change to add or tighten an archetype.** | Adding a new archetype, tightening sandbox budget thresholds, forcing corp to peer to hub, etc. See [`docs/archetypes.md`](../docs/archetypes.md). |
 | [`locals.tf`](locals.tf) | The heavy lifter: parses `sub.yaml`, runs `_assert_*` guardrails (required fields, known archetype, valid `billingScopeKey`, no caller-tag collisions, sandbox requires budget, cost-allocation regex), resolves archetype config + identity tags, computes the final `module "subscription"` input set. | Adding a new optional YAML field (also update the JSON Schema in `landingzones/sub.schema.json`), changing the tag-layering rules, or adding a new guardrail. |
 | [`variables.tf`](variables.tf) | Platform context shared across **every** sub vended from this repo: `tenant_id`, `vending_subscription_id`, `billing_scopes` (map), `management_group_ids` (map per archetype), `hub_virtual_network_resource_id`, `cost_allocation_tag_key` / `_required` / `_pattern`, `mandatory_tags`. Carries validation rules (e.g. `billing_scopes` must contain `default`, hub VNet ID must be a full resource ID). Plus the per-run input `sub_yaml_path`. | Adding a new platform-wide knob (also extend `bootstrap/variables.tf` and `bootstrap/files.tf` so it lands in `terraform.auto.tfvars` automatically). |
 | [`outputs.tf`](outputs.tf) | `subscription_id`, `subscription_resource_id`, `archetype`, `alias_name`, `management_group_id`, `effective_tags`. Consumed by downstream automation (e.g. budget dashboards, audit logs). | Exposing a new value from the AVM module to downstream tooling. |
 | [`providers.tf`](providers.tf) | `azurerm` (pinned to platform sub) + `azapi` (tenant-pinned, used by the AVM module). `storage_use_azuread = true` so the backend uses Entra-ID auth. | Adding a new provider (rare — the AVM module already imports azapi/azurerm). |
-| [`versions.tf`](versions.tf) | `required_version = "1.15.5"`, `azurerm 4.74.0`, `azapi 2.10.0`, `random 3.9.0` (all **exact** pins, no `~>`). | Bumping Terraform or provider versions — must stay in sync with the workflows' `terraform_version` pin. |
+| [`versions.tf`](versions.tf) | `required_version = "~> 1.15.5"` (compatible patch constraint), with exact provider pins: `azurerm 4.74.0`, `azapi 2.10.0`, and `random 3.9.0`. | Bumping Terraform Core or provider versions. Keep the Terraform Core constraint in sync with the workflows' `terraform_version` pin. |
 | [`backend.tf`](backend.tf) | Partial `backend "azurerm"` (only `use_azuread_auth = true`). Every `terraform init` supplies `resource_group_name`, `storage_account_name`, `container_name`, and **`key`** as `-backend-config=` flags so each subscription has its own state file. | Almost never. |
 | `terraform.auto.tfvars` | **Not in the skeleton.** Rendered by `bootstrap/files.tf` and committed to the **seeded** repo only. Carries platform context filled in from operator inputs (tenant ID, billing scopes, MG IDs, hub VNet, cost-allocation tag, mandatory tags). | Day-2 changes — edit it in the seeded repo via PR. The bootstrap is one-shot and is NOT re-run to rotate these values. See [`docs/onboarding.md → "Updating platform inputs after bootstrap"`](../docs/onboarding.md#updating-platform-inputs-after-bootstrap). |
 

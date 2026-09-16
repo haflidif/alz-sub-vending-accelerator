@@ -4,12 +4,15 @@ Two views of this codebase to keep straight:
 
 1. **Skeleton repo** (this checkout) — the template you start from.
    Contains `bootstrap/`, sample `landingzones/<arch>/` YAMLs, the
-   Terraform engine, docs, CI workflows, and the wizard. An operator
+   Terraform engine, docs, CI workflows, PowerShell module, and starter
+   manifests. An operator
    uses this (via "Use this template", or by cloning) to stand up a new
    vending repo.
 2. **Vending repo** — the GitHub repository that `bootstrap/` creates
    (or configures) in your GitHub org. Contains everything
-   the skeleton ships **except** `bootstrap/`, plus a rendered
+   the runtime skeleton ships. Accelerator development assets such as
+   `bootstrap/`, `powershell/`, `starters/`, `tests/`, and proposals are
+   excluded. The vending repo also receives a rendered
    `terraform/terraform.auto.tfvars` carrying platform context, plus
    a generated `.github/CODEOWNERS`. This is where day-to-day vending
    happens.
@@ -40,8 +43,20 @@ subscription-vending/
 │       ├── apply.yml                # Push to main + dispatch → terraform apply
 │       └── pr-validate.yml          # PR → schema validate + fmt + plan
 │
+├── powershell/                      # Accelerator bootstrap interface
+│   └── SubscriptionVending/
+│       ├── SubscriptionVending.psd1 # Module manifest
+│       ├── SubscriptionVending.psm1 # Engine discovery + bootstrap commands
+│       └── README.md                # Module usage
+│
+├── starters/                        # Engine contract and declarations
+│   ├── starter-contract.json        # Required capabilities
+│   ├── starter.schema.json          # Starter manifest schema
+│   ├── terraform/starter.json       # Available Terraform starter
+│   └── bicep/starter.json           # Planned Bicep starter
+│
 ├── bootstrap/                       # ★ Skeleton-only. Operator runs ONCE.
-│   ├── Invoke-Bootstrap.ps1         # ⭐ Interactive wizard (preferred entry)
+│   ├── Invoke-Bootstrap.ps1         # Terraform compatibility implementation
 │   ├── README.md                    # Bootstrap module reference
 │   ├── terraform.tf                 # Provider versions for the bootstrap layer
 │   ├── locals.tf                    # Billing-scope path string resolution
@@ -86,13 +101,18 @@ subscription-vending/
 │   ├── onboarding.md                # ⭐ One-time operator setup
 │   ├── repository-layout.md         # ← you are here
 │   ├── schema-validation.md         # What the schema enforces + where
+│   ├── starter-contract.md          # Terraform/Bicep capability baseline
 │   ├── state-storage.md             # Backend container + per-sub key
 │   ├── tagging.md                   # CAF tag baseline + cost-allocation tag
 │   └── teardown.md                  # Retire a vended subscription
 │
-└── scripts/
-    ├── README.md                    # Local-helper scripts reference
-    └── Reset-LocalState.ps1         # Wipe local operator state
+├── scripts/
+│   ├── README.md                    # Local-helper scripts reference
+│   └── Reset-LocalState.ps1         # Wipe local operator state
+│
+└── tests/
+    └── PowerShell/
+        └── SubscriptionVending.Tests.ps1
 ```
 
 ⭐ = start here for each persona.
@@ -103,13 +123,16 @@ subscription-vending/
 | Path | Skeleton | Vending repo |
 |---|---|---|
 | `bootstrap/` | Present (operator runs it locally) | **Excluded** by `bootstrap/files.tf` from the seed |
+| `powershell/`, `starters/`, `tests/` | Accelerator development and bootstrap assets | **Excluded** |
+| `docs/proposals/`, `docs/starter-contract.md` | Accelerator design material | **Excluded** |
 | `terraform/terraform.auto.tfvars` | Absent (gitignored) | **Rendered by `bootstrap/files.tf`** with platform context |
 | `.github/CODEOWNERS` | Absent | **Rendered from `bootstrap/templates/CODEOWNERS.tftpl`** with operator-chosen teams |
-| Everything else (`terraform/`, `landingzones/`, `docs/`, `scripts/`, `.github/`, `README.md`, etc.) | Source of truth | Verbatim copy via `github_repository_file` |
+| Runtime files (`terraform/`, `landingzones/`, operator docs, `scripts/`, `.github/`, `README.md`, etc.) | Source of truth | Verbatim copy via `github_repository_file` |
 
 `bootstrap/files.tf` enforces these exclusions via
-`skeleton_excluded_prefixes` (`bootstrap/`, `.git/`, `.terraform/`,
-`.vs/`, `.vscode/`, `.devcontainer/`) and `skeleton_excluded_regexes`
+`skeleton_excluded_prefixes` (`bootstrap/`, `powershell/`, `starters/`,
+`tests/`, `docs/proposals/`, `.git/`, `.terraform/`, `.vs/`, `.vscode/`,
+`.devcontainer/`) and `skeleton_excluded_regexes`
 (state files, plans, `.env`, `.DS_Store`, stray shell artefacts).
 
 ## Where to make a change

@@ -9,6 +9,47 @@ template itself, not the AVM module pinned by the engine (see
 
 ## [Unreleased]
 
+### Added
+
+- `SubscriptionVending` PowerShell module as the accelerator entry point, with
+  engine discovery, Terraform bootstrap orchestration, configuration
+  validation, and starter contract validation.
+- Versioned Terraform and Bicep starter manifests with a shared baseline of 26
+  required vending-machine capabilities.
+- Starter manifest JSON Schema and tests that prevent an engine from becoming
+  available while required capabilities remain planned or unsupported.
+- Product direction and delivery proposal documents for the dual-engine
+  accelerator.
+- Accelerator CI checks for the PowerShell module, starter manifests,
+  discovery behavior, and bootstrap Terraform configuration.
+
+### Changed
+
+- Made the PowerShell module the preferred bootstrap interface while retaining
+  `bootstrap/Invoke-Bootstrap.ps1` as the current Terraform implementation.
+- Excluded accelerator development assets, tests, starter metadata, and
+  proposals from generated vending repositories.
+- Updated bootstrap and repository documentation for the module and starter
+  contract.
+- Updated GitHub Actions checkout from version 6 to 7.
+- Updated bootstrap providers to AzureRM 5.0.0, AzureAD 3.9.0, and GitHub
+  6.13.0.
+- Updated the Terraform subscription-vending AVM module from 0.2.1 to 0.3.1.
+- Changed Terraform Core constraints from exact 1.15.5 pins to compatible
+  `~> 1.15.5` patch constraints.
+- Aligned bootstrap preflight with the supported Terraform range, from 1.15.5
+  inclusive to 1.16.0 exclusive.
+
+### Fixed
+
+- Propagated legacy bootstrap exit codes through the PowerShell module.
+- Removed unsafe `-WhatIf` behavior from module initialization and reject it in
+  legacy bootstrap mode. `-PlanOnly` remains the supported preview path.
+- Validated starter contract versions and required file and directory paths.
+- Made shared changes under `terraform/` select every subscription for preview
+  and deployment.
+- Made discovery failures and cancellations fail the final PR validation gate.
+
 ## [0.1.0] - 2026-06-01
 
 A GitHub **template** for Azure Subscription Vending

@@ -1,16 +1,26 @@
-# Bootstrap wizard — `Invoke-Bootstrap.ps1`
+# Subscription-vending bootstrap
 
-Full reference for the interactive PowerShell wrapper around the
-`bootstrap/` Terraform module. The wizard replaces the manual
+Full reference for the PowerShell accelerator entry point and its current
+Terraform implementation. The module replaces the manual
 `Copy-Item terraform.tfvars.example → notepad → terraform init/plan/apply`
-sequence with a guided, resumable flow. Inspired by ALZ Accelerator's
-`Deploy-Accelerator`, but kept deliberately small — single file, no
-module, no abstraction over Terraform.
+sequence with a guided, resumable flow inspired by the ALZ Accelerator.
 
-> 🚀 **TL;DR** — `cd bootstrap; pwsh ./Invoke-Bootstrap.ps1`. The wizard
-> walks you through every input, validates everything against Azure +
-> GitHub APIs, then runs `terraform init / plan / apply`. Re-run the
-> same command to resume if anything fails.
+> 🚀 **TL;DR:** import
+> `powershell/SubscriptionVending/SubscriptionVending.psd1`, then run
+> `Initialize-SubscriptionVending -Engine Terraform`. The module selects the
+> starter and delegates to the existing Terraform wizard. It walks through
+> every input, validates everything against Azure and GitHub APIs, then runs
+> `terraform init / plan / apply`. Re-run the same command to resume.
+
+```powershell
+Import-Module ./powershell/SubscriptionVending/SubscriptionVending.psd1
+Get-SubscriptionVendingEngine
+Initialize-SubscriptionVending -Engine Terraform
+```
+
+The Bicep engine is visible as `Planned` but cannot be selected yet. It will
+be enabled only after its starter provides the required identities, GitHub
+Actions, YAML request handling, validation, preview, and deployment behavior.
 
 > 🧹 **Need to undo a bootstrap** (wrong tenant, wrong repo, typo,
 > abandoned POC)? The same wizard handles teardown — run
@@ -19,17 +29,21 @@ module, no abstraction over Terraform.
 > [Destroying / undoing a bootstrap](#destroying--undoing-a-bootstrap)
 > below.
 
-## When to use the wizard vs the manual flow
+## When to use the module, legacy wizard, or manual flow
 
 | You want… | Use |
 |---|---|
-| First-time bootstrap with input validation, drift detection, and a saved sidecar | Wizard |
+| First-time bootstrap through the accelerator interface | `Initialize-SubscriptionVending -Engine Terraform` |
+| See available and planned engines | `Get-SubscriptionVendingEngine` |
+| Validate an existing sidecar against Azure and GitHub | `Test-SubscriptionVendingConfiguration -InputsPath <path>` |
 | To re-collect inputs without touching Terraform | `Invoke-Bootstrap.ps1 -Phase configure` |
 | A dry-run plan with no apply | `Invoke-Bootstrap.ps1 -PlanOnly` |
+| Destroy an existing Terraform bootstrap | `Invoke-Bootstrap.ps1 -Destroy` |
 | To drive Terraform yourself from a non-PowerShell environment | Manual flow — see [`bootstrap/README.md`](../bootstrap/README.md#usage) |
 
-The wizard and the manual flow leave **identical Terraform state**
-behind. They are interchangeable — the wizard is just a convenience.
+The module, legacy wizard, and manual Terraform flow leave **identical
+Terraform state** behind. The module is now the stable product boundary while
+the legacy script remains the current Terraform implementation.
 
 ## Phases
 
@@ -46,7 +60,7 @@ is `all`.
 
 | Phase | What happens | Re-runnable? | Side effects |
 |---|---|---|---|
-| `preflight` | Verifies `terraform` (≥1.10), `az` (≥2.64), `gh` (≥2.50), `pwsh` (≥7.2). Resolves a GitHub token from `$env:GITHUB_TOKEN` or `gh auth token` (process scope only, never persisted). Verifies `az` session matches the configured tenant. | Always | None — read-only |
+| `preflight` | Verifies Terraform is `>= 1.15.5` and `< 1.16.0`, Azure CLI is 2.64.0 or newer, GitHub CLI is 2.50.0 or newer, and PowerShell is 7.2 or newer. Resolves a GitHub token from `$env:GITHUB_TOKEN` or `gh auth token` without persisting it. Verifies the Azure session matches the configured tenant. | Always | None |
 | `configure` | Prompts you for every bootstrap input, grouped by concern (see [Group reference](#group-reference)). Persists to `bootstrap/.bootstrap-inputs.json` (gitignored) **atomically per group** — Ctrl-C never loses more than one group's progress. On rerun, current values are shown as defaults; press Enter to keep. | Always — keep / edit per group | Writes to `.bootstrap-inputs.json` + rotates `.bak` |
 | `validate` | Calls Azure (resource-group/SA/MG existence) + GitHub (`/user`, `/repos/...`, team/user lookups) to confirm the inputs are sane **before** `terraform apply` discovers them. Catches typos, missing scopes, wrong tenant, MG ID format mistakes. | Always | None — read-only |
 | `terraform` | Renders `terraform.tfvars.json` from the sidecar (drift-aware — warns on hand-edits), runs `terraform init` (with `-reconfigure` when `-Reconfigure` is set), `terraform plan -out=tfplan`, then asks before `apply`. | Always (Terraform handles its own state) | Writes `terraform.tfvars.json`, runs Terraform |
@@ -64,6 +78,10 @@ is `all`.
 | `-InputsPath` | string | `<script-dir>/.bootstrap-inputs.json` | JSON sidecar location. |
 | `-TfvarsPath` | string | `<script-dir>/terraform.tfvars.json` | Rendered tfvars location. |
 | `-ScriptRoot` | string | `$PSScriptRoot` | Bootstrap module directory. Only override for unusual layouts. |
+
+`-WhatIf` is accepted only with destroy or local cleanup. Bootstrap mode rejects
+it because configuration and Terraform initialization are not read-only.
+Use `-PlanOnly` to preview bootstrap changes.
 
 ## Group reference (configure phase)
 
@@ -166,9 +184,14 @@ pwsh ./Invoke-Bootstrap.ps1 -SkipPreflight
 
 ## Implementation notes
 
-The script is intentionally a **single file** (`Invoke-Bootstrap.ps1`) —
-no PowerShell module, no nested scripts, no dot-sourcing. The file is
-organised into nine sections (search for `# Section N --`):
+The module currently provides engine discovery, a stable bootstrap command,
+and configuration validation. For Terraform it calls the existing single-file
+`Invoke-Bootstrap.ps1` implementation. This compatibility boundary lets the
+Terraform path remain stable while a Bicep starter and shared orchestration are
+added incrementally.
+
+The Terraform script is organised into nine sections (search for
+`# Section N --`):
 
 | Section | Purpose |
 |---|---|

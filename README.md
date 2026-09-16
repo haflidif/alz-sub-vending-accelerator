@@ -51,8 +51,19 @@ sub-vending/
 ├── CONTRIBUTING.md
 ├── CHANGELOG.md
 │
+├── powershell/
+│   └── SubscriptionVending/
+│       ├── SubscriptionVending.psd1 # accelerator module manifest
+│       └── SubscriptionVending.psm1 # engine selection + bootstrap commands
+│
+├── starters/
+│   ├── starter-contract.json       # capabilities every available starter needs
+│   ├── starter.schema.json         # versioned starter manifest schema
+│   ├── terraform/starter.json      # current Terraform starter declaration
+│   └── bicep/starter.json          # planned Bicep starter declaration
+│
 ├── bootstrap/                     # ← skeleton-only. Operator runs ONCE.
-│   ├── Invoke-Bootstrap.ps1       # interactive wizard (preferred entry point)
+│   ├── Invoke-Bootstrap.ps1       # Terraform compatibility implementation
 │   ├── terraform.tf, variables.tf
 │   ├── main.tf                    # UAMI + OIDC + RBAC + state container + GitHub config
 │   ├── files.tf                   # seeds skeleton + renders terraform.auto.tfvars
@@ -264,6 +275,9 @@ Topic-by-topic docs in `docs/`:
 | Retire a single vended subscription | [`docs/teardown.md`](docs/teardown.md) |
 | Undo a botched bootstrap (different from above) | [`docs/bootstrap-wizard.md#destroying--undoing-a-bootstrap`](docs/bootstrap-wizard.md#destroying--undoing-a-bootstrap) |
 | Every term defined in one place | [`docs/glossary.md`](docs/glossary.md) |
+| Terraform and Bicep starter capability contract | [`docs/starter-contract.md`](docs/starter-contract.md) |
+| Proposed dual-engine accelerator direction (not implemented) | [`docs/proposals/subscription-vending-accelerator.md`](docs/proposals/subscription-vending-accelerator.md) |
+| Proposed delivery milestones and local PoC | [`docs/proposals/subscription-vending-delivery-plan.md`](docs/proposals/subscription-vending-delivery-plan.md) |
 
 ---
 

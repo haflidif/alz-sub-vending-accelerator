@@ -25,17 +25,17 @@ which one on the first run.
 ## Day 1: bootstrap (15 min)
 
 ```powershell
-cd bootstrap
-
 az login --tenant <your-tenant-id>
 $env:GITHUB_TOKEN = "<your PAT>"   # or rely on `gh auth login`
 
-pwsh ./Invoke-Bootstrap.ps1        # interactive wizard, one command
+Import-Module ./powershell/SubscriptionVending/SubscriptionVending.psd1
+Initialize-SubscriptionVending -Engine Terraform
 ```
 
-The wizard prompts for every input it needs, validates each value against
-Azure and GitHub APIs, and runs `terraform init / plan / apply`. When it
-finishes, it prints:
+The PowerShell module is the accelerator entry point. The Terraform starter
+currently delegates to the proven `bootstrap/Invoke-Bootstrap.ps1` workflow,
+which prompts for every input, validates each value against Azure and GitHub
+APIs, and runs `terraform init / plan / apply`. When it finishes, it prints:
 
 - `uami_principal_id` (needed for the billing-role grant below)
 - `github_repository_full_name` (your new vending repo)
@@ -44,6 +44,15 @@ finishes, it prints:
 [Step 2 in the onboarding doc](docs/onboarding.md#step-2--grant-subscriptioncreator-on-the-billing-scope).
 
 Full bootstrap reference: [`docs/bootstrap-wizard.md`](docs/bootstrap-wizard.md)
+
+To see starter availability:
+
+```powershell
+Get-SubscriptionVendingEngine
+```
+
+The Bicep starter is planned and is reported explicitly as unavailable until
+it implements the same bootstrap and vending capabilities.
 
 ---
 
@@ -102,11 +111,14 @@ In the newly created GitHub repo:
 ## Need help?
 
 If something goes wrong during bootstrap, the wizard is resumable. Just
-re-run `pwsh ./Invoke-Bootstrap.ps1` and it picks up where it left off.
+re-run `Initialize-SubscriptionVending -Engine Terraform` and it picks up
+where it left off.
 
 To undo a bootstrap that went sideways, use destroy mode:
 
 ```powershell
+# The legacy script remains the Terraform lifecycle implementation for now.
+cd bootstrap
 pwsh ./Invoke-Bootstrap.ps1 -Destroy -WhatIf   # preview what would be removed
 pwsh ./Invoke-Bootstrap.ps1 -Destroy            # tear it down
 ```

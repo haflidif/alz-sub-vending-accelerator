@@ -39,12 +39,36 @@ discover_changed() {
       || git fetch --no-tags --prune origin "${BASE#origin/}" >/dev/null 2>&1 \
       || true
   fi
-  git diff --name-only --diff-filter=AM "${BASE}...${HEAD}" -- 'landingzones/*/*.yaml' | sort -u
+
+  if ! git rev-parse --verify --quiet "${BASE}^{commit}" >/dev/null; then
+    echo "::error::BASE does not resolve to a commit: $BASE" >&2
+    return 1
+  fi
+  if ! git rev-parse --verify --quiet "${HEAD}^{commit}" >/dev/null; then
+    echo "::error::HEAD does not resolve to a commit: $HEAD" >&2
+    return 1
+  fi
+
+  local changed
+  changed="$(git diff --name-only "${BASE}...${HEAD}" -- terraform 'landingzones/*/*.yaml')"
+  if grep -Eq '^terraform/.*\.tf(\.json)?$' <<<"$changed"; then
+    discover_all
+  else
+    git diff --name-only --diff-filter=AM "${BASE}...${HEAD}" \
+      -- 'landingzones/*/*.yaml' | sort -u
+  fi
 }
 
+files=()
 case "$MODE" in
-  all)     mapfile -t files < <(discover_all) ;;
-  changed) mapfile -t files < <(discover_changed) ;;
+  all)
+    discovered="$(discover_all)"
+    [[ -z "$discovered" ]] || mapfile -t files <<<"$discovered"
+    ;;
+  changed)
+    discovered="$(discover_changed)"
+    [[ -z "$discovered" ]] || mapfile -t files <<<"$discovered"
+    ;;
   single)
     if [[ -z "$SUB_PATH" ]]; then
       echo "::error::mode=single requires SUB_PATH (e.g. landingzones/corp/prod-corp-erp-001 or landingzones/corp/prod-corp-erp-001.yaml)" >&2
