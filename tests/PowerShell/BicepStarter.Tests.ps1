@@ -3,6 +3,7 @@ Set-StrictMode -Version Latest
 
 $repositoryRoot = Resolve-Path (Join-Path $PSScriptRoot '../..')
 $modulePath = Join-Path $repositoryRoot 'bicep/SubscriptionVending.Bicep.psm1'
+$templatePath = Join-Path $repositoryRoot 'bicep/main.bicep'
 
 function Assert-Equal {
   param($Expected, $Actual, [string] $Message)
@@ -27,6 +28,11 @@ function Assert-Throws {
 
 Import-Module $modulePath -Force
 try {
+  $template = Get-Content -LiteralPath $templatePath -Raw
+  Assert-Equal $true ($template -match "param existingSubscriptionId string = ''") 'Existing-subscription validation input is missing.'
+  Assert-Equal $true ($template -match 'subscriptionAliasEnabled: empty\(existingSubscriptionId\)') 'Subscription creation is not disabled for existing-subscription validation.'
+  Assert-Equal $true ($template -match 'virtualNetworkName: virtualNetworkEnabled \? virtualNetworkName : null') 'Disabled networking must not pass an invalid empty VNet name.'
+
   $platform = @{
     billingScopes = @{
       default = '/providers/Microsoft.Billing/billingAccounts/123/enrollmentAccounts/456'
@@ -46,6 +52,7 @@ try {
       pattern = '^PRJ-[0-9]+$'
     }
     enableTelemetry = $false
+    resourceProviders = @{}
   }
 
   $request = @{
@@ -80,7 +87,7 @@ try {
 
   $result = ConvertTo-BicepSubscriptionParameters -Request $request -Platform $platform -RequestName 'prod-corp-app-001'
   Assert-Equal 'prod-corp-app-001' $result.parameters.subscriptionAliasName.value 'Alias default is incorrect.'
-  Assert-Equal '/providers/Microsoft.Management/managementGroups/contoso-corp' $result.parameters.subscriptionManagementGroupId.value 'Management group selection is incorrect.'
+  Assert-Equal 'contoso-corp' $result.parameters.subscriptionManagementGroupId.value 'Management group selection is incorrect.'
   Assert-Equal $true $result.parameters.virtualNetworkPeeringEnabled.value 'Corp guardrail must force hub peering.'
   Assert-Equal '10.20.1.0/24' $result.parameters.virtualNetworkSubnets.value[0].addressPrefix 'Subnet conversion is incorrect.'
   Assert-Equal 'PRJ-1234' $result.parameters.subscriptionTags.value.projectcode 'Cost allocation tag is missing.'
@@ -89,6 +96,7 @@ try {
   Assert-Equal 'Reader' $result.parameters.roleAssignments.value[0].definition 'Role assignment conversion is incorrect.'
   Assert-Equal 'id-workload' $result.parameters.userAssignedManagedIdentities.value[0].name 'Managed identity conversion is incorrect.'
   Assert-Equal $false $result.parameters.enableTelemetry.value 'Telemetry setting is incorrect.'
+  Assert-Equal 0 $result.parameters.resourceProviders.value.Count 'Explicit resource provider configuration was not preserved.'
 
   $invalidRequest = $request.Clone()
   $invalidRequest.costAllocationCode = 'INVALID'

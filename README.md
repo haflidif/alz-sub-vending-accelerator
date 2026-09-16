@@ -88,6 +88,7 @@ sub-vending/
 ├── bicep/                         # ← planned Bicep engine package
 │   ├── main.bicep                 # pinned AVM sub-vending wrapper
 │   ├── SubscriptionVending.Bicep.psm1
+│   ├── default-resource-providers.json
 │   ├── platform.schema.json
 │   ├── platform.example.json
 │   └── README.md
