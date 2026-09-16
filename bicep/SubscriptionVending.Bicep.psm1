@@ -63,19 +63,22 @@ function ConvertTo-BicepSubscriptionParameters {
       HubPeeringDefault = $true
       HubPeeringAllowFalse = $false
       BudgetRequired = $false
-      BudgetThresholds = @(100)
+      BudgetActualThresholds = @(80)
+      BudgetForecastThresholds = @(100)
     }
     online = @{
       HubPeeringDefault = $false
       HubPeeringAllowFalse = $true
       BudgetRequired = $false
-      BudgetThresholds = @(100)
+      BudgetActualThresholds = @(80)
+      BudgetForecastThresholds = @(100)
     }
     sandbox = @{
       HubPeeringDefault = $false
       HubPeeringAllowFalse = $true
       BudgetRequired = $true
-      BudgetThresholds = @(100)
+      BudgetActualThresholds = @(50, 90)
+      BudgetForecastThresholds = @(100)
     }
   }
 
@@ -228,8 +231,8 @@ function ConvertTo-BicepSubscriptionParameters {
     budgetName = @{ value = if ($budgetEnabled) { "$aliasName-monthly" } else { '' } }
     budgetAmount = @{ value = $budgetAmount }
     budgetContactEmails = @{ value = $budgetContacts }
-    budgetThresholds = @{ value = @($archetypeConfig.BudgetThresholds) }
-    budgetThresholdType = @{ value = 'Forecasted' }
+    budgetActualThresholds = @{ value = @($archetypeConfig.BudgetActualThresholds) }
+    budgetForecastThresholds = @{ value = @($archetypeConfig.BudgetForecastThresholds) }
     enableTelemetry = @{ value = [bool](Get-MapValue -Map $Platform -Key 'enableTelemetry' -Default $true) }
   }
   if (Test-MapKey -Map $Platform -Key 'resourceProviders') {

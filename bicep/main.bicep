@@ -46,12 +46,8 @@ param budgetEnabled bool = false
 param budgetName string = ''
 param budgetAmount int = 100
 param budgetContactEmails array = []
-param budgetThresholds array = [90]
-@allowed([
-  'Actual'
-  'Forecasted'
-])
-param budgetThresholdType string = 'Forecasted'
+param budgetActualThresholds int[] = [80]
+param budgetForecastThresholds int[] = [100]
 
 param resourceProviders object?
 
@@ -85,13 +81,21 @@ module subscriptionVending 'br/public:avm/ptn/lz/sub-vending:0.8.0' = {
     userAssignedIdentityResourceGroupName: userAssignedIdentityResourceGroupName
     userAssignedManagedIdentities: userAssignedManagedIdentities
     userAssignedIdentitiesResourceGroupLockEnabled: false
-    budgetName: budgetEnabled ? budgetName : ''
-    budgetAmount: budgetAmount
-    budgetContactEmails: budgetContactEmails
-    budgetThresholds: budgetThresholds
-    budgetThresholdType: budgetThresholdType
+    budgetName: ''
     resourceProviders: resourceProviders ?? defaultResourceProviders
     enableTelemetry: enableTelemetry
+  }
+}
+
+module subscriptionBudget './modules/budgetWrapper.bicep' = if (budgetEnabled) {
+  name: take('budget-${subscriptionAliasName}-${uniqueString(subscriptionAliasName, deployment().name)}', 64)
+  params: {
+    subscriptionId: subscriptionVending.outputs.subscriptionId
+    name: budgetName
+    amount: budgetAmount
+    contactEmails: budgetContactEmails
+    actualThresholds: budgetActualThresholds
+    forecastThresholds: budgetForecastThresholds
   }
 }
 
@@ -99,3 +103,4 @@ output subscriptionId string = subscriptionVending.outputs.subscriptionId
 output subscriptionResourceId string = subscriptionVending.outputs.subscriptionResourceId
 output failedResourceProviders string = subscriptionVending.outputs.failedResourceProviders
 output failedResourceProviderFeatures string = subscriptionVending.outputs.failedResourceProvidersFeatures
+output budgetResourceId string = subscriptionBudget.?outputs.resourceId ?? ''

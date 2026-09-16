@@ -93,6 +93,8 @@ try {
   Assert-Equal 'PRJ-1234' $result.parameters.subscriptionTags.value.projectcode 'Cost allocation tag is missing.'
   Assert-Equal 500 $result.parameters.budgetAmount.value 'Budget amount is incorrect.'
   Assert-Equal 2 $result.parameters.budgetContactEmails.value.Count 'Budget contacts are incorrect.'
+  Assert-Equal 80 $result.parameters.budgetActualThresholds.value[0] 'Actual budget threshold is incorrect.'
+  Assert-Equal 100 $result.parameters.budgetForecastThresholds.value[0] 'Forecast budget threshold is incorrect.'
   Assert-Equal 'Reader' $result.parameters.roleAssignments.value[0].definition 'Role assignment conversion is incorrect.'
   Assert-Equal 'id-workload' $result.parameters.userAssignedManagedIdentities.value[0].name 'Managed identity conversion is incorrect.'
   Assert-Equal $false $result.parameters.enableTelemetry.value 'Telemetry setting is incorrect.'

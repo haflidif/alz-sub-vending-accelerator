@@ -75,6 +75,8 @@ template itself, not the AVM module pinned by the engine (see
   confirmed the AVM default deployment-script support footprint.
 - Completed non-creating management-group validation and what-if against an
   existing subscription in an ALZ hierarchy.
+- Added a Bicep subscription budget module that preserves separate actual and
+  forecast notification thresholds in one budget resource.
 
 ## [0.1.0] - 2026-06-01
 
