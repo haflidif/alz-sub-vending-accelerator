@@ -23,6 +23,8 @@ template itself, not the AVM module pinned by the engine (see
 - Accelerator CI checks for the PowerShell module, starter manifests,
   discovery behavior, and bootstrap Terraform configuration.
 - Engine package roots and manifest-driven starter package declarations.
+- Initial Bicep runtime package with an Azure Verified Modules sub-vending
+  wrapper, platform schema, and deterministic request compiler.
 
 ### Changed
 
@@ -57,6 +59,12 @@ template itself, not the AVM module pinned by the engine (see
 - Made discovery failures and cancellations fail the final PR validation gate.
 - Rejected attempts to change the starter bound to an existing bootstrap
   sidecar.
+- Added CI validation for the Bicep template, platform configuration example,
+  and request compiler.
+- Made subscription discovery and shared GitHub Actions route preview and
+  deployment through the repository's selected engine.
+- Added bootstrap rendering for Bicep platform configuration and engine
+  metadata repository variables.
 
 ## [0.1.0] - 2026-06-01
 

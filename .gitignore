@@ -34,6 +34,12 @@ terraform.tfvars.json
 !terraform.tfvars.example
 !*/terraform.tfvars.example
 
+# Local Bicep platform inputs and generated deployment artifacts.
+bicep/platform.json
+bicep/main.json
+bicep/request.parameters.json
+bicep/out/
+
 # Interactive-bootstrap sidecar state (operator inputs persisted between runs).
 # Contains tenant/sub/billing IDs — must never be committed.
 .bootstrap-inputs.json

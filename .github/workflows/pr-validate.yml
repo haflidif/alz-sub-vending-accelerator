@@ -69,6 +69,7 @@ jobs:
           MODE: changed
           BASE: origin/${{ github.base_ref }}
           HEAD: ${{ github.event.pull_request.head.sha }}
+          VENDING_ENGINE: ${{ vars.VENDING_ENGINE || 'terraform' }}
         run: bash .github/scripts/discover-subs.sh
 
   # ---------------------------------------------------------------------------
@@ -93,6 +94,8 @@ jobs:
           [[ -d starters ]] || { echo "::error::starters/ is missing"; exit 1; }
           [[ -f tests/PowerShell/SubscriptionVending.Tests.ps1 ]] \
             || { echo "::error::PowerShell accelerator test is missing"; exit 1; }
+          [[ -f tests/PowerShell/BicepStarter.Tests.ps1 ]] \
+            || { echo "::error::Bicep starter test is missing"; exit 1; }
           [[ -f tests/scripts/discover-subs.Tests.sh ]] \
             || { echo "::error::discovery test is missing"; exit 1; }
           echo "available=true" >> "$GITHUB_OUTPUT"
@@ -101,6 +104,29 @@ jobs:
         if: steps.accelerator.outputs.available == 'true'
         shell: pwsh
         run: ./tests/PowerShell/SubscriptionVending.Tests.ps1
+
+      - name: Test Bicep request compiler
+        if: steps.accelerator.outputs.available == 'true'
+        shell: pwsh
+        run: ./tests/PowerShell/BicepStarter.Tests.ps1
+
+      - name: Build Bicep starter
+        if: hashFiles('bicep/main.bicep') != ''
+        shell: bash
+        run: |
+          az bicep install --version v0.47.16
+          az bicep build --file bicep/main.bicep
+
+      - name: Validate Bicep platform example
+        if: hashFiles('bicep/platform.schema.json') != ''
+        shell: bash
+        run: |
+          pipx install 'check-jsonschema==0.37.2'
+          files=(bicep/platform.example.json)
+          [[ ! -f bicep/platform.json ]] || files+=(bicep/platform.json)
+          check-jsonschema \
+            --schemafile bicep/platform.schema.json \
+            "${files[@]}"
 
       - name: Test subscription discovery
         if: steps.accelerator.outputs.available == 'true'
@@ -127,7 +153,7 @@ jobs:
   plan:
     name: Plan ${{ matrix.archetype }}/${{ matrix.name }}
     needs: [schema-validate, discover]
-    if: needs.discover.outputs.count != '0'
+    if: needs.discover.outputs.count != '0' && (vars.VENDING_ENGINE == '' || vars.VENDING_ENGINE == 'terraform')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -202,12 +228,83 @@ jobs:
           path: terraform/tfplan
           retention-days: 7
 
+  bicep-preview:
+    name: What-if ${{ matrix.archetype }}/${{ matrix.name }}
+    needs: [schema-validate, discover]
+    if: needs.discover.outputs.count != '0' && vars.VENDING_ENGINE == 'bicep'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install Bicep request compiler dependencies
+        shell: pwsh
+        run: Install-Module powershell-yaml -RequiredVersion 0.4.12 -Scope CurrentUser -Force
+
+      - name: Compile subscription request
+        shell: pwsh
+        run: |
+          Import-Module ./bicep/SubscriptionVending.Bicep.psm1
+          New-BicepSubscriptionParameters `
+            -RequestPath '${{ matrix.sub_path }}' `
+            -PlatformPath './bicep/platform.json' `
+            -OutputPath './bicep/request.parameters.json'
+
+      - name: Validate and preview Bicep deployment
+        shell: bash
+        run: |
+          az bicep install --version v0.47.16
+          validate_name="$(printf 'validate-%s-%s' '${{ matrix.name }}' '${{ github.run_id }}' | cut -c1-64)"
+          preview_name="$(printf 'preview-%s-%s' '${{ matrix.name }}' '${{ github.run_id }}' | cut -c1-64)"
+          az deployment mg validate \
+            --management-group-id "${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}" \
+            --location "${{ vars.AZURE_DEPLOYMENT_LOCATION }}" \
+            --name "$validate_name" \
+            --template-file bicep/main.bicep \
+            --parameters @bicep/request.parameters.json
+          az deployment mg what-if \
+            --management-group-id "${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}" \
+            --location "${{ vars.AZURE_DEPLOYMENT_LOCATION }}" \
+            --name "$preview_name" \
+            --template-file bicep/main.bicep \
+            --parameters @bicep/request.parameters.json \
+            --no-pretty-print > bicep/what-if.txt
+
+      - name: Comment what-if on PR
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const preview = fs.readFileSync('bicep/what-if.txt', 'utf8');
+            const trimmed = preview.length > 60000 ? preview.slice(0, 60000) + '\n...[truncated]' : preview;
+            const body = `### What-if: \`${{ matrix.archetype }}/${{ matrix.name }}\`\n\n<details><summary>Show preview</summary>\n\n\`\`\`text\n${trimmed}\n\`\`\`\n\n</details>`;
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: what-if-${{ matrix.archetype }}-${{ matrix.name }}
+          path: bicep/what-if.txt
+          retention-days: 7
+
   # ---------------------------------------------------------------------------
   # 4) Final gate - fails the check if any required job failed
   # ---------------------------------------------------------------------------
   result:
     name: PR Validate Result
-    needs: [schema-validate, discover, accelerator-validate, plan]
+    needs: [schema-validate, discover, accelerator-validate, plan, bicep-preview]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -226,6 +323,10 @@ jobs:
           fi
           if [[ "${{ needs.plan.result }}" == "failure" || "${{ needs.plan.result }}" == "cancelled" ]]; then
             echo "One or more plan jobs failed or were cancelled."
+            exit 1
+          fi
+          if [[ "${{ needs.bicep-preview.result }}" == "failure" || "${{ needs.bicep-preview.result }}" == "cancelled" ]]; then
+            echo "One or more Bicep preview jobs failed or were cancelled."
             exit 1
           fi
           echo "All checks completed."

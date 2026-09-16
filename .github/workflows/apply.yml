@@ -15,6 +15,7 @@ on:
     paths:
       - 'landingzones/*/*.yaml'
       - 'terraform/**'
+      - 'bicep/**'
   workflow_dispatch:
     inputs:
       mode:
@@ -60,6 +61,7 @@ jobs:
           SUB_PATH: ${{ inputs.sub_path }}
           BASE:     ${{ github.event.before || 'HEAD~1' }}
           HEAD:     ${{ github.sha }}
+          VENDING_ENGINE: ${{ vars.VENDING_ENGINE || 'terraform' }}
         run: bash .github/scripts/discover-subs.sh
 
   # ---------------------------------------------------------------------------
@@ -68,7 +70,7 @@ jobs:
   apply:
     name: Apply ${{ matrix.archetype }}/${{ matrix.name }}
     needs: discover
-    if: needs.discover.outputs.count != '0'
+    if: needs.discover.outputs.count != '0' && (vars.VENDING_ENGINE == '' || vars.VENDING_ENGINE == 'terraform')
     runs-on: ubuntu-latest
     # Per-sub concurrency: same subscription cannot apply twice in parallel
     # (state-locking would fight us anyway), but different subs run freely.
@@ -133,3 +135,50 @@ jobs:
           path: |
             terraform/tfplan
           retention-days: 30
+
+  bicep-apply:
+    name: Deploy ${{ matrix.archetype }}/${{ matrix.name }}
+    needs: discover
+    if: needs.discover.outputs.count != '0' && vars.VENDING_ENGINE == 'bicep'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: apply-${{ matrix.archetype }}-${{ matrix.name }}
+      cancel-in-progress: false
+    environment: production
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install Bicep request compiler dependencies
+        shell: pwsh
+        run: Install-Module powershell-yaml -RequiredVersion 0.4.12 -Scope CurrentUser -Force
+
+      - name: Compile subscription request
+        shell: pwsh
+        run: |
+          Import-Module ./bicep/SubscriptionVending.Bicep.psm1
+          New-BicepSubscriptionParameters `
+            -RequestPath '${{ matrix.sub_path }}' `
+            -PlatformPath './bicep/platform.json' `
+            -OutputPath './bicep/request.parameters.json'
+
+      - name: Deploy Bicep subscription
+        shell: bash
+        run: |
+          az bicep install --version v0.47.16
+          deployment_name="$(printf 'vend-%s-%s' '${{ matrix.name }}' '${{ github.run_id }}' | cut -c1-64)"
+          az deployment mg create \
+            --management-group-id "${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}" \
+            --location "${{ vars.AZURE_DEPLOYMENT_LOCATION }}" \
+            --name "$deployment_name" \
+            --template-file bicep/main.bicep \
+            --parameters @bicep/request.parameters.json

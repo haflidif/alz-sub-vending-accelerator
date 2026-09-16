@@ -29,11 +29,12 @@ git -C "$test_root" config user.email test@example.com
 git -C "$test_root" config user.name "Discovery Test"
 git -C "$test_root" config commit.gpgsign false
 mkdir -p "$test_root/landingzones/corp" "$test_root/landingzones/online" \
-  "$test_root/terraform" "$test_root/.github/scripts"
+  "$test_root/terraform" "$test_root/bicep" "$test_root/.github/scripts"
 cp "$script_path" "$test_root/.github/scripts/discover-subs.sh"
 printf '{}\n' > "$test_root/landingzones/corp/corp-one.yaml"
 printf '{}\n' > "$test_root/landingzones/online/online-one.yaml"
 printf 'terraform {}\n' > "$test_root/terraform/main.tf"
+printf 'targetScope = '\''managementGroup'\''\n' > "$test_root/bicep/main.bicep"
 git -C "$test_root" add .
 git -C "$test_root" commit -qm "Initial fixture"
 base="$(git -C "$test_root" rev-parse HEAD)"
@@ -82,6 +83,21 @@ output="$test_root/terraform-output.txt"
 assert_count 2 "$output"
 grep -q 'corp-one' "$output" || fail "Terraform change omitted corp subscription"
 grep -q 'online-one' "$output" || fail "Terraform change omitted online subscription"
+
+base="$head"
+printf '# changed\n' >> "$test_root/bicep/main.bicep"
+git -C "$test_root" add .
+git -C "$test_root" commit -qm "Change Bicep"
+head="$(git -C "$test_root" rev-parse HEAD)"
+output="$test_root/bicep-output.txt"
+(
+  cd "$test_root"
+  MODE=changed VENDING_ENGINE=bicep BASE="$base" HEAD="$head" GITHUB_OUTPUT="$output" \
+    bash .github/scripts/discover-subs.sh
+)
+assert_count 2 "$output"
+grep -q 'corp-one' "$output" || fail "Bicep change omitted corp subscription"
+grep -q 'online-one' "$output" || fail "Bicep change omitted online subscription"
 
 output="$test_root/invalid-base-output.txt"
 if (

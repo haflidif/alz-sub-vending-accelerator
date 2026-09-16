@@ -23,6 +23,12 @@ MODE="${MODE:-changed}"
 BASE="${BASE:-origin/main}"
 HEAD="${HEAD:-HEAD}"
 SUB_PATH="${SUB_PATH:-}"
+VENDING_ENGINE="${VENDING_ENGINE:-terraform}"
+
+case "$VENDING_ENGINE" in
+  terraform|bicep) ;;
+  *) echo "::error::unknown VENDING_ENGINE: $VENDING_ENGINE" >&2; exit 1 ;;
+esac
 
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
@@ -50,8 +56,12 @@ discover_changed() {
   fi
 
   local changed
-  changed="$(git diff --name-only "${BASE}...${HEAD}" -- terraform 'landingzones/*/*.yaml')"
-  if grep -Eq '^terraform/.*\.tf(\.json)?$' <<<"$changed"; then
+  changed="$(git diff --name-only "${BASE}...${HEAD}" -- "$VENDING_ENGINE" 'landingzones/*/*.yaml')"
+  if [[ "$VENDING_ENGINE" == "terraform" ]] \
+    && grep -Eq '^terraform/.*\.tf(\.json)?$' <<<"$changed"; then
+    discover_all
+  elif [[ "$VENDING_ENGINE" == "bicep" ]] \
+    && grep -Eq '^bicep/.*(\.bicep|\.psm1|/platform\.json)$' <<<"$changed"; then
     discover_all
   else
     git diff --name-only --diff-filter=AM "${BASE}...${HEAD}" \
