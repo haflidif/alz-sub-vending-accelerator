@@ -158,6 +158,7 @@ exit 9
 
   & pwsh -NoLogo -NoProfile -File $legacyBootstrapPath -Phase configure -WhatIf 2>$null
   Assert-Equal 1 $LASTEXITCODE 'Legacy bootstrap must reject unsafe WhatIf usage in bootstrap mode.'
+  $global:LASTEXITCODE = 0
 
   Write-Host 'SubscriptionVending module tests passed.' -ForegroundColor Green
 }
