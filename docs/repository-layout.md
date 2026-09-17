@@ -100,7 +100,7 @@ subscription-vending/
 ├── docs/                            # ★ Topic-by-topic reference
 │   ├── architecture.md              # End-to-end design
 │   ├── archetypes.md                # corp / online / sandbox + add new
-│   ├── billing-scopes.md            # EA / MCA / MPA path formats + billing_scopes map
+│   ├── billing-scopes.md            # EA / MCA / MPA paths and engine configuration
 │   ├── bootstrap-wizard.md          # Invoke-Bootstrap.ps1 full reference
 │   ├── first-vend.md                # ⭐ Vend your first subscription (consumer)
 │   ├── glossary.md                  # Every term defined

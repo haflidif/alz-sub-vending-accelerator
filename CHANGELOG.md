@@ -4,8 +4,8 @@ All notable changes to the Azure Subscription Vending accelerator.
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and [Semantic Versioning](https://semver.org/). Versions track the accelerator
-template itself, not the AVM module pinned by the engine (see
-`terraform/main.tf` for the AVM module pin).
+template itself, not the AVM modules pinned by the engines. See
+`terraform/main.tf` and `bicep/main.bicep`.
 
 ## [Unreleased]
 
@@ -54,6 +54,9 @@ template itself, not the AVM module pinned by the engine (see
   bootstrap, persisted `starter_name`, and exposed it as a Terraform output.
 - Updated operator, architecture, CI/CD, tagging, billing, schema, repository,
   and teardown documentation for the available Terraform and Bicep engines.
+- Completed a repository-wide documentation audit, corrected remaining
+  Terraform-only wording in shared guidance, and clearly labeled
+  engine-specific state and bootstrap instructions.
 
 ### Fixed
 

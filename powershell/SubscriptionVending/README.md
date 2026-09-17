@@ -26,11 +26,11 @@ Starter availability comes from the versioned manifests under `starters/`.
 See [`docs/starter-contract.md`](../../docs/starter-contract.md) for the
 required capability baseline.
 
-Run only one Terraform bootstrap phase:
+Run only one shared bootstrap phase:
 
 ```powershell
 Initialize-SubscriptionVending `
-  -Engine Terraform `
+  -Engine Bicep `
   -Phase validate `
   -NonInteractive `
   -InputsPath ./bootstrap/.bootstrap-inputs.json
@@ -40,7 +40,7 @@ Validate an existing configuration:
 
 ```powershell
 Test-SubscriptionVendingConfiguration `
-  -Engine Terraform `
+  -Engine Bicep `
   -InputsPath ./bootstrap/.bootstrap-inputs.json
 ```
 

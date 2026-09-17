@@ -1,6 +1,6 @@
 <!--
 Thanks for contributing! Fill in the relevant sections below.
-The schema-validation and plan jobs will run automatically.
+Schema validation and the selected engine preview run automatically.
 -->
 
 ## Summary
@@ -26,14 +26,14 @@ If this PR adds or modifies a `landingzones/<archetype>/*.yaml` file:
 - [ ] `owner` is set (business-owner email, required by schema)
 - [ ] For sandbox: `budget.amount` is set (schema-required)
 - [ ] Tags do not collide with reserved keys (see `docs/tagging.md`)
-- [ ] Reviewed the **PR plan output** in Actions before requesting review
+- [ ] Reviewed the Terraform plan or Bicep what-if output before requesting review
 
-## Skeleton change checklist
+## Accelerator change checklist
 
 If this PR modifies anything outside `landingzones/`:
 
 - [ ] No tenant-specific or environment-specific values in code, defaults, or docs
-- [ ] `terraform fmt` / `terraform validate` clean
+- [ ] Relevant Terraform, Bicep, PowerShell, discovery, and schema checks pass
 - [ ] Schema (`landingzones/sub.schema.json`) updated if new YAML fields were added
 - [ ] Docs in `docs/` updated to match behaviour change
 - [ ] No new required variable without a sensible default or doc update

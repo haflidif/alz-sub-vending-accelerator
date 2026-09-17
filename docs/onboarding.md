@@ -24,10 +24,12 @@ minimal MG hierarchy, platform subscription, and state storage account by
 any means first. If you already have an Azure Landing Zone, skip this
 entirely.
 
-> ### One Terraform layer in the skeleton
+> ### One shared Terraform bootstrap layer
 >
-> The skeleton ships **one** Terraform layer that the
-> operator runs locally: [`bootstrap/`](../bootstrap/). It creates the
+> The skeleton ships **one** Terraform bootstrap layer that the
+> operator runs locally:
+> [`bootstrap/`](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/tree/main/bootstrap).
+> It creates the
 > pipeline UAMI, OIDC federation, MG-scoped RBAC, GitHub repo + branch
 > protection + production environment, and seeds the vending skeleton
 > into that new repo with either `terraform/terraform.auto.tfvars` or
@@ -50,7 +52,7 @@ entirely.
 The accelerator ships the `SubscriptionVending` PowerShell module as its
 operator entry point. Select Terraform or Bicep when creating the vending
 repository. Both engines delegate the one-time repository and identity setup
-to [`Invoke-Bootstrap.ps1`](../bootstrap/Invoke-Bootstrap.ps1), preserving
+to [`Invoke-Bootstrap.ps1`](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/Invoke-Bootstrap.ps1), preserving
 the existing prompts, validation, saved answers, and resumability.
 
 ```powershell
@@ -89,8 +91,8 @@ When the wizard finishes, capture these outputs from
 | `github_repository_full_name` | Your new vending repo |
 | `next_step_billing_role` | A copy-paste reminder of step 2 |
 
-Detailed reference of every resource the bootstrap creates is in
-[`bootstrap/README.md`](../bootstrap/README.md).
+The [bootstrap reference](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md)
+describes every resource the bootstrap creates.
 
 ### Useful wizard flags
 
@@ -322,8 +324,10 @@ for the full schema.
 The bootstrap is the **only supported** path. If you need to inspect or
 reproduce its actions by hand (e.g. for an audit, or because your
 environment forbids running Terraform from a workstation), see
-[`bootstrap/main.tf`](../bootstrap/main.tf) — every resource is named
-explicitly and described in [`bootstrap/README.md`](../bootstrap/README.md).
+[`bootstrap/main.tf`](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/main.tf)
+names every resource explicitly. The
+[bootstrap reference](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md)
+describes them.
 The Terraform-side resources (UAMI, FICs, role assignments, state
 container) all have direct `az` / Azure REST equivalents; the GitHub-side
 resources (repo variables, environment, branch protection, file seeding)

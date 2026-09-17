@@ -94,9 +94,9 @@ If one matrix item failed but the rest succeeded, you don't need a new PR:
 
 ## 6. Modifying an existing sub
 
-Edit the YAML and open a PR. The PR plan shows exactly what will change in
-Azure (e.g. new role assignment, additional VNet, tag updates). Apply
-follows the same merge → environment gate path.
+Edit the YAML and open a PR. Terraform plan or Bicep what-if shows what will
+change in Azure, such as a new role assignment, VNet, or tag. Deployment
+follows the same merge and environment-gate path.
 
 > Note: deleting a YAML does **not** delete the Azure subscription. To
 > retire a sub, see [`teardown.md`](teardown.md).

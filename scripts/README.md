@@ -11,6 +11,10 @@ Local helpers — PowerShell only. Each script is self-contained,
 
 ## `Reset-LocalState.ps1`
 
+This helper targets the shared Terraform-based bootstrap and Terraform runtime
+artifacts. Bicep compiler output under `bicep/out/` is gitignored but is not
+removed by this script.
+
 ### What it removes
 
 | Category | Pattern (any depth under the working-tree root) |

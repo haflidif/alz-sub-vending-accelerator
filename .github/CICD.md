@@ -136,6 +136,6 @@ down — see
 
 - [`docs/onboarding.md`](../docs/onboarding.md) — one-time operator setup
 - [`docs/first-vend.md`](../docs/first-vend.md) — vend your first sub
-- [`bootstrap/README.md`](../bootstrap/README.md) — what `bootstrap/` creates
+- [Bootstrap reference](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md)
 - [`docs/state-storage.md`](../docs/state-storage.md) — backend container + per-sub key
 - [GitHub OIDC with Azure](https://docs.github.com/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-azure)
