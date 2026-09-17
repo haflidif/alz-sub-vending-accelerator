@@ -11,6 +11,11 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Added
 
+- Visible Bicep deployment progress with periodic Azure provisioning-state
+  updates instead of a silent long-running CLI command.
+- Terraform and Bicep apply summaries containing the final subscription ID,
+  deployment status, and engine-specific operational outputs.
+- Bicep deployment response artifacts for successful and failed runs.
 - `SubscriptionVending` PowerShell module as the accelerator entry point, with
   engine discovery, Terraform bootstrap orchestration, configuration
   validation, and starter contract validation.

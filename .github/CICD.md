@@ -54,8 +54,18 @@ to Bicep templates, the request compiler, `platform.json`, or
    subscriptions in parallel:
    - Logs into Azure via `azure/login@v3` using OIDC against the operator's UAMI (FIC matches the trigger — branch / PR / environment).
    - Terraform initializes the per-sub backend, creates a saved plan, applies
-     it, and uploads the plan artifact.
-   - Bicep compiles the YAML request and runs `az deployment mg create`.
+     it, captures structured Terraform outputs, and uploads the plan and
+     output artifacts.
+   - Bicep compiles the YAML request, starts `az deployment mg create`
+     asynchronously, and reports the Azure provisioning state every 30
+     seconds.
+
+Both engines publish a GitHub job summary containing the request path,
+deployment status, subscription ID, and engine-specific operational details.
+The Bicep summary also reports the stable deployment name, budget resource ID,
+and any resource-provider registration failures. Failed Bicep deployments add
+the Azure error object to the summary and retain the deployment response as an
+artifact.
 
 The `production` GitHub Environment gates every job in this matrix —
 required reviewers are configured by `bootstrap/` from
