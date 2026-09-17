@@ -25,6 +25,7 @@ location                 = "westeurope"
 
 # -----------------------------------------------------------------------------
 # Existing platform Terraform state storage account
+# Required only when starter_name = "terraform". Omit these values for Bicep.
 # -----------------------------------------------------------------------------
 state_storage_account_resource_group_name = "rg-platform-tfstate-prod"
 state_storage_account_name                = "stplatformtfstate"

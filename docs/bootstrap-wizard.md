@@ -95,7 +95,7 @@ than one group.
 | # | Group | What it asks | Validation |
 |---|---|---|---|
 | 1 | `IdentityLocation` | `tenant_id`, `platform_subscription_id`, `location`, `uami_resource_group_name`, `uami_name` | GUID format, Azure-region name |
-| 2 | `State` | `state_storage_account_resource_group_name`, `state_storage_account_name`, `state_container_name` | Storage-account naming rules (3-24 lowercase alphanumeric) |
+| 2 | `State` | Terraform only: `state_storage_account_resource_group_name`, `state_storage_account_name`, `state_container_name` | Storage-account naming rules (3-24 lowercase alphanumeric) |
 | 3 | `Rbac` | `alz_root_management_group_id`, `connectivity_subscription_id`, `grant_user_access_administrator` | Bare MG name (not a full resource ID), GUID for sub IDs |
 | 4 | `GitHubRepo` | `github_owner`, `github_repository_name`, `github_repository_visibility`, `github_default_branch`, `create_github_repository` | GitHub handle format |
 | 5 | `BranchProtection` | `enforce_branch_protection`, `branch_protection_required_status_checks`, `branch_protection_required_approving_review_count` | Non-empty check names |
@@ -315,7 +315,7 @@ Enforced regardless of `-AutoApprove` or `-NonInteractive`:
 
 1. **Role assignments granted to the UAMI's `principalId`** — must be
    removed first so role-assignment orphans don't outlive the UAMI:
-   - `Storage Blob Data Contributor` on the state container
+   - Terraform only: `Storage Blob Data Contributor` on the state container
    - `Management Group Contributor` on the ALZ root MG
    - `User Access Administrator` on the ALZ root MG (when
      `grant_user_access_administrator = true`)
@@ -329,8 +329,8 @@ Enforced regardless of `-AutoApprove` or `-NonInteractive`:
 2. **3 Federated Identity Credentials** on the UAMI — deleted
    implicitly when the UAMI itself is removed (Azure cascades).
 3. **The pipeline UAMI**.
-4. **State container** (opt-in only via `-IncludeStateContainer`, and
-   only when empty).
+4. **Terraform state container** (Terraform starter only, opt-in via
+   `-IncludeStateContainer`, and only when empty).
 
 The script **never** touches the state storage account, the resource
 group that holds the UAMI, the platform subscription, or any
@@ -341,10 +341,12 @@ Management Group.
 1. **Branch protection rule** on the default branch (usually `main`).
 2. **`production` Environment** (or whatever
    `production_environment_name` was set to).
-3. **Six managed Actions repository variables**:
+3. **Managed Actions repository variables**:
    - `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`
-   - `BACKEND_RESOURCE_GROUP_NAME`, `BACKEND_STORAGE_ACCOUNT_NAME`,
-     `BACKEND_CONTAINER_NAME`
+   - `VENDING_ENGINE`, `ALZ_ROOT_MANAGEMENT_GROUP_ID`,
+     `AZURE_DEPLOYMENT_LOCATION`
+   - Terraform only: `BACKEND_RESOURCE_GROUP_NAME`,
+     `BACKEND_STORAGE_ACCOUNT_NAME`, `BACKEND_CONTAINER_NAME`
 
    Other variables (if any) are left alone.
 4. **The repository itself** (opt-in only via `-IncludeGitHubRepo`).

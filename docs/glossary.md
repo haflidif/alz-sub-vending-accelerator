@@ -187,15 +187,15 @@ later, day-2 PRs against the seeded vending repo). Distinct from
 
 ## P
 
-**Platform subscription**: The subscription that owns the pipeline UAMI and
-the bootstrap's state storage account. Often called the management
+**Platform subscription**: The subscription that owns the pipeline UAMI and,
+for Terraform, the runtime state storage account. Often called the management
 subscription. The bootstrap uses `platform_subscription_id` for this value.
 
 **Pre-bootstrap** — The green-field prerequisites that must exist before
-`bootstrap/` runs: a root MG hierarchy, a platform subscription, a state
-storage account, and optionally a hub VNet. On a green-field POC tenant you
-create these by any means; if you already have an Azure Landing Zone they
-already exist.
+`bootstrap/` runs: a root MG hierarchy, a platform subscription, and
+optionally a hub VNet. Terraform also requires a state storage account. On a
+green-field POC tenant you create these by any means; if you already have an
+Azure Landing Zone they usually exist.
 
 ## S
 

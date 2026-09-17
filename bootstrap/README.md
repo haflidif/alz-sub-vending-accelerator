@@ -40,9 +40,10 @@ repository.
   - `repo:<owner>/<repo>:ref:refs/heads/main`
   - `repo:<owner>/<repo>:pull_request`
   - `repo:<owner>/<repo>:environment:production`
-- `subvending-tfstate` container in the **existing** platform state SA
+- Terraform starter only: `subvending-tfstate` container in the existing
+  platform state SA
 - Role assignments for the UAMI:
-  - `Storage Blob Data Contributor` on the container (least privilege)
+  - Terraform starter only: `Storage Blob Data Contributor` on the container
   - `Management Group Contributor` on the ALZ root MG
   - `User Access Administrator` on the ALZ root MG (toggleable)
   - `Network Contributor` on the **hub VNet's resource group** (RG-scoped, not subscription-wide). Skipped entirely if `hub_virtual_network_resource_id` is not set.
@@ -56,7 +57,8 @@ repository.
   - `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`
   - `VENDING_ENGINE`, `ALZ_ROOT_MANAGEMENT_GROUP_ID`,
     `AZURE_DEPLOYMENT_LOCATION`
-  - `BACKEND_RESOURCE_GROUP_NAME`, `BACKEND_STORAGE_ACCOUNT_NAME`, `BACKEND_CONTAINER_NAME`
+  - Terraform starter only: `BACKEND_RESOURCE_GROUP_NAME`,
+    `BACKEND_STORAGE_ACCOUNT_NAME`, `BACKEND_CONTAINER_NAME`
 - `production` Environment with required reviewers and `protected_branches` policy
 - **Seeds the repo with the runtime skeleton**: the selected engine package,
   `landingzones/` examples, operator docs, `.github/workflows/`, `README.md`,
@@ -74,9 +76,9 @@ repository.
 
 ## What it does NOT do (deliberately)
 
-- **Does not create or mutate the platform state SA.** It only creates the
-  container inside it, so you keep the SA's settings (versioning, soft-delete,
-  network rules, CMK) under whatever pipeline owns it.
+- **Does not create or mutate the platform state SA.** For Terraform, it only
+  creates the runtime state container inside the existing account. Bicep does
+  not look up the account or create a container.
 - **Does not grant the billing-scope `SubscriptionCreator` role.** That requires
   the upstream
   [`Grant-SubscriptionCreatorRole.ps1`][grant] from the ALZ PowerShell module
@@ -94,7 +96,8 @@ repository.
 - A GitHub PAT exported as `GITHUB_TOKEN` with scopes:
   - `repo` (always)
   - `admin:org` (only if `create_github_repository = true` and the repo lives in an org)
-- The platform state SA already exists and has Entra-ID auth enabled.
+- Terraform starter only: the platform state SA already exists and has
+  Entra-ID auth enabled.
 
 ## Usage
 
@@ -180,9 +183,10 @@ Source layout under `bootstrap/`:
 | [`terraform.tf`](terraform.tf) | Bootstrap provider pins: `azurerm 5.0.0`, `azuread 3.9.0`, and `github 6.13.0`. Terraform Core uses the compatible patch constraint `~> 1.15.5`. Configures `azurerm` against `platform_subscription_id` with `storage_use_azuread`, pins `azuread` to `tenant_id`, and reads `GITHUB_TOKEN` from the environment. |
 | [`variables.tf`](variables.tf) | ~20 inputs across identity/location, state, RBAC, GitHub repo, branch protection, production env, billing scopes (map with EA/MCA/MPA per entry), MG IDs, cost allocation, mandatory tags, CODEOWNERS, skeleton seeding. Validation rules enforce billing-scope structure, MG ID format, GitHub handles, tag-key naming. |
 | [`locals.tf`](locals.tf) | Resolves each `billing_scopes` entry into the full Azure billing scope path string. EA → `enrollmentAccounts/...`, MCA → `billingProfiles/.../invoiceSections/...`, MPA → `customers/...`. |
-| [`main.tf`](main.tf) | UAMI + 3 FICs (branch / PR / production env) + state container + 4 role assignments (Storage Blob Data Contributor on the container, MG Contributor + optional UAA on the ALZ root MG, Network Contributor RG-scoped on the hub VNet's RG) + optional `github_repository` create + Actions variables + `production` environment + branch protection. |
+| [`main.tf`](main.tf) | UAMI + 3 FICs, MG and network RBAC, optional Terraform state container and blob RBAC, optional repository creation, Actions variables, production environment, and branch protection. |
+| [`migrations.tf`](migrations.tf) | State-address migrations that preserve existing Terraform bootstrap resources after engine-conditional resources were introduced. |
 | [`files.tf`](files.tf) | Seeds shared runtime files plus the selected engine package, renders `terraform/terraform.auto.tfvars` or `bicep/platform.json`, and renders `.github/CODEOWNERS`. |
-| [`outputs.tf`](outputs.tf) | Selected starter, UAMI identifiers, state container, GitHub repository, and `next_step_billing_role` (a pre-filled `Grant-SubscriptionCreatorRole` snippet per billing scope). |
+| [`outputs.tf`](outputs.tf) | Selected starter, UAMI identifiers, optional Terraform state container, GitHub repository, and `next_step_billing_role`. |
 | [`templates/CODEOWNERS.tftpl`](templates/CODEOWNERS.tftpl) | Single template rendered with the operator's `codeowners_default_team` + `codeowners_archetype_teams`. Only the **rendered** file lands in the seeded repo. |
 | [`Invoke-Bootstrap.ps1`](Invoke-Bootstrap.ps1) | The interactive wizard. Handles both **create** (bootstrap; default) and **destroy** (`-Destroy`; with optional `-IncludeStateContainer`, `-IncludeGitHubRepo`, `-CleanBootstrapFolder`, standard `-WhatIf`). 9 + 1 sections; see [`docs/bootstrap-wizard.md → Implementation notes`](../docs/bootstrap-wizard.md#implementation-notes) and [`docs/bootstrap-wizard.md → Destroying / undoing a bootstrap`](../docs/bootstrap-wizard.md#destroying--undoing-a-bootstrap). |
 | [`terraform.tfvars.example`](terraform.tfvars.example) | Schema-correct example — copy to `terraform.tfvars` for the manual flow, or use the wizard which writes a JSON sidecar instead. |

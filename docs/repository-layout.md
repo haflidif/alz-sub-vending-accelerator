@@ -16,10 +16,10 @@ Two views of this codebase to keep straight:
    its rendered platform configuration, plus a generated
    `.github/CODEOWNERS`. This is where day-to-day vending happens.
 
-For a green-field tenant you also need an MG hierarchy, a platform
-subscription, and a state storage account in place before running
-`bootstrap/`. Create those by any means for POC/test use; if you already
-have an Azure Landing Zone, they exist already.
+For a green-field tenant you also need an MG hierarchy and a platform
+subscription before running `bootstrap/`. The Terraform starter additionally
+needs a state storage account. Create those by any means for POC/test use; if
+you already have an Azure Landing Zone, they usually exist already.
 
 ## Full directory tree (skeleton)
 

@@ -11,6 +11,8 @@ data "azurerm_resource_group" "uami" {
 }
 
 data "azurerm_storage_account" "state" {
+  count = var.starter_name == "terraform" ? 1 : 0
+
   name                = var.state_storage_account_name
   resource_group_name = var.state_storage_account_resource_group_name
 }
@@ -56,13 +58,15 @@ resource "azurerm_federated_identity_credential" "pipeline" {
 }
 
 ###############################################################################
-# State container — owned by bootstrap. The platform storage account already
-# exists (provisioned by the platform LZ); we only add our own container.
+# Terraform runtime state container. The platform storage account already
+# exists; the Bicep starter skips this resource.
 ###############################################################################
 
 resource "azurerm_storage_container" "tfstate" {
+  count = var.starter_name == "terraform" ? 1 : 0
+
   name                  = var.state_container_name
-  storage_account_id    = data.azurerm_storage_account.state.id
+  storage_account_id    = data.azurerm_storage_account.state[0].id
   container_access_type = "private"
 }
 
@@ -70,9 +74,11 @@ resource "azurerm_storage_container" "tfstate" {
 # Azure RBAC for the pipeline identity
 ###############################################################################
 
-# Container-scoped (least privilege) for state read/write
+# Terraform-only, container-scoped state read/write
 resource "azurerm_role_assignment" "state_blob_contributor" {
-  scope                = azurerm_storage_container.tfstate.id
+  count = var.starter_name == "terraform" ? 1 : 0
+
+  scope                = azurerm_storage_container.tfstate[0].id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_user_assigned_identity.pipeline.principal_id
   principal_type       = "ServicePrincipal"
@@ -192,21 +198,27 @@ resource "github_actions_variable" "azure_deployment_location" {
 }
 
 resource "github_actions_variable" "backend_resource_group" {
+  count = var.starter_name == "terraform" ? 1 : 0
+
   repository    = local.github_repo_name
   variable_name = "BACKEND_RESOURCE_GROUP_NAME"
   value         = var.state_storage_account_resource_group_name
 }
 
 resource "github_actions_variable" "backend_storage_account" {
+  count = var.starter_name == "terraform" ? 1 : 0
+
   repository    = local.github_repo_name
   variable_name = "BACKEND_STORAGE_ACCOUNT_NAME"
   value         = var.state_storage_account_name
 }
 
 resource "github_actions_variable" "backend_container" {
+  count = var.starter_name == "terraform" ? 1 : 0
+
   repository    = local.github_repo_name
   variable_name = "BACKEND_CONTAINER_NAME"
-  value         = azurerm_storage_container.tfstate.name
+  value         = azurerm_storage_container.tfstate[0].name
 }
 
 ###############################################################################

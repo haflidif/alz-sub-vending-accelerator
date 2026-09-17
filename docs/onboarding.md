@@ -12,16 +12,16 @@ vended. After this is done, day-to-day vending happens via PRs — see
 | # | Requirement | How to verify |
 |---|---|---|
 | 1 | **ALZ deployed** — root MG with `corp`/`online`/`sandbox` (or your equivalent) child MGs | `az account management-group list -o table` |
-| 2 | **Platform/management subscription** with a Terraform state storage account (typically deployed by the [ALZ Terraform Accelerator](https://github.com/Azure/alz-terraform-accelerator)) | `az storage account list --subscription <mgmt-sub> -o table` |
+| 2 | **Platform/management subscription**. Terraform also requires an existing state storage account, typically deployed by the [ALZ Terraform Accelerator](https://github.com/Azure/alz-terraform-accelerator). | `az account show`; for Terraform, `az storage account list --subscription <mgmt-sub> -o table` |
 | 3 | **Billing scope** ID(s) — EA enrollment account, MCA invoice section, or MPA customer | `az billing account list -o table` (full discovery commands in [`docs/billing-scopes.md`](billing-scopes.md)) |
 | 4 | **Optional: hub VNet** — full Azure resource ID if you peer corp/online subs to it | `az network vnet show --ids <id>` |
 | 5 | **GitHub org** + a **PAT** with `repo` (and `admin:org` if creating a new repo) | `gh auth status` |
-| 6 | **Az CLI logged in** to the platform tenant with rights to create UAMI, assign roles at MG scope, and create blob containers in the state SA | `az account show` |
+| 6 | **Az CLI logged in** to the platform tenant with rights to create UAMI and assign roles at MG scope. Terraform also needs permission to create a blob container. | `az account show` |
 | 7 | **PowerShell 7.2+, Terraform `>= 1.15.5` and `< 1.16.0`, Azure CLI 2.64.0+, and GitHub CLI 2.50.0+** | `$PSVersionTable.PSVersion`; `terraform version`; `az version`; `gh version` |
 
 If you're missing item 1 or 2 (testing in a green-field tenant), create a
-minimal MG hierarchy, platform subscription, and state storage account by
-any means first. If you already have an Azure Landing Zone, skip this
+minimal MG hierarchy and platform subscription by any means first. Add a state
+storage account when testing Terraform. If you already have an Azure Landing Zone, skip this
 entirely.
 
 > ### One shared Terraform bootstrap layer
@@ -37,13 +37,13 @@ entirely.
 > It is idempotent and safe to re-run.
 >
 > For green-field POC tenants you'll first need the prerequisites (root MG
-> hierarchy, platform/management subscription, state storage account) in
+> hierarchy and platform/management subscription) in
 > place so `bootstrap/` has something to bind to — create them by any
 > means. **If you already have an Azure Landing Zone, you don't need this
 > step.**
 >
-> Once those prerequisites exist, pass their values (state SA name,
-> platform subscription ID) to `bootstrap/` as inputs.
+> Once those prerequisites exist, pass their values to `bootstrap/`. State
+> storage inputs are collected only for Terraform.
 
 ---
 

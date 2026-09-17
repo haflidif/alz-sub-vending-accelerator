@@ -19,8 +19,8 @@ output "uami_resource_id" {
 }
 
 output "state_container_name" {
-  value       = azurerm_storage_container.tfstate.name
-  description = "Created Terraform state container (in the platform storage account)."
+  value       = try(azurerm_storage_container.tfstate[0].name, null)
+  description = "Created Terraform runtime state container, or null for the Bicep starter."
 }
 
 output "github_repository_full_name" {

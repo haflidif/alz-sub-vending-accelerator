@@ -60,6 +60,10 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Fixed
 
+- Stopped Bicep bootstraps from requiring or creating Terraform runtime state
+  storage, blob RBAC, or backend GitHub variables.
+- Fixed bootstrap plan-file argument handling so Terraform writes and applies
+  the intended `tfplan` file on PowerShell 7.
 - Made Bicep platform configuration and default resource-provider changes
   select every subscription in PR validation and apply workflows.
 - Added discovery regression coverage for Bicep platform-wide files and
