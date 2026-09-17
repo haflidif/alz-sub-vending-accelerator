@@ -64,6 +64,14 @@ template itself, not the AVM modules pinned by the engines. See
   storage, blob RBAC, or backend GitHub variables.
 - Fixed bootstrap plan-file argument handling so Terraform writes and applies
   the intended `tfplan` file on PowerShell 7.
+- Stabilized repository seeding so local bootstrap state created during apply
+  cannot change the package file set.
+- Granted production reviewer teams repository access before configuring the
+  GitHub environment protection rule.
+- Rendered CODEOWNERS for only the runtime engine included in the generated
+  repository.
+- Excluded the local compiled `bicep/main.json` build artifact from generated
+  repositories.
 - Made Bicep platform configuration and default resource-provider changes
   select every subscription in PR validation and apply workflows.
 - Added discovery regression coverage for Bicep platform-wide files and

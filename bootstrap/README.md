@@ -60,6 +60,8 @@ repository.
   - Terraform starter only: `BACKEND_RESOURCE_GROUP_NAME`,
     `BACKEND_STORAGE_ACCOUNT_NAME`, `BACKEND_CONTAINER_NAME`
 - `production` Environment with required reviewers and `protected_branches` policy
+- `push` repository access for production reviewer teams so GitHub can use
+  them as environment reviewers and CODEOWNERS
 - **Seeds the repo with the runtime skeleton**: the selected engine package,
   `landingzones/` examples, operator docs, `.github/workflows/`, `README.md`,
   `CONTRIBUTING.md`, and `.gitignore`. Accelerator development files such as
