@@ -102,7 +102,7 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   $starterContract = Get-Content -LiteralPath (Join-Path $starterRoot 'starter-contract.json') -Raw | ConvertFrom-Json
   Assert-Equal $true ('terraform/' -in $starterContract.packageRoots) 'Terraform package root is missing from the contract.'
   Assert-Equal $true ('bicep/' -in $starterContract.packageRoots) 'Bicep package root is missing from the contract.'
-  $sampleFiles = @('README.md', 'terraform/main.tf', 'bicep/main.bicep')
+  $sampleFiles = @('README.md', 'scripts/Grant-SubscriptionCreatorRole.ps1', 'terraform/main.tf', 'bicep/main.bicep')
   $terraformPackage = @(
     $sampleFiles | Where-Object {
       $file = $_
@@ -112,6 +112,7 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
     }
   )
   Assert-Equal $true ('README.md' -in $terraformPackage) 'Common files must be included in the Terraform package.'
+  Assert-Equal $true ('scripts/Grant-SubscriptionCreatorRole.ps1' -in $terraformPackage) 'The billing role helper must be included in the Terraform package.'
   Assert-Equal $true ('terraform/main.tf' -in $terraformPackage) 'Terraform files must be included in the Terraform package.'
   Assert-Equal $false ('bicep/main.bicep' -in $terraformPackage) 'Non-selected Bicep files must be excluded from the Terraform package.'
   $bicepManifest = Get-Content -LiteralPath (Join-Path $starterRoot 'bicep/starter.json') -Raw | ConvertFrom-Json
@@ -126,6 +127,7 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
     }
   )
   Assert-Equal $true ('README.md' -in $bicepPackage) 'Common files must be included in the Bicep package.'
+  Assert-Equal $true ('scripts/Grant-SubscriptionCreatorRole.ps1' -in $bicepPackage) 'The billing role helper must be included in the Bicep package.'
   Assert-Equal $true ('bicep/main.bicep' -in $bicepPackage) 'Bicep files must be included in the Bicep package.'
   Assert-Equal $false ('terraform/main.tf' -in $bicepPackage) 'Non-selected Terraform files must be excluded from the Bicep package.'
 
@@ -136,6 +138,8 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   $bootstrapMigrations = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/migrations.tf') -Raw
   $codeownersTemplate = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/templates/CODEOWNERS.tftpl') -Raw
   $bootstrapScript = Get-Content -LiteralPath $legacyBootstrapPath -Raw
+  $prValidateWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/pr-validate.yml') -Raw
+  $applyWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/apply.yml') -Raw
   $terraformOnlyCount = 'count\s*=\s*var\.starter_name\s*==\s*"terraform"\s*\?\s*1\s*:\s*0'
 
   Assert-Equal 6 ([regex]::Matches($bootstrapMain, $terraformOnlyCount).Count) 'Every Terraform state resource and backend variable must be conditional.'
@@ -145,6 +149,8 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Matches $bootstrapMain "(?s)resource `"github_actions_variable`" `"backend_resource_group`".*?$terraformOnlyCount" 'Backend GitHub variables must be Terraform-only.'
   Assert-Matches $bootstrapVariables '(?s)variable "state_storage_account_name".*?default\s*=\s*null.*?var\.starter_name != "terraform"' 'State storage input must be optional for Bicep.'
   Assert-Matches $bootstrapOutputs 'try\(azurerm_storage_container\.tfstate\[0\]\.name, null\)' 'Bicep state container output must be null-safe.'
+  Assert-Matches $bootstrapOutputs 'pwsh \./scripts/Grant-SubscriptionCreatorRole\.ps1' 'Bootstrap output must use the accelerator billing role helper.'
+  Assert-Equal $false ($bootstrapOutputs -match 'Install-Module ALZ') 'Bootstrap output must not depend on the ALZ module.'
   Assert-Equal 5 ([regex]::Matches($bootstrapMigrations, '(?m)^moved \{').Count) 'Conditional resources must preserve existing Terraform state addresses.'
   Assert-Matches $bootstrapScript "Terraform runtime state configuration is not used by the Bicep starter" 'Bicep configuration must skip Terraform runtime state prompts.'
   Assert-Matches $bootstrapScript '\$planArgs = @\(\$chdir, ''plan'', ''-input=false'', "-out=\$planPath"\)' 'Terraform plan output path must be passed as one expanded argument.'
@@ -158,6 +164,12 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Matches $bootstrapVariables 'variable "github_oidc_subject_mode"' 'Bootstrap variables must expose GitHub OIDC subject mode.'
   Assert-Matches $bootstrapVariables 'github_owner_id is required when github_oidc_subject_mode is immutable' 'Immutable OIDC subjects must require the numeric owner ID.'
   Assert-Matches $bootstrapScript "Choices @\('standard', 'immutable'\)" 'The bootstrap wizard must support immutable GitHub OIDC subjects.'
+  Assert-Matches $bootstrapScript "-MinVersion '1\.10\.0'" 'Bootstrap preflight must accept the AVM module minimum Terraform version.'
+  Assert-Matches $bootstrapScript "-MaxVersionExclusive '2\.0\.0'" 'Bootstrap preflight must allow newer Terraform 1.x releases.'
+  Assert-Matches (Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/terraform.tf') -Raw) 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Bootstrap Terraform version range is incorrect.'
+  Assert-Matches (Get-Content -LiteralPath (Join-Path $repositoryRoot 'terraform/versions.tf') -Raw) 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Runtime Terraform version range is incorrect.'
+  Assert-Matches $prValidateWorkflow "needs\.accelerator-validate\.outputs\.sources-available != 'true'" 'PR runtime previews must skip the accelerator source repository.'
+  Assert-Matches $applyWorkflow 'Accelerator source repository detected; skipping runtime apply\.' 'Apply must skip sample subscriptions in the accelerator source repository.'
   Assert-Matches $bootstrapFiles 'starter_name\s*=\s*var\.starter_name' 'CODEOWNERS rendering must receive the selected starter.'
   Assert-Matches $codeownersTemplate '%\{ if starter_name == "terraform" ~\}' 'CODEOWNERS must select the Terraform runtime path conditionally.'
   Assert-Matches $codeownersTemplate '/bicep/' 'CODEOWNERS must protect the Bicep runtime path.'

@@ -185,12 +185,11 @@ prepare either runtime engine:
 - Seeds the selected engine package and renders its platform configuration:
   `terraform/terraform.auto.tfvars` or `bicep/platform.json`
 
-The only step it **cannot** do is grant `SubscriptionCreator` on the
-billing scope — run the upstream
-[`Grant-SubscriptionCreatorRole.ps1`][grant] for that. The bootstrap output
-prints the exact command with the UAMI principal ID pre-filled.
-
-[grant]: https://github.com/Azure/ALZ-PowerShell-Module/blob/main/src/ALZ/Public/Grant-SubscriptionCreatorRole.ps1
+The only step it **cannot** do automatically is grant `SubscriptionCreator`
+on the billing scope. Run the accelerator's
+[`Grant-SubscriptionCreatorRole.ps1`](scripts/Grant-SubscriptionCreatorRole.ps1)
+as an approval-gated operator step. The bootstrap output prints the exact
+command with the UAMI principal ID pre-filled.
 
 ---
 

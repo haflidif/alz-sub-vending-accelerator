@@ -78,6 +78,8 @@ jobs:
   accelerator-validate:
     name: Accelerator validation
     runs-on: ubuntu-latest
+    outputs:
+      sources-available: ${{ steps.accelerator.outputs.available }}
     steps:
       - uses: actions/checkout@v7
 
@@ -96,6 +98,8 @@ jobs:
             || { echo "::error::PowerShell accelerator test is missing"; exit 1; }
           [[ -f tests/PowerShell/BicepStarter.Tests.ps1 ]] \
             || { echo "::error::Bicep starter test is missing"; exit 1; }
+          [[ -f tests/PowerShell/BillingRole.Tests.ps1 ]] \
+            || { echo "::error::Billing role helper test is missing"; exit 1; }
           [[ -f tests/scripts/discover-subs.Tests.sh ]] \
             || { echo "::error::discovery test is missing"; exit 1; }
           echo "available=true" >> "$GITHUB_OUTPUT"
@@ -109,6 +113,11 @@ jobs:
         if: steps.accelerator.outputs.available == 'true'
         shell: pwsh
         run: ./tests/PowerShell/BicepStarter.Tests.ps1
+
+      - name: Test billing role helper
+        if: steps.accelerator.outputs.available == 'true'
+        shell: pwsh
+        run: ./tests/PowerShell/BillingRole.Tests.ps1
 
       - name: Build Bicep starter
         if: hashFiles('bicep/main.bicep') != ''
@@ -152,8 +161,8 @@ jobs:
   # ---------------------------------------------------------------------------
   plan:
     name: Plan ${{ matrix.archetype }}/${{ matrix.name }}
-    needs: [schema-validate, discover]
-    if: needs.discover.outputs.count != '0' && (vars.VENDING_ENGINE == '' || vars.VENDING_ENGINE == 'terraform')
+    needs: [schema-validate, discover, accelerator-validate]
+    if: needs.accelerator-validate.outputs.sources-available != 'true' && needs.discover.outputs.count != '0' && (vars.VENDING_ENGINE == '' || vars.VENDING_ENGINE == 'terraform')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -230,8 +239,8 @@ jobs:
 
   bicep-preview:
     name: What-if ${{ matrix.archetype }}/${{ matrix.name }}
-    needs: [schema-validate, discover]
-    if: needs.discover.outputs.count != '0' && vars.VENDING_ENGINE == 'bicep'
+    needs: [schema-validate, discover, accelerator-validate]
+    if: needs.accelerator-validate.outputs.sources-available != 'true' && needs.discover.outputs.count != '0' && vars.VENDING_ENGINE == 'bicep'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

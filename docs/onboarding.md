@@ -17,7 +17,7 @@ vended. After this is done, day-to-day vending happens via PRs — see
 | 4 | **Optional: hub VNet** — full Azure resource ID if you peer corp/online subs to it | `az network vnet show --ids <id>` |
 | 5 | **GitHub org** + a **PAT** with `repo` (and `admin:org` if creating a new repo) | `gh auth status` |
 | 6 | **Az CLI logged in** to the platform tenant with rights to create UAMI and assign roles at MG scope. Terraform also needs permission to create a blob container. | `az account show` |
-| 7 | **PowerShell 7.2+, Terraform `>= 1.15.5` and `< 1.16.0`, Azure CLI 2.64.0+, and GitHub CLI 2.50.0+** | `$PSVersionTable.PSVersion`; `terraform version`; `az version`; `gh version` |
+| 7 | **PowerShell 7.2+, Terraform `>= 1.10.0` and `< 2.0.0`, Azure CLI 2.64.0+, and GitHub CLI 2.50.0+** | `$PSVersionTable.PSVersion`; `terraform version`; `az version`; `gh version` |
 
 If you're missing item 1 or 2 (testing in a green-field tenant), create a
 minimal MG hierarchy and platform subscription by any means first. Add a state
@@ -132,22 +132,18 @@ identical state behind.
 
 ## Step 2 — Grant `SubscriptionCreator` on the billing scope
 
-The only thing the Terraform bootstrap **cannot** do, because billing-role
-assignments live outside the ARM control plane. Use the upstream
-[ALZ PowerShell helper][grant-script] which assigns role definition
-`a0bcee42-bf30-4d1b-926a-48d21664ef71`.
+The bootstrap deliberately leaves billing-role assignments as an explicit
+operator action because they live outside the normal ARM RBAC control plane.
+The accelerator helper validates the billing scope and principal, detects an
+existing assignment, and assigns role definition
+`a0bcee42-bf30-4d1b-926a-48d21664ef71` through the Azure Billing API.
 
-[grant-script]: https://github.com/Azure/ALZ-PowerShell-Module/blob/main/src/ALZ/Public/Grant-SubscriptionCreatorRole.ps1
-
-```powershell
-Install-Module -Name ALZ -Scope CurrentUser
-Import-Module ALZ
-```
+Use `-WhatIf` first when reviewing a new billing scope.
 
 ### EA (Enterprise Agreement)
 
 ```powershell
-Grant-SubscriptionCreatorRole `
+pwsh ./scripts/Grant-SubscriptionCreatorRole.ps1 `
   -servicePrincipalObjectId "<uami_principal_id from step 1>" `
   -billingAccountID "<ea-billing-account-id>" `
   -enrollmentAccountID "<enrollment-account-id>"
@@ -156,7 +152,7 @@ Grant-SubscriptionCreatorRole `
 ### MCA (Microsoft Customer Agreement)
 
 ```powershell
-Grant-SubscriptionCreatorRole `
+pwsh ./scripts/Grant-SubscriptionCreatorRole.ps1 `
   -servicePrincipalObjectId "<uami_principal_id from step 1>" `
   -billingAccountID "<mca-billing-account-name>" `
   -billingProfileID "<billing-profile-name>" `
@@ -175,10 +171,11 @@ az billing profile  list --account-name "<billing-account>" -o table
 az billing invoice-section list --account-name "<billing-account>" --profile-name "<profile>" -o table
 ```
 
-### Workaround if `Grant-SubscriptionCreatorRole` returns `415 Unsupported Media Type`
+### Direct REST fallback
 
-Older versions of the helper hit a `415` from `az rest`. Grant the role
-directly:
+The helper uses a temporary UTF-8 JSON file to avoid PowerShell native
+argument corruption. If it cannot run in your environment, the equivalent
+EA request is:
 
 ```powershell
 $ba='<ea-billing-account-id>'
@@ -191,11 +188,19 @@ $body=@{properties=@{
   principalId=$oid; principalTenantId=$tid
   roleDefinitionId="/providers/Microsoft.Billing/billingAccounts/$ba/enrollmentAccounts/$ea/billingRoleDefinitions/$rdef"
 }} | ConvertTo-Json -Depth 5 -Compress
-$body | Out-File -Encoding ascii .\.body.json
-$url="https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$ba/enrollmentAccounts/$ea/billingRoleAssignments/${assign}?api-version=2019-10-01-preview"
+$body | Set-Content -Encoding utf8NoBOM .\.body.json
+$url="https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$ba/enrollmentAccounts/$ea/billingRoleAssignments/${assign}?api-version=2024-04-01"
 az rest --method put --uri $url --headers "Content-Type=application/json" --body "@./.body.json"
 Remove-Item .\.body.json
 ```
+
+For MCA, replace the EA scope with:
+
+```text
+/providers/Microsoft.Billing/billingAccounts/<account>/billingProfiles/<profile>/invoiceSections/<section>
+```
+
+The direct REST fallback is intentionally not part of bootstrap automation.
 
 ### DevTest entitlement (optional)
 
@@ -231,7 +236,7 @@ az role assignment list --assignee "$UAMI_OID" \
 
 # Billing role (EA example)
 az rest --method GET \
-  --url "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/<ba>/enrollmentAccounts/<ea>/billingRoleAssignments?api-version=2019-10-01-preview" \
+  --url "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/<ba>/enrollmentAccounts/<ea>/billingRoleAssignments?api-version=2024-04-01" \
   --query "value[?properties.principalId=='$UAMI_OID']"
 
 # State-container access

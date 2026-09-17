@@ -10,7 +10,7 @@ output "uami_client_id" {
 
 output "uami_principal_id" {
   value       = azurerm_user_assigned_identity.pipeline.principal_id
-  description = "Object ID of the UAMI. Use this for the manual Grant-SubscriptionCreatorRole step."
+  description = "Object ID of the UAMI. Use this with scripts/Grant-SubscriptionCreatorRole.ps1."
 }
 
 output "uami_resource_id" {
@@ -31,32 +31,31 @@ output "github_repository_full_name" {
 output "next_step_billing_role" {
   value = join("\n", concat(
     [
-      "Manual follow-up — grant SubscriptionCreator on EACH billing scope:",
-      "",
-      "  Install-Module ALZ -Scope CurrentUser",
-      "  Import-Module ALZ",
+      "Manual follow-up - grant SubscriptionCreator on EACH billing scope:",
       "",
     ],
     flatten([
       for k, v in var.billing_scopes : (
         v.agreement_type == "EA" ? [
           "  # billing_scopes[\"${k}\"] (EA)",
-          "  Grant-SubscriptionCreatorRole `",
+          "  pwsh ./scripts/Grant-SubscriptionCreatorRole.ps1 `",
           "    -servicePrincipalObjectId '${azurerm_user_assigned_identity.pipeline.principal_id}' `",
           "    -billingAccountID '${v.ea.billing_account_name}' `",
           "    -enrollmentAccountID '${v.ea.enrollment_account_id}'",
           "",
           ] : v.agreement_type == "MCA" ? [
           "  # billing_scopes[\"${k}\"] (MCA)",
-          "  Grant-SubscriptionCreatorRole `",
+          "  pwsh ./scripts/Grant-SubscriptionCreatorRole.ps1 `",
           "    -servicePrincipalObjectId '${azurerm_user_assigned_identity.pipeline.principal_id}' `",
           "    -billingAccountID '${v.mca.billing_account_name}' `",
           "    -billingProfileID '${v.mca.billing_profile_name}' `",
           "    -invoiceSectionID '${v.mca.invoice_section_name}'",
           "",
           ] : [
-          "  # billing_scopes[\"${k}\"] (MPA — assign Indirect Buyer / Indirect Provisioner role on customer)",
-          "  # az role assignment create --role 'Azure subscription creator' --assignee-object-id '${azurerm_user_assigned_identity.pipeline.principal_id}' --scope '/providers/Microsoft.Billing/billingAccounts/${v.mpa.billing_account_name}/customers/${v.mpa.customer_id}'",
+          "  # billing_scopes[\"${k}\"] (MPA - verify Partner Center permissions first)",
+          "  pwsh ./scripts/Grant-SubscriptionCreatorRole.ps1 `",
+          "    -servicePrincipalObjectId '${azurerm_user_assigned_identity.pipeline.principal_id}' `",
+          "    -billingResourceID '/providers/Microsoft.Billing/billingAccounts/${v.mpa.billing_account_name}/customers/${v.mpa.customer_id}'",
           "",
         ]
       )
@@ -68,5 +67,5 @@ output "next_step_billing_role" {
       for k, v in local.resolved_billing_scopes : "  ${k} = ${v}"
     ],
   ))
-  description = "Reminder for the one step that cannot be done in Terraform — runs once per billing scope."
+  description = "Commands for the approval-gated billing role assignment that runs once per billing scope."
 }

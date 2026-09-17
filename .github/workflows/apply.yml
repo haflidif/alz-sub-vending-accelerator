@@ -41,10 +41,34 @@ concurrency:
 
 jobs:
   # ---------------------------------------------------------------------------
+  # 0) Do not execute sample subscriptions in the accelerator source repo
+  # ---------------------------------------------------------------------------
+  runtime-check:
+    name: Detect generated vending repository
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.runtime.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Detect runtime repository
+        id: runtime
+        shell: bash
+        run: |
+          if [[ -d powershell && -d starters && -d tests ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Accelerator source repository detected; skipping runtime apply."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ---------------------------------------------------------------------------
   # 1) Discover which subscriptions to apply
   # ---------------------------------------------------------------------------
   discover:
     name: Discover subscriptions
+    needs: runtime-check
+    if: needs.runtime-check.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set.outputs.matrix }}
