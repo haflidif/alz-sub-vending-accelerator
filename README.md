@@ -178,7 +178,7 @@ prepare either runtime engine:
 - Pipeline UAMI + 3 GitHub OIDC federated credentials (branch / PR / environment)
 - Terraform only: `subvending-tfstate` container and container-scoped
   Storage Blob Data Contributor
-- Management Group Contributor + User Access Administrator on the ALZ root MG,
+- Contributor + User Access Administrator on the ALZ root MG,
   Network Contributor on the **hub VNet's resource group** (not subscription-wide)
 - GitHub repo + Actions variables + `production` environment with required reviewers
 - Branch protection on `main` (PR + status checks + linear history)

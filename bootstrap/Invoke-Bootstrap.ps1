@@ -783,6 +783,8 @@ function Configure-GitHubRepo {
     if ($Inputs.Contains('create_github_repository')) { $summary += "create_github_repository     = $($Inputs.create_github_repository)" }
     if ($Inputs.github_repository_visibility) { $summary += "github_repository_visibility = $($Inputs.github_repository_visibility)" }
     if ($Inputs.github_default_branch) { $summary += "github_default_branch        = $($Inputs.github_default_branch)" }
+    if ($Inputs.github_oidc_subject_mode) { $summary += "github_oidc_subject_mode    = $($Inputs.github_oidc_subject_mode)" }
+    if ($Inputs.github_owner_id) { $summary += "github_owner_id             = $($Inputs.github_owner_id)" }
 
     if (-not (Edit-Group -Title 'GitHub repository' -SummaryLines $summary)) { return }
 
@@ -816,6 +818,24 @@ function Configure-GitHubRepo {
         -Default ($Inputs.github_default_branch ?? 'main') `
         -HelpText 'Default branch -- used in OIDC subject claims.' `
         -Validator { param($v) $v -match '^[A-Za-z0-9._\-/]+$' }
+
+    $Inputs.github_oidc_subject_mode = Read-PromptChoice `
+        -Label 'github_oidc_subject_mode' `
+        -Choices @('standard', 'immutable') `
+        -Default ($Inputs.github_oidc_subject_mode ?? 'standard') `
+        -HelpText 'Use immutable when the GitHub owner includes numeric owner/repository IDs in OIDC subjects.'
+
+    if ($Inputs.github_oidc_subject_mode -eq 'immutable') {
+        $owner = (Invoke-GhApi -Method 'GET' -Path "/users/$($Inputs.github_owner)") | ConvertFrom-Json
+        if (-not $owner.id) {
+            throw "Could not resolve the numeric GitHub owner ID for '$($Inputs.github_owner)'."
+        }
+        $Inputs.github_owner_id = [long] $owner.id
+        Write-Ok "Resolved GitHub owner ID $($Inputs.github_owner_id)."
+    }
+    else {
+        $Inputs.Remove('github_owner_id')
+    }
 }
 
 function Configure-BranchProtection {
@@ -1331,6 +1351,9 @@ function Invoke-Validate {
     )
     if ($Inputs.starter_name -eq 'terraform') {
         $required += @('state_storage_account_resource_group_name', 'state_storage_account_name')
+    }
+    if ($Inputs.github_oidc_subject_mode -eq 'immutable') {
+        $required += 'github_owner_id'
     }
     $missing = $required | Where-Object { -not $Inputs.Contains($_) -or $null -eq $Inputs[$_] -or $Inputs[$_] -eq '' }
     if ($missing) {

@@ -149,7 +149,7 @@ In this skeleton, "landing zone" = one row under `landingzones/<arch>/`.
 **Management Group (MG)** — Azure governance container that groups
 subscriptions for inherited policy + RBAC. Archetype MGs (e.g.
 `corp` / `online` / `sandbox`) descend from a common root MG (where the
-pipeline UAMI receives `Management Group Contributor`).
+pipeline UAMI receives `Contributor`).
 
 **Mandatory tags**: Platform-wide tags applied to every vended subscription.
 CAF-aligned defaults use `managedby=terraform` for Terraform repositories and

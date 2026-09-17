@@ -97,7 +97,7 @@ than one group.
 | 1 | `IdentityLocation` | `tenant_id`, `platform_subscription_id`, `location`, `uami_resource_group_name`, `uami_name` | GUID format, Azure-region name |
 | 2 | `State` | Terraform only: `state_storage_account_resource_group_name`, `state_storage_account_name`, `state_container_name` | Storage-account naming rules (3-24 lowercase alphanumeric) |
 | 3 | `Rbac` | `alz_root_management_group_id`, `connectivity_subscription_id`, `grant_user_access_administrator` | Bare MG name (not a full resource ID), GUID for sub IDs |
-| 4 | `GitHubRepo` | `github_owner`, `github_repository_name`, `github_repository_visibility`, `github_default_branch`, `create_github_repository` | GitHub handle format |
+| 4 | `GitHubRepo` | `github_owner`, `github_repository_name`, `github_repository_visibility`, `github_default_branch`, `create_github_repository`, `github_oidc_subject_mode` | GitHub handle format and optional immutable owner-ID resolution |
 | 5 | `BranchProtection` | `enforce_branch_protection`, `branch_protection_required_status_checks`, `branch_protection_required_approving_review_count` | Non-empty check names |
 | 6 | `ProductionEnv` | `production_environment_name`, reviewer team handles + user handles | Resolves handles → numeric IDs via GitHub API |
 | 7 | `BillingScopes` | One entry per scope: key, `agreement_type` (EA/MCA/MPA), matching nested fields. Must include a `default` key. | `default` present, agreement-type ↔ nested-object consistency, path-string format on render |
@@ -316,7 +316,7 @@ Enforced regardless of `-AutoApprove` or `-NonInteractive`:
 1. **Role assignments granted to the UAMI's `principalId`** — must be
    removed first so role-assignment orphans don't outlive the UAMI:
    - Terraform only: `Storage Blob Data Contributor` on the state container
-   - `Management Group Contributor` on the ALZ root MG
+   - `Contributor` on the ALZ root MG
    - `User Access Administrator` on the ALZ root MG (when
      `grant_user_access_administrator = true`)
    - `Network Contributor` on the hub VNet's resource group (when a hub
