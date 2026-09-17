@@ -138,6 +138,8 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   $bootstrapMigrations = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/migrations.tf') -Raw
   $codeownersTemplate = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/templates/CODEOWNERS.tftpl') -Raw
   $bootstrapScript = Get-Content -LiteralPath $legacyBootstrapPath -Raw
+  $prValidateWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/pr-validate.yml') -Raw
+  $applyWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/apply.yml') -Raw
   $terraformOnlyCount = 'count\s*=\s*var\.starter_name\s*==\s*"terraform"\s*\?\s*1\s*:\s*0'
 
   Assert-Equal 6 ([regex]::Matches($bootstrapMain, $terraformOnlyCount).Count) 'Every Terraform state resource and backend variable must be conditional.'
@@ -166,6 +168,8 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Matches $bootstrapScript "-MaxVersionExclusive '2\.0\.0'" 'Bootstrap preflight must allow newer Terraform 1.x releases.'
   Assert-Matches (Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/terraform.tf') -Raw) 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Bootstrap Terraform version range is incorrect.'
   Assert-Matches (Get-Content -LiteralPath (Join-Path $repositoryRoot 'terraform/versions.tf') -Raw) 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Runtime Terraform version range is incorrect.'
+  Assert-Matches $prValidateWorkflow "needs\.accelerator-validate\.outputs\.sources-available != 'true'" 'PR runtime previews must skip the accelerator source repository.'
+  Assert-Matches $applyWorkflow 'Accelerator source repository detected; skipping runtime apply\.' 'Apply must skip sample subscriptions in the accelerator source repository.'
   Assert-Matches $bootstrapFiles 'starter_name\s*=\s*var\.starter_name' 'CODEOWNERS rendering must receive the selected starter.'
   Assert-Matches $codeownersTemplate '%\{ if starter_name == "terraform" ~\}' 'CODEOWNERS must select the Terraform runtime path conditionally.'
   Assert-Matches $codeownersTemplate '/bicep/' 'CODEOWNERS must protect the Bicep runtime path.'

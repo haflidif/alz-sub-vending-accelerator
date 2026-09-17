@@ -48,6 +48,9 @@ template itself, not the AVM modules pinned by the engines. See
   allowing newer Terraform 1.x releases.
 - Kept GitHub Actions pinned to Terraform 1.15.5 for reproducible CI runs
   without imposing that exact version on operators.
+- Prevented the accelerator source repository from running sample subscription
+  previews or applies while preserving those jobs in generated vending
+  repositories.
 - Made repository seeding select common runtime files plus only the package
   declared by the selected starter. Terraform selection preserves the version
   0.1 generated repository contents.

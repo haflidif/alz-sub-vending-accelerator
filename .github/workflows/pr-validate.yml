@@ -78,6 +78,8 @@ jobs:
   accelerator-validate:
     name: Accelerator validation
     runs-on: ubuntu-latest
+    outputs:
+      sources-available: ${{ steps.accelerator.outputs.available }}
     steps:
       - uses: actions/checkout@v7
 
@@ -159,8 +161,8 @@ jobs:
   # ---------------------------------------------------------------------------
   plan:
     name: Plan ${{ matrix.archetype }}/${{ matrix.name }}
-    needs: [schema-validate, discover]
-    if: needs.discover.outputs.count != '0' && (vars.VENDING_ENGINE == '' || vars.VENDING_ENGINE == 'terraform')
+    needs: [schema-validate, discover, accelerator-validate]
+    if: needs.accelerator-validate.outputs.sources-available != 'true' && needs.discover.outputs.count != '0' && (vars.VENDING_ENGINE == '' || vars.VENDING_ENGINE == 'terraform')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -237,8 +239,8 @@ jobs:
 
   bicep-preview:
     name: What-if ${{ matrix.archetype }}/${{ matrix.name }}
-    needs: [schema-validate, discover]
-    if: needs.discover.outputs.count != '0' && vars.VENDING_ENGINE == 'bicep'
+    needs: [schema-validate, discover, accelerator-validate]
+    if: needs.accelerator-validate.outputs.sources-available != 'true' && needs.discover.outputs.count != '0' && vars.VENDING_ENGINE == 'bicep'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
