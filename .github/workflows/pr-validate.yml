@@ -96,6 +96,8 @@ jobs:
             || { echo "::error::PowerShell accelerator test is missing"; exit 1; }
           [[ -f tests/PowerShell/BicepStarter.Tests.ps1 ]] \
             || { echo "::error::Bicep starter test is missing"; exit 1; }
+          [[ -f tests/PowerShell/BillingRole.Tests.ps1 ]] \
+            || { echo "::error::Billing role helper test is missing"; exit 1; }
           [[ -f tests/scripts/discover-subs.Tests.sh ]] \
             || { echo "::error::discovery test is missing"; exit 1; }
           echo "available=true" >> "$GITHUB_OUTPUT"
@@ -109,6 +111,11 @@ jobs:
         if: steps.accelerator.outputs.available == 'true'
         shell: pwsh
         run: ./tests/PowerShell/BicepStarter.Tests.ps1
+
+      - name: Test billing role helper
+        if: steps.accelerator.outputs.available == 'true'
+        shell: pwsh
+        run: ./tests/PowerShell/BillingRole.Tests.ps1
 
       - name: Build Bicep starter
         if: hashFiles('bicep/main.bicep') != ''

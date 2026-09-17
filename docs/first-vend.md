@@ -106,7 +106,7 @@ follows the same merge and environment-gate path.
 | Symptom | Most likely cause |
 |---------|-------------------|
 | `EntitlementNotFound: MS-AZR-0148P` on sandbox | EA admin hasn't enabled Dev/Test pricing on the enrollment. Use `Production` (default) or have them enable it. |
-| `BillingAccountIdMissing` / `403` on alias creation | Pipeline UAMI is missing `SubscriptionCreator` on the billing scope. Re-run `Grant-SubscriptionCreatorRole` (see onboarding doc). |
+| `BillingAccountIdMissing` / `403` on alias creation | Pipeline UAMI is missing `SubscriptionCreator` on the billing scope. Re-run `scripts/Grant-SubscriptionCreatorRole.ps1` (see onboarding doc). |
 | `Subscription_NotFound` mid-apply | Azure Resource Manager hasn't fully propagated the new sub yet. The AzAPI provider retries automatically; if it still fails after 60m, re-run the matrix item. |
 | Apply hangs at "Waiting for review" | Check Settings → Environments → `production`; required reviewers must explicitly approve. |
 | The preview matrix is empty on a PR | `discover-subs.sh` could not see the YAML or selected-engine change. Confirm the request is at `landingzones/<archetype>/<name>.yaml` and `VENDING_ENGINE` is `terraform` or `bicep`. |

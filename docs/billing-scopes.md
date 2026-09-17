@@ -117,25 +117,31 @@ az billing customer list --account-name <name> -o table
 After running the bootstrap, a privileged operator (EA admin / MCA Billing
 Profile Owner / Partner Admin) must grant the pipeline UAMI permission to
 **create subscriptions** under each billing scope. The bootstrap output
-`next_step_billing_role` prints the exact PowerShell commands.
+`next_step_billing_role` prints the exact approval-gated PowerShell commands.
 
 ```powershell
-Install-Module ALZ -Scope CurrentUser
-Import-Module ALZ
-
 # EA example
-Grant-SubscriptionCreatorRole `
+pwsh ./scripts/Grant-SubscriptionCreatorRole.ps1 `
   -servicePrincipalObjectId '<UAMI principalId>' `
   -billingAccountID '7690848' `
   -enrollmentAccountID '403507'
 
 # MCA example
-Grant-SubscriptionCreatorRole `
+pwsh ./scripts/Grant-SubscriptionCreatorRole.ps1 `
   -servicePrincipalObjectId '<UAMI principalId>' `
   -billingAccountID '<MCA billing account name>' `
   -billingProfileID '<billing profile>' `
   -invoiceSectionID '<invoice section>'
 ```
+
+Current verification level:
+
+| Agreement | Status |
+| --- | --- |
+| Direct EA | End-to-end verified with a real subscription vend |
+| MCA | Scope construction and request payload tested; tenant validation requires user feedback |
+| Indirect EA | Public reports indicate possible subscription-alias authorization incompatibility |
+| MPA | Explicit billing scope supported by the helper; not tenant-verified |
 
 ---
 
@@ -143,9 +149,9 @@ Grant-SubscriptionCreatorRole `
 
 | Symptom                                                                         | Likely cause                                                                                                                |
 | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `415 Unsupported Media Type` from `Grant-SubscriptionCreatorRole`              | Known issue when the ALZ module signs the request. Fall back to `az rest --method PUT` against `/billingRoleAssignments/...` (see docs/onboarding.md). |
+| `Azure CLI command failed` while granting the role                              | Read the Azure Billing API response printed by the helper. Confirm the active tenant, billing scope, operator billing permissions, and service principal ID. |
 | `EnrollmentAccountOwnerNotFound`                                                | The principal granting the role isn't the EA enrollment account owner. Check `az billing enrollment-account show ... --query principalName`.  |
-| MCA `400 Bad Request` on create                                                | Wrong invoice-section permissions — the UAMI needs *Azure subscription creator* on the invoice section, not just the billing profile.       |
+| MCA `400 Bad Request` on create                                                 | Wrong invoice-section permissions. The UAMI needs *Azure subscription creator* on the invoice section, not just the billing profile.       |
 | MPA create fails silently                                                       | Partner needs *Indirect Buyer* + *Admin agent* roles on the customer tenant.                                                                |
 | `billingScopeKey 'foo' not found`                                               | The key does not exist in `terraform/terraform.auto.tfvars` or `bicep/platform.json`. Add it to the selected engine configuration via PR. |
 

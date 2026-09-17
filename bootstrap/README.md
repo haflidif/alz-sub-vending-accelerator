@@ -85,13 +85,11 @@ repository.
 - **Does not create or mutate the platform state SA.** For Terraform, it only
   creates the runtime state container inside the existing account. Bicep does
   not look up the account or create a container.
-- **Does not grant the billing-scope `SubscriptionCreator` role.** That requires
-  the upstream
-  [`Grant-SubscriptionCreatorRole.ps1`][grant] from the ALZ PowerShell module
-  and is documented as a manual follow-up — the UAMI object ID is in the
+- **Does not automatically grant the billing-scope `SubscriptionCreator`
+  role.** Run
+  [`scripts/Grant-SubscriptionCreatorRole.ps1`](../scripts/Grant-SubscriptionCreatorRole.ps1)
+  as the manual, approval-gated follow-up. The UAMI object ID is in the
   Terraform output.
-
-[grant]: https://github.com/Azure/ALZ-PowerShell-Module/blob/main/src/ALZ/Public/Grant-SubscriptionCreatorRole.ps1
 
 ## Prerequisites
 
@@ -137,8 +135,8 @@ context needed by the GitHub workflows.
 
 You only need to do **one** thing manually:
 
-1. Run the manual `Grant-SubscriptionCreatorRole` step (see the
-   `next_step_billing_role` Terraform output — the UAMI principal ID is
+1. Run `scripts/Grant-SubscriptionCreatorRole.ps1` manually (see the
+   `next_step_billing_role` Terraform output; the UAMI principal ID is
    pre-filled).
 
 That's it — open a PR against an example YAML in `landingzones/` to verify
@@ -186,7 +184,7 @@ Source layout under `bootstrap/`:
 
 | File | Purpose |
 |---|---|
-| [`terraform.tf`](terraform.tf) | Bootstrap provider pins: `azurerm 5.0.0`, `azuread 3.9.0`, and `github 6.13.0`. Terraform Core uses the compatible patch constraint `~> 1.15.5`. Configures `azurerm` against `platform_subscription_id` with `storage_use_azuread`, pins `azuread` to `tenant_id`, and reads `GITHUB_TOKEN` from the environment. |
+| [`terraform.tf`](terraform.tf) | Bootstrap provider pins: `azurerm 5.0.0`, `azuread 3.9.0`, and `github 6.13.0`. Terraform Core supports versions from 1.10 through the latest 1.x release, matching the runtime AVM module requirement. Configures `azurerm` against `platform_subscription_id` with `storage_use_azuread`, pins `azuread` to `tenant_id`, and reads `GITHUB_TOKEN` from the environment. |
 | [`variables.tf`](variables.tf) | ~20 inputs across identity/location, state, RBAC, GitHub repo, branch protection, production env, billing scopes (map with EA/MCA/MPA per entry), MG IDs, cost allocation, mandatory tags, CODEOWNERS, skeleton seeding. Validation rules enforce billing-scope structure, MG ID format, GitHub handles, tag-key naming. |
 | [`locals.tf`](locals.tf) | Resolves each `billing_scopes` entry into the full Azure billing scope path string. EA → `enrollmentAccounts/...`, MCA → `billingProfiles/.../invoiceSections/...`, MPA → `customers/...`. |
 | [`main.tf`](main.tf) | UAMI + 3 FICs, MG and network RBAC, optional Terraform state container and blob RBAC, optional repository creation, Actions variables, production environment, and branch protection. |
@@ -196,3 +194,8 @@ Source layout under `bootstrap/`:
 | [`templates/CODEOWNERS.tftpl`](templates/CODEOWNERS.tftpl) | Single template rendered with the operator's `codeowners_default_team` + `codeowners_archetype_teams`. Only the **rendered** file lands in the seeded repo. |
 | [`Invoke-Bootstrap.ps1`](Invoke-Bootstrap.ps1) | The interactive wizard. Handles both **create** (bootstrap; default) and **destroy** (`-Destroy`; with optional `-IncludeStateContainer`, `-IncludeGitHubRepo`, `-CleanBootstrapFolder`, standard `-WhatIf`). 9 + 1 sections; see [`docs/bootstrap-wizard.md → Implementation notes`](../docs/bootstrap-wizard.md#implementation-notes) and [`docs/bootstrap-wizard.md → Destroying / undoing a bootstrap`](../docs/bootstrap-wizard.md#destroying--undoing-a-bootstrap). |
 | [`terraform.tfvars.example`](terraform.tfvars.example) | Schema-correct example — copy to `terraform.tfvars` for the manual flow, or use the wizard which writes a JSON sidecar instead. |
+
+The repository-level
+[`scripts/Grant-SubscriptionCreatorRole.ps1`](../scripts/Grant-SubscriptionCreatorRole.ps1)
+performs the out-of-band Azure Billing role assignment for EA, MCA, or an
+explicit supported billing scope.

@@ -43,10 +43,11 @@ template itself, not the AVM modules pinned by the engines. See
 - Updated bootstrap providers to AzureRM 5.0.0, AzureAD 3.9.0, and GitHub
   6.13.0.
 - Updated the Terraform subscription-vending AVM module from 0.2.1 to 0.3.1.
-- Changed Terraform Core constraints from exact 1.15.5 pins to compatible
-  `~> 1.15.5` patch constraints.
-- Aligned bootstrap preflight with the supported Terraform range, from 1.15.5
-  inclusive to 1.16.0 exclusive.
+- Relaxed Terraform Core constraints to `>= 1.10.0, < 2.0.0`, matching the
+  minimum required by the Terraform subscription-vending AVM module while
+  allowing newer Terraform 1.x releases.
+- Kept GitHub Actions pinned to Terraform 1.15.5 for reproducible CI runs
+  without imposing that exact version on operators.
 - Made repository seeding select common runtime files plus only the package
   declared by the selected starter. Terraform selection preserves the version
   0.1 generated repository contents.

@@ -61,7 +61,7 @@ is `all`.
 
 | Phase | What happens | Re-runnable? | Side effects |
 |---|---|---|---|
-| `preflight` | Verifies Terraform is `>= 1.15.5` and `< 1.16.0`, Azure CLI is 2.64.0 or newer, GitHub CLI is 2.50.0 or newer, and PowerShell is 7.2 or newer. Resolves a GitHub token from `$env:GITHUB_TOKEN` or `gh auth token` without persisting it. Verifies the Azure session matches the configured tenant. | Always | None |
+| `preflight` | Verifies Terraform is `>= 1.10.0` and `< 2.0.0`, Azure CLI is 2.64.0 or newer, GitHub CLI is 2.50.0 or newer, and PowerShell is 7.2 or newer. Resolves a GitHub token from `$env:GITHUB_TOKEN` or `gh auth token` without persisting it. Verifies the Azure session matches the configured tenant. | Always | None |
 | `configure` | Prompts you for every bootstrap input, grouped by concern (see [Group reference](#group-reference)). Persists to `bootstrap/.bootstrap-inputs.json` (gitignored) **atomically per group** — Ctrl-C never loses more than one group's progress. On rerun, current values are shown as defaults; press Enter to keep. | Always — keep / edit per group | Writes to `.bootstrap-inputs.json` + rotates `.bak` |
 | `validate` | Calls Azure (resource-group/SA/MG existence) + GitHub (`/user`, `/repos/...`, team/user lookups) to confirm the inputs are sane **before** `terraform apply` discovers them. Catches typos, missing scopes, wrong tenant, MG ID format mistakes. | Always | None — read-only |
 | `terraform` | Renders `terraform.tfvars.json` from the sidecar (drift-aware — warns on hand-edits), runs `terraform init` (with `-reconfigure` when `-Reconfigure` is set), `terraform plan -out=tfplan`, then asks before `apply`. | Always (Terraform handles its own state) | Writes `terraform.tfvars.json`, runs Terraform |

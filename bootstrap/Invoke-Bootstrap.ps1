@@ -526,8 +526,8 @@ function Invoke-Preflight {
 
     $ok = (Test-ToolVersion -Tool 'terraform' `
             -VersionArg 'version' `
-            -MinVersion '1.15.5' `
-            -MaxVersionExclusive '1.16.0' `
+            -MinVersion '1.10.0' `
+            -MaxVersionExclusive '2.0.0' `
             -VersionExtractor {
             param($out)
             if ($out -match 'Terraform v?(\d+\.\d+\.\d+)') { return [version] $Matches[1] }
