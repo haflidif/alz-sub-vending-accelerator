@@ -12,7 +12,8 @@ Before anything else, confirm the items in the
 [prerequisite table](docs/onboarding.md#prerequisites--confirm-you-have-these):
 
 - Azure Landing Zones deployed (root MG + child MGs for your archetypes)
-- Platform / management subscription with a Terraform state storage account
+- Platform / management subscription
+- Terraform starter only: an existing state storage account
 - Billing scope ID(s) (EA, MCA, or MPA)
 - GitHub org + a PAT (`repo` scope, `admin:org` if creating a new repo)
 - Az CLI + `gh` CLI installed, logged in to your tenant

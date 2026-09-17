@@ -40,19 +40,34 @@ variable "location" {
 
 variable "state_storage_account_resource_group_name" {
   type        = string
-  description = "Resource group of the EXISTING platform storage account used for Terraform state."
+  default     = null
+  nullable    = true
+  description = "Resource group of the existing platform storage account used by the Terraform starter. Not used by Bicep."
+
+  validation {
+    condition     = var.starter_name != "terraform" || (var.state_storage_account_resource_group_name != null && var.state_storage_account_resource_group_name != "")
+    error_message = "state_storage_account_resource_group_name is required for the Terraform starter."
+  }
 }
 
 variable "state_storage_account_name" {
   type        = string
-  description = "Name of the EXISTING platform storage account."
+  default     = null
+  nullable    = true
+  description = "Name of the existing platform storage account used by the Terraform starter. Not used by Bicep."
+
+  validation {
+    condition     = var.starter_name != "terraform" || (var.state_storage_account_name != null && var.state_storage_account_name != "")
+    error_message = "state_storage_account_name is required for the Terraform starter."
+  }
 }
 
 variable "state_container_name" {
   type        = string
   default     = "subvending-tfstate"
   description = <<-EOT
-    Container created in the existing platform storage account for sub-vending state.
+    Container created for per-subscription Terraform state when starter_name is terraform.
+    The Bicep starter does not create or use this container.
     Default mirrors the ALZ Accelerator's `<name>-tfstate` naming style. If your
     platform team prefers an environment-prefixed name (e.g. `core-subvending-tfstate`
     when `environment_name = "core"` in the accelerator inputs), override here.

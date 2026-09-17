@@ -40,6 +40,18 @@ function Assert-Throws {
   throw "Expected error matching '$MessagePattern', but no error was thrown."
 }
 
+function Assert-Matches {
+  param(
+    [Parameter(Mandatory)] [string] $Value,
+    [Parameter(Mandatory)] [string] $Pattern,
+    [Parameter(Mandatory)] [string] $Message
+  )
+
+  if ($Value -notmatch $Pattern) {
+    throw "$Message Pattern '$Pattern' was not found."
+  }
+}
+
 try {
   New-Item -ItemType Directory -Path $bootstrapPath -Force | Out-Null
   Copy-Item -LiteralPath $starterRoot -Destination $testStarterRoot -Recurse
@@ -116,6 +128,24 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Equal $true ('README.md' -in $bicepPackage) 'Common files must be included in the Bicep package.'
   Assert-Equal $true ('bicep/main.bicep' -in $bicepPackage) 'Bicep files must be included in the Bicep package.'
   Assert-Equal $false ('terraform/main.tf' -in $bicepPackage) 'Non-selected Terraform files must be excluded from the Bicep package.'
+
+  $bootstrapMain = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/main.tf') -Raw
+  $bootstrapVariables = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/variables.tf') -Raw
+  $bootstrapOutputs = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/outputs.tf') -Raw
+  $bootstrapMigrations = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/migrations.tf') -Raw
+  $bootstrapScript = Get-Content -LiteralPath $legacyBootstrapPath -Raw
+  $terraformOnlyCount = 'count\s*=\s*var\.starter_name\s*==\s*"terraform"\s*\?\s*1\s*:\s*0'
+
+  Assert-Equal 6 ([regex]::Matches($bootstrapMain, $terraformOnlyCount).Count) 'Every Terraform state resource and backend variable must be conditional.'
+  Assert-Matches $bootstrapMain "(?s)data `"azurerm_storage_account`" `"state`".*?$terraformOnlyCount" 'State storage lookup must be Terraform-only.'
+  Assert-Matches $bootstrapMain "(?s)resource `"azurerm_storage_container`" `"tfstate`".*?$terraformOnlyCount" 'State container must be Terraform-only.'
+  Assert-Matches $bootstrapMain "(?s)resource `"azurerm_role_assignment`" `"state_blob_contributor`".*?$terraformOnlyCount" 'State blob RBAC must be Terraform-only.'
+  Assert-Matches $bootstrapMain "(?s)resource `"github_actions_variable`" `"backend_resource_group`".*?$terraformOnlyCount" 'Backend GitHub variables must be Terraform-only.'
+  Assert-Matches $bootstrapVariables '(?s)variable "state_storage_account_name".*?default\s*=\s*null.*?var\.starter_name != "terraform"' 'State storage input must be optional for Bicep.'
+  Assert-Matches $bootstrapOutputs 'try\(azurerm_storage_container\.tfstate\[0\]\.name, null\)' 'Bicep state container output must be null-safe.'
+  Assert-Equal 5 ([regex]::Matches($bootstrapMigrations, '(?m)^moved \{').Count) 'Conditional resources must preserve existing Terraform state addresses.'
+  Assert-Matches $bootstrapScript "Terraform runtime state configuration is not used by the Bicep starter" 'Bicep configuration must skip Terraform runtime state prompts.'
+  Assert-Matches $bootstrapScript '\$planArgs = @\(\$chdir, ''plan'', ''-input=false'', "-out=\$planPath"\)' 'Terraform plan output path must be passed as one expanded argument.'
 
   $invalidStarterRoot = Join-Path $testRoot 'invalid-starters'
   Copy-Item -LiteralPath $starterRoot -Destination $invalidStarterRoot -Recurse

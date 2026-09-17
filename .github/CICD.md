@@ -88,9 +88,9 @@ repo:
 | `VENDING_ENGINE` | Selected starter | Workflow routing and discovery validation |
 | `ALZ_ROOT_MANAGEMENT_GROUP_ID` | ALZ root management group | Bicep validation, what-if, and deployment scope |
 | `AZURE_DEPLOYMENT_LOCATION` | Bootstrap deployment location | Bicep management-group deployment location |
-| `BACKEND_RESOURCE_GROUP_NAME` | Platform state SA's RG | `terraform init` |
-| `BACKEND_STORAGE_ACCOUNT_NAME` | Platform state SA name | `terraform init` |
-| `BACKEND_CONTAINER_NAME` | `azurerm_storage_container.tfstate.name` (default `subvending-tfstate`) | `terraform init` |
+| `BACKEND_RESOURCE_GROUP_NAME` | Terraform only: platform state SA's RG | `terraform init` |
+| `BACKEND_STORAGE_ACCOUNT_NAME` | Terraform only: platform state SA name | `terraform init` |
+| `BACKEND_CONTAINER_NAME` | Terraform only: runtime state container | `terraform init` |
 
 Plus `AZAPI_RETRY_GET_AFTER_PUT_MAX_TIME=60m` (env-level only, not a
 repo variable) — covers slow subscription-alias propagation.

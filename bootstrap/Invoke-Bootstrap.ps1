@@ -1289,7 +1289,16 @@ function Invoke-Configure {
         return
     }
     Configure-IdentityLocation $Inputs ; Save-Inputs -Path $InputsPath -Inputs $Inputs
-    Configure-State $Inputs            ; Save-Inputs -Path $InputsPath -Inputs $Inputs
+    if ($Inputs.starter_name -eq 'terraform') {
+        Configure-State $Inputs        ; Save-Inputs -Path $InputsPath -Inputs $Inputs
+    }
+    else {
+        $Inputs.Remove('state_storage_account_resource_group_name')
+        $Inputs.Remove('state_storage_account_name')
+        $Inputs.Remove('state_container_name')
+        Save-Inputs -Path $InputsPath -Inputs $Inputs
+        Write-Skip 'Terraform runtime state configuration is not used by the Bicep starter.'
+    }
     Configure-Rbac $Inputs             ; Save-Inputs -Path $InputsPath -Inputs $Inputs
     Configure-GitHubRepo $Inputs       ; Save-Inputs -Path $InputsPath -Inputs $Inputs
     Configure-BranchProtection $Inputs ; Save-Inputs -Path $InputsPath -Inputs $Inputs
@@ -1316,11 +1325,13 @@ function Invoke-Validate {
 
     $required = @(
         'tenant_id', 'platform_subscription_id', 'location',
-        'uami_resource_group_name', 'state_storage_account_resource_group_name',
-        'state_storage_account_name', 'alz_root_management_group_id',
+        'uami_resource_group_name', 'alz_root_management_group_id',
         'connectivity_subscription_id', 'github_owner', 'github_repository_name',
         'billing_scopes', 'management_group_ids'
     )
+    if ($Inputs.starter_name -eq 'terraform') {
+        $required += @('state_storage_account_resource_group_name', 'state_storage_account_name')
+    }
     $missing = $required | Where-Object { -not $Inputs.Contains($_) -or $null -eq $Inputs[$_] -or $Inputs[$_] -eq '' }
     if ($missing) {
         throw "Missing required inputs: $($missing -join ', '). Run -Phase configure."
@@ -1353,15 +1364,17 @@ function Invoke-Validate {
     }
     catch { Write-Fail "UAMI RG check failed: $($_.Exception.Message)"; $ok = $false }
 
-    # State storage account
-    try {
-        $sa = (& az storage account show `
-                --name $Inputs.state_storage_account_name `
-                --resource-group $Inputs.state_storage_account_resource_group_name 2>$null) | ConvertFrom-Json
-        if ($sa) { Write-Ok "State SA $($sa.name) found." }
-        else { Write-Fail "State SA '$($Inputs.state_storage_account_name)' not found."; $ok = $false }
+    # Terraform runtime state storage account
+    if ($Inputs.starter_name -eq 'terraform') {
+        try {
+            $sa = (& az storage account show `
+                    --name $Inputs.state_storage_account_name `
+                    --resource-group $Inputs.state_storage_account_resource_group_name 2>$null) | ConvertFrom-Json
+            if ($sa) { Write-Ok "State SA $($sa.name) found." }
+            else { Write-Fail "State SA '$($Inputs.state_storage_account_name)' not found."; $ok = $false }
+        }
+        catch { Write-Fail "Storage account check failed: $($_.Exception.Message)"; $ok = $false }
     }
-    catch { Write-Fail "Storage account check failed: $($_.Exception.Message)"; $ok = $false }
 
     # Management groups
     foreach ($k in $Inputs.management_group_ids.Keys) {
@@ -1500,8 +1513,9 @@ function Invoke-Terraform {
 
     # plan
     $planPath = Join-Path $ScriptRoot 'tfplan'
-    Write-Info "terraform $chdir plan -input=false -out=$planPath"
-    & terraform $chdir plan -input=false -out=$planPath
+    $planArgs = @($chdir, 'plan', '-input=false', "-out=$planPath")
+    Write-Info ("terraform " + ($planArgs -join ' '))
+    & terraform @planArgs
     $planExit = $LASTEXITCODE
     if ($planExit -ne 0) { throw "terraform plan failed (exit $planExit)" }
 
@@ -1528,8 +1542,9 @@ function Invoke-Terraform {
         }
     }
 
-    Write-Info "terraform $chdir apply -input=false $planPath"
-    & terraform $chdir apply -input=false $planPath
+    $applyArgs = @($chdir, 'apply', '-input=false', $planPath)
+    Write-Info ("terraform " + ($applyArgs -join ' '))
+    & terraform @applyArgs
     if ($LASTEXITCODE -ne 0) { throw "terraform apply failed (exit $LASTEXITCODE)" }
 
     Write-Header 'Outputs'
@@ -1699,22 +1714,24 @@ function Get-DestroyTargets {
         Write-Warn "UAMI '$uamiName' in RG '$uamiRg' -- not found"
     }
 
-    $saName   = Get-RequiredInput -Inputs $Inputs -Key 'state_storage_account_name'
-    $contName = Get-OptionalInput  -Inputs $Inputs -Key 'state_container_name' -Default 'subvending-tfstate'
+    if ($Inputs.starter_name -eq 'terraform') {
+        $saName   = Get-RequiredInput -Inputs $Inputs -Key 'state_storage_account_name'
+        $contName = Get-OptionalInput  -Inputs $Inputs -Key 'state_container_name' -Default 'subvending-tfstate'
 
-    $exists = Get-AzResource { az storage container exists --auth-mode login --account-name $saName --name $contName --query exists -o tsv }
-    if ($exists -and $exists.Trim() -eq 'true') {
-        $d.StateContainer = $contName
-        $blobsRaw = Get-AzResource { az storage blob list --auth-mode login --account-name $saName --container-name $contName --query "length([])" -o tsv }
-        $count = if ($blobsRaw) { [int]$blobsRaw.Trim() } else { 0 }
-        $d.StateContainerBlobCount = $count
-        if ($count -gt 0) {
-            Write-Warn "State container '$contName' in '$saName' EXISTS, $count blob(s) -- vended-sub state. Container will NOT be deleted."
+        $exists = Get-AzResource { az storage container exists --auth-mode login --account-name $saName --name $contName --query exists -o tsv }
+        if ($exists -and $exists.Trim() -eq 'true') {
+            $d.StateContainer = $contName
+            $blobsRaw = Get-AzResource { az storage blob list --auth-mode login --account-name $saName --container-name $contName --query "length([])" -o tsv }
+            $count = if ($blobsRaw) { [int]$blobsRaw.Trim() } else { 0 }
+            $d.StateContainerBlobCount = $count
+            if ($count -gt 0) {
+                Write-Warn "State container '$contName' in '$saName' EXISTS, $count blob(s) -- vended-sub state. Container will NOT be deleted."
+            } else {
+                Write-Ok "State container '$contName' in '$saName' EXISTS and is empty"
+            }
         } else {
-            Write-Ok "State container '$contName' in '$saName' EXISTS and is empty"
+            Write-Warn "State container '$contName' in '$saName' -- not found"
         }
-    } else {
-        Write-Warn "State container '$contName' in '$saName' -- not found"
     }
 
     $ghOwner  = Get-RequiredInput -Inputs $Inputs -Key 'github_owner'
@@ -1739,7 +1756,10 @@ function Get-DestroyTargets {
         if ($vars) {
             $varObj = $vars | ConvertFrom-Json
             $managed = @('AZURE_CLIENT_ID', 'AZURE_TENANT_ID', 'AZURE_SUBSCRIPTION_ID',
-                'BACKEND_RESOURCE_GROUP_NAME', 'BACKEND_STORAGE_ACCOUNT_NAME', 'BACKEND_CONTAINER_NAME')
+                'VENDING_ENGINE', 'ALZ_ROOT_MANAGEMENT_GROUP_ID', 'AZURE_DEPLOYMENT_LOCATION')
+            if ($Inputs.starter_name -eq 'terraform') {
+                $managed += @('BACKEND_RESOURCE_GROUP_NAME', 'BACKEND_STORAGE_ACCOUNT_NAME', 'BACKEND_CONTAINER_NAME')
+            }
             $hit = @($varObj.variables | Where-Object { $managed -contains $_.name } | ForEach-Object { $_.name })
             $d.ActionsVariables = $hit
             Write-Ok "  Actions variables managed: $($hit.Count) ($(($hit -join ', ')))"

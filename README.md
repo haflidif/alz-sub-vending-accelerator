@@ -68,7 +68,7 @@ sub-vending/
 ├── bootstrap/                     # ← skeleton-only. Operator runs ONCE.
 │   ├── Invoke-Bootstrap.ps1       # Terraform compatibility implementation
 │   ├── terraform.tf, variables.tf
-│   ├── main.tf                    # UAMI + OIDC + RBAC + state container + GitHub config
+│   ├── main.tf                    # UAMI + OIDC + RBAC + optional Terraform state + GitHub
 │   ├── files.tf                   # seeds selected engine + renders platform config
 │   ├── outputs.tf
 │   ├── templates/CODEOWNERS.tftpl
@@ -161,11 +161,12 @@ engines, the workflow matrix isolates each request.
 ## Operator setup (one-time)
 
 > 🧪 **Testing in a fresh / green-field tenant?** You'll need an MG hierarchy,
-> a platform/management subscription, and a Terraform state storage account
+> a platform/management subscription and, for Terraform, a state storage account
 > in place before running `bootstrap/`. If you don't yet have those — e.g.
 > you're standing this up in a throwaway POC tenant — create a minimal MG
-> hierarchy + platform subscription + state storage account by any means
-> first. **If you already have an Azure Landing Zone, skip this entirely.**
+> hierarchy and platform subscription by any means. Terraform also requires
+> a state storage account. **If you already have an Azure Landing Zone, skip
+> this entirely.**
 
 **Read [`docs/onboarding.md`](docs/onboarding.md) first** — it lists the 6
 prerequisites and walks through the 3-step setup.
@@ -175,9 +176,9 @@ uses one Terraform apply to
 prepare either runtime engine:
 
 - Pipeline UAMI + 3 GitHub OIDC federated credentials (branch / PR / environment)
-- `subvending-tfstate` container in your **existing** platform SA
-- Role assignments: Storage Blob Data Contributor (container-scoped),
-  Management Group Contributor + User Access Administrator on the ALZ root MG,
+- Terraform only: `subvending-tfstate` container and container-scoped
+  Storage Blob Data Contributor
+- Management Group Contributor + User Access Administrator on the ALZ root MG,
   Network Contributor on the **hub VNet's resource group** (not subscription-wide)
 - GitHub repo + Actions variables + `production` environment with required reviewers
 - Branch protection on `main` (PR + status checks + linear history)
@@ -219,8 +220,8 @@ terraform init `
 terraform plan -var="sub_yaml_path=../landingzones/corp/prod-corp-erp-001.yaml"
 ```
 
-To work on this template itself, spin up a throwaway tenant + state storage
-account (by any means), then iterate on `bootstrap/` against it.
+To work on this template itself, use a throwaway tenant and platform
+subscription. Add state storage when testing the Terraform starter.
 
 ---
 
