@@ -130,9 +130,11 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Equal $false ('terraform/main.tf' -in $bicepPackage) 'Non-selected Terraform files must be excluded from the Bicep package.'
 
   $bootstrapMain = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/main.tf') -Raw
+  $bootstrapFiles = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/files.tf') -Raw
   $bootstrapVariables = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/variables.tf') -Raw
   $bootstrapOutputs = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/outputs.tf') -Raw
   $bootstrapMigrations = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/migrations.tf') -Raw
+  $codeownersTemplate = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/templates/CODEOWNERS.tftpl') -Raw
   $bootstrapScript = Get-Content -LiteralPath $legacyBootstrapPath -Raw
   $terraformOnlyCount = 'count\s*=\s*var\.starter_name\s*==\s*"terraform"\s*\?\s*1\s*:\s*0'
 
@@ -146,6 +148,15 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Equal 5 ([regex]::Matches($bootstrapMigrations, '(?m)^moved \{').Count) 'Conditional resources must preserve existing Terraform state addresses.'
   Assert-Matches $bootstrapScript "Terraform runtime state configuration is not used by the Bicep starter" 'Bicep configuration must skip Terraform runtime state prompts.'
   Assert-Matches $bootstrapScript '\$planArgs = @\(\$chdir, ''plan'', ''-input=false'', "-out=\$planPath"\)' 'Terraform plan output path must be passed as one expanded argument.'
+  Assert-Matches $bootstrapFiles 'skeleton_include_patterns\s*=\s*concat\(' 'Repository seeding must use stable package roots.'
+  Assert-Equal $false ($bootstrapFiles -match 'fileset\(local\.skeleton_root, "\*\*/\*"\)') 'Repository seeding must not scan mutable bootstrap state.'
+  Assert-Matches $bootstrapFiles '\^bicep/main\\\\\.json\$' 'Repository seeding must exclude the compiled Bicep artifact.'
+  Assert-Matches $bootstrapMain 'resource "github_team_repository" "production_reviewers"' 'Production reviewer teams must receive repository access.'
+  Assert-Matches $bootstrapMain 'depends_on = \[github_team_repository\.production_reviewers\]' 'Environment protection must wait for reviewer team access.'
+  Assert-Matches $bootstrapFiles 'starter_name\s*=\s*var\.starter_name' 'CODEOWNERS rendering must receive the selected starter.'
+  Assert-Matches $codeownersTemplate '%\{ if starter_name == "terraform" ~\}' 'CODEOWNERS must select the Terraform runtime path conditionally.'
+  Assert-Matches $codeownersTemplate '/bicep/' 'CODEOWNERS must protect the Bicep runtime path.'
+  Assert-Equal $false ($codeownersTemplate -match '/bootstrap/') 'Generated CODEOWNERS must not reference accelerator-only bootstrap files.'
 
   $invalidStarterRoot = Join-Path $testRoot 'invalid-starters'
   Copy-Item -LiteralPath $starterRoot -Destination $invalidStarterRoot -Recurse

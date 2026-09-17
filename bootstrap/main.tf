@@ -225,6 +225,16 @@ resource "github_actions_variable" "backend_container" {
 # Production environment with required reviewers
 ###############################################################################
 
+resource "github_team_repository" "production_reviewers" {
+  for_each = toset([for team_id in var.production_reviewer_team_ids : tostring(team_id)])
+
+  team_id    = each.value
+  repository = local.github_repo_name
+  permission = "push"
+
+  depends_on = [github_repository.this]
+}
+
 resource "github_repository_environment" "production" {
   repository  = local.github_repo_name
   environment = var.production_environment_name
@@ -246,6 +256,8 @@ resource "github_repository_environment" "production" {
     protected_branches     = true
     custom_branch_policies = false
   }
+
+  depends_on = [github_team_repository.production_reviewers]
 }
 
 ###############################################################################

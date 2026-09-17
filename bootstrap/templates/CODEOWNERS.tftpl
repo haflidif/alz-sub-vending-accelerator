@@ -6,9 +6,12 @@
 # Default owners — apply to everything that isn't specifically overridden.
 *                                   ${default_team}
 
-# Engine — locked down to the default team.
+# Selected engine - locked down to the default team.
+%{ if starter_name == "terraform" ~}
 /terraform/                         ${default_team}
-/bootstrap/                         ${default_team}
+%{ else ~}
+/bicep/                             ${default_team}
+%{ endif ~}
 /.github/                           ${default_team}
 /docs/                              ${default_team}
 %{ for archetype, owners in archetype_owners ~}
