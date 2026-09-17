@@ -72,6 +72,12 @@ template itself, not the AVM modules pinned by the engines. See
   repository.
 - Excluded the local compiled `bicep/main.json` build artifact from generated
   repositories.
+- Added support for GitHub immutable OIDC subjects containing numeric owner
+  and repository IDs.
+- Made the generated repository description identify the selected runtime
+  engine instead of referring only to Terraform.
+- Replaced `Management Group Contributor` with `Contributor` at the ALZ root
+  management group so the pipeline can validate and run Bicep deployments.
 - Made Bicep platform configuration and default resource-provider changes
   select every subscription in PR validation and apply workflows.
 - Added discovery regression coverage for Bicep platform-wide files and

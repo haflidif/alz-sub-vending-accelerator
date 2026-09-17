@@ -29,7 +29,11 @@ resource "azurerm_user_assigned_identity" "pipeline" {
 }
 
 locals {
-  github_subject_prefix = "repo:${var.github_owner}/${var.github_repository_name}"
+  github_subject_prefix = (
+    var.github_oidc_subject_mode == "immutable"
+    ? "repo:${var.github_owner}@${var.github_owner_id}/${var.github_repository_name}@${local.github_repository_numeric_id}"
+    : "repo:${var.github_owner}/${var.github_repository_name}"
+  )
 
   federated_credentials = {
     branch = {
@@ -84,10 +88,11 @@ resource "azurerm_role_assignment" "state_blob_contributor" {
   principal_type       = "ServicePrincipal"
 }
 
-# Management Group Contributor — to vend subs and place them under MGs
+# Contributor at the ALZ root MG is required for management-group deployments
+# and the subscription-scoped resources created by the vending engine.
 resource "azurerm_role_assignment" "mg_contributor" {
   scope                = "/providers/Microsoft.Management/managementGroups/${var.alz_root_management_group_id}"
-  role_definition_name = "Management Group Contributor"
+  role_definition_name = "Contributor"
   principal_id         = azurerm_user_assigned_identity.pipeline.principal_id
   principal_type       = "ServicePrincipal"
 }
@@ -132,7 +137,7 @@ resource "github_repository" "this" {
   count = var.create_github_repository ? 1 : 0
 
   name            = var.github_repository_name
-  description     = "Azure subscription vending — driven by Azure/avm-ptn-alz-sub-vending/azure"
+  description     = "Azure subscription vending with ${title(var.starter_name)} and GitHub Actions"
   visibility      = var.github_repository_visibility
   has_issues      = true
   has_discussions = false
@@ -154,6 +159,11 @@ locals {
     var.create_github_repository
     ? github_repository.this[0].name
     : data.github_repository.this[0].name
+  )
+  github_repository_numeric_id = (
+    var.create_github_repository
+    ? github_repository.this[0].repo_id
+    : data.github_repository.this[0].repo_id
   )
 }
 

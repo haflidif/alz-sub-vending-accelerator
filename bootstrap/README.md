@@ -40,11 +40,15 @@ repository.
   - `repo:<owner>/<repo>:ref:refs/heads/main`
   - `repo:<owner>/<repo>:pull_request`
   - `repo:<owner>/<repo>:environment:production`
+  - GitHub organizations using immutable OIDC subjects can select
+    `github_oidc_subject_mode = "immutable"`; the credentials then include
+    numeric owner and repository IDs to match GitHub's assertion.
 - Terraform starter only: `subvending-tfstate` container in the existing
   platform state SA
 - Role assignments for the UAMI:
   - Terraform starter only: `Storage Blob Data Contributor` on the container
-  - `Management Group Contributor` on the ALZ root MG
+  - `Contributor` on the ALZ root MG for management-group deployments and
+    their subscription-scoped resources
   - `User Access Administrator` on the ALZ root MG (toggleable)
   - `Network Contributor` on the **hub VNet's resource group** (RG-scoped, not subscription-wide). Skipped entirely if `hub_virtual_network_resource_id` is not set.
 - `github_branch_protection` on `main` (toggleable via `enforce_branch_protection`):

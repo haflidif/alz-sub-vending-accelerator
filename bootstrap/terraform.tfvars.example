@@ -50,6 +50,10 @@ github_repository_name       = "sub-vending"
 create_github_repository     = false
 github_repository_visibility = "private"
 github_default_branch        = "main"
+# Set immutable and provide the numeric owner ID when GitHub OIDC assertions
+# use repo:<owner>@<owner-id>/<repo>@<repo-id>:... subjects.
+github_oidc_subject_mode = "standard"
+# github_owner_id         = 12345678
 
 # Branch protection on main (PR + status checks required to merge).
 # Defaults match the shipped pr-validate.yml job names. Override

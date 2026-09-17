@@ -83,7 +83,7 @@ variable "alz_root_management_group_id" {
   description = <<-EOT
     Bare management-group name (NOT a full resource ID) at or above the archetype
     MGs (corp / online / sandbox / extra). The pipeline UAMI receives
-    `Management Group Contributor` (and optionally `User Access Administrator`)
+    `Contributor` (and optionally `User Access Administrator`)
     here, and inheritance covers every archetype MG below.
 
     PRECONDITION: this MG MUST be a parent of every archetype MG listed in
@@ -135,6 +135,29 @@ variable "github_default_branch" {
   type        = string
   default     = "main"
   description = "Default branch — used in OIDC subject claims."
+}
+
+variable "github_oidc_subject_mode" {
+  type        = string
+  default     = "standard"
+  description = "GitHub OIDC subject format: standard or immutable."
+
+  validation {
+    condition     = contains(["standard", "immutable"], var.github_oidc_subject_mode)
+    error_message = "github_oidc_subject_mode must be standard or immutable."
+  }
+}
+
+variable "github_owner_id" {
+  type        = number
+  default     = null
+  nullable    = true
+  description = "Numeric GitHub organization or user ID. Required for immutable OIDC subjects."
+
+  validation {
+    condition     = var.github_oidc_subject_mode != "immutable" || var.github_owner_id != null
+    error_message = "github_owner_id is required when github_oidc_subject_mode is immutable."
+  }
 }
 
 ###############################################################################
