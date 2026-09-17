@@ -199,7 +199,7 @@ jobs:
         shell: bash
         run: |
           az bicep install --version v0.47.16
-          deployment_name="$(printf 'vend-%s-%s' '${{ matrix.name }}' '${{ github.run_id }}' | cut -c1-64)"
+          deployment_name="$(printf 'vend-%s' '${{ matrix.name }}' | cut -c1-64)"
           az deployment mg create \
             --management-group-id "${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}" \
             --location "${{ vars.AZURE_DEPLOYMENT_LOCATION }}" \
