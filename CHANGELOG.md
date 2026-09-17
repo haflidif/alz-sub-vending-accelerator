@@ -64,6 +64,10 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Fixed
 
+- Made Bicep management-group deployment names stable per subscription so AVM
+  deployment-script support resources remain idempotent across workflow runs.
+- Made Bicep PR validation and what-if use the same deployment name as apply so
+  previews evaluate the resource identities that apply will use.
 - Stopped Bicep bootstraps from requiring or creating Terraform runtime state
   storage, blob RBAC, or backend GitHub variables.
 - Fixed bootstrap plan-file argument handling so Terraform writes and applies
