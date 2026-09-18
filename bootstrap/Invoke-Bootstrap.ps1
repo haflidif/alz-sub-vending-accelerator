@@ -917,6 +917,7 @@ function Configure-ProductionEnv {
 
     $Inputs.production_reviewer_user_ids = Get-GitHubNumericIds -Kind 'user' -Existing $Inputs.production_reviewer_user_ids
     $Inputs.production_reviewer_team_ids = Get-GitHubNumericIds -Kind 'team' -Existing $Inputs.production_reviewer_team_ids
+    Write-ProductionReviewerGuardrail -Inputs $Inputs
 }
 
 function Get-GitHubNumericIds {
@@ -973,6 +974,68 @@ function Get-GitHubNumericIds {
         }
     }
     return $ids.ToArray()
+}
+
+function Get-ProductionReviewerAssessment {
+    param([hashtable] $Inputs)
+
+    $eligibleReviewerIds = [System.Collections.Generic.HashSet[long]]::new()
+    foreach ($userId in @($Inputs.production_reviewer_user_ids)) {
+        if ($userId) {
+            $null = $eligibleReviewerIds.Add([long] $userId)
+        }
+    }
+
+    $failedTeamIds = [System.Collections.Generic.List[long]]::new()
+    foreach ($teamId in @($Inputs.production_reviewer_team_ids)) {
+        if (-not $teamId) { continue }
+
+        $memberIds = @(& gh api --paginate "teams/$teamId/members?per_page=100" --jq '.[].id' 2>$null)
+        if ($LASTEXITCODE -ne 0) {
+            $failedTeamIds.Add([long] $teamId)
+            continue
+        }
+
+        foreach ($memberId in $memberIds) {
+            $parsedId = 0L
+            if ([long]::TryParse("$memberId", [ref] $parsedId)) {
+                $null = $eligibleReviewerIds.Add($parsedId)
+            }
+        }
+    }
+
+    return [pscustomobject]@{
+        EligibleReviewerCount = $eligibleReviewerIds.Count
+        FailedTeamIds         = $failedTeamIds.ToArray()
+        IsComplete            = $failedTeamIds.Count -eq 0
+    }
+}
+
+function Write-ProductionReviewerGuardrail {
+    param(
+        [hashtable] $Inputs,
+        [switch] $Validation
+    )
+
+    $assessment = Get-ProductionReviewerAssessment -Inputs $Inputs
+    if (-not $assessment.IsComplete) {
+        Write-Warn "Could not verify membership for production reviewer team ID(s): $($assessment.FailedTeamIds -join ', '). Ensure at least two eligible people can approve deployments when self-review prevention is enabled."
+        return
+    }
+
+    if ($assessment.EligibleReviewerCount -eq 0) {
+        Write-Warn 'No eligible production environment reviewers are configured. Configure reviewers in GitHub before using the repository for production deployments.'
+        return
+    }
+
+    if ($assessment.EligibleReviewerCount -eq 1) {
+        Write-Warn 'Only one eligible production environment reviewer was found while self-review prevention is enabled. If that person starts or merges a deployment-triggering change, nobody can approve the deployment. Add a second eligible reviewer before production use.'
+        return
+    }
+
+    if ($Validation) {
+        Write-Ok "Production environment has $($assessment.EligibleReviewerCount) eligible reviewers."
+    }
 }
 
 function Configure-BillingScopes {
@@ -1445,6 +1508,8 @@ function Invoke-Validate {
             Write-Ok "billing_scopes[$k] ($type) shape OK."
         }
     }
+
+    Write-ProductionReviewerGuardrail -Inputs $Inputs -Validation
 
     # GitHub repo presence (only if create_github_repository=false)
     if (-not [bool] $Inputs.create_github_repository) {

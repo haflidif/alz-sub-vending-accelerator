@@ -11,6 +11,9 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Added
 
+- Bootstrap warnings for production environments with no eligible reviewers,
+  one-person approval deadlocks, or reviewer teams whose membership cannot be
+  verified.
 - Visible Bicep deployment progress with periodic Azure provisioning-state
   updates instead of a silent long-running CLI command.
 - Terraform and Bicep apply summaries containing the final subscription ID,

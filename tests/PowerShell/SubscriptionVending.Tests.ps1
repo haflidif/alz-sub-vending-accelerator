@@ -159,6 +159,76 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Matches $bootstrapFiles '\^bicep/main\\\\\.json\$' 'Repository seeding must exclude the compiled Bicep artifact.'
   Assert-Matches $bootstrapMain 'resource "github_team_repository" "production_reviewers"' 'Production reviewer teams must receive repository access.'
   Assert-Matches $bootstrapMain 'depends_on = \[github_team_repository\.production_reviewers\]' 'Environment protection must wait for reviewer team access.'
+  Assert-Matches $bootstrapScript 'function Get-ProductionReviewerAssessment' 'Bootstrap must assess actual eligible production reviewers.'
+  Assert-Matches $bootstrapScript 'teams/\$teamId/members\?per_page=100' 'Production reviewer assessment must resolve team membership.'
+  Assert-Matches $bootstrapScript 'HashSet\[long\]' 'Production reviewer assessment must deduplicate users and team members.'
+  Assert-Matches $bootstrapScript 'Only one eligible production environment reviewer was found while self-review prevention is enabled\.' 'Bootstrap must warn about the one-person approval deadlock.'
+  Assert-Equal 2 ([regex]::Matches($bootstrapScript, 'Write-ProductionReviewerGuardrail -Inputs \$Inputs').Count) 'Reviewer guardrail must run during configure and validate.'
+
+  $tokens = $null
+  $parseErrors = $null
+  $bootstrapAst = [System.Management.Automation.Language.Parser]::ParseFile(
+    $legacyBootstrapPath,
+    [ref] $tokens,
+    [ref] $parseErrors
+  )
+  Assert-Equal 0 $parseErrors.Count 'Bootstrap script must parse before reviewer functions are tested.'
+  foreach ($functionName in @('Get-ProductionReviewerAssessment', 'Write-ProductionReviewerGuardrail')) {
+    $functionAst = $bootstrapAst.Find(
+      {
+        param($node)
+        $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+          $node.Name -eq $functionName
+      },
+      $true
+    )
+    Invoke-Expression $functionAst.Extent.Text
+  }
+
+  $script:mockTeamMembers = @{
+    '100' = @(7, 8)
+    '200' = @(8)
+  }
+  function global:gh {
+    $teamMatch = [regex]::Match(($args -join ' '), 'teams/(\d+)/members')
+    $teamId = [long] $teamMatch.Groups[1].Value
+    if (-not $script:mockTeamMembers.ContainsKey("$teamId")) {
+      $global:LASTEXITCODE = 1
+      return
+    }
+    $global:LASTEXITCODE = 0
+    return $script:mockTeamMembers["$teamId"]
+  }
+
+  $assessment = Get-ProductionReviewerAssessment -Inputs @{
+    production_reviewer_user_ids = @(7)
+    production_reviewer_team_ids = @(100, 200)
+  }
+  Assert-Equal 2 $assessment.EligibleReviewerCount 'Reviewer assessment must deduplicate direct users and overlapping team membership.'
+  Assert-Equal $true $assessment.IsComplete 'Reviewer assessment must be complete when every team lookup succeeds.'
+
+  $failedAssessment = Get-ProductionReviewerAssessment -Inputs @{
+    production_reviewer_user_ids = @()
+    production_reviewer_team_ids = @(300)
+  }
+  Assert-Equal $false $failedAssessment.IsComplete 'Reviewer assessment must report failed team lookups.'
+  Assert-Equal 300 $failedAssessment.FailedTeamIds[0] 'Reviewer assessment must identify the team that could not be resolved.'
+
+  $script:reviewerWarning = ''
+  function Write-Warn { param([string] $Message) $script:reviewerWarning = $Message }
+  function Write-Ok { param([string] $Message) }
+  Write-ProductionReviewerGuardrail -Inputs @{
+    production_reviewer_user_ids = @(7)
+    production_reviewer_team_ids = @()
+  }
+  Assert-Matches $script:reviewerWarning 'Only one eligible production environment reviewer' 'One eligible reviewer must produce the deadlock warning.'
+
+  Remove-Item Function:\Get-ProductionReviewerAssessment -ErrorAction SilentlyContinue
+  Remove-Item Function:\Write-ProductionReviewerGuardrail -ErrorAction SilentlyContinue
+  Remove-Item Function:\Write-Warn -ErrorAction SilentlyContinue
+  Remove-Item Function:\Write-Ok -ErrorAction SilentlyContinue
+  Remove-Item Function:\global:gh -ErrorAction SilentlyContinue
+
   Assert-Matches $bootstrapMain 'repo:\$\{var\.github_owner\}@\$\{var\.github_owner_id\}/\$\{var\.github_repository_name\}@\$\{local\.github_repository_numeric_id\}' 'Immutable GitHub OIDC subjects must include owner and repository IDs.'
   Assert-Matches $bootstrapMain '(?s)resource "azurerm_role_assignment" "mg_contributor".*?role_definition_name\s*=\s*"Contributor"' 'The pipeline identity must be able to run management-group deployments.'
   Assert-Matches $bootstrapVariables 'variable "github_oidc_subject_mode"' 'Bootstrap variables must expose GitHub OIDC subject mode.'
