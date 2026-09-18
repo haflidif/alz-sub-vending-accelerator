@@ -108,6 +108,12 @@ than one group.
 | 12 | `CodeOwners` | `codeowners_default_team` (single handle), `codeowners_archetype_teams` (per-archetype overrides) | `@user` or `@org/team` format |
 | 13 | `Skeleton` | `copy_skeleton_files`, `skeleton_commit_author`, `skeleton_commit_email` | Email format |
 
+The production reviewer check is advisory. A one-person setup can continue
+without changing the secure `prevent_self_review` default. When that person
+initiates the workflow, a repository administrator can open the pending run
+and select **Start all waiting jobs**, provided administrator bypass has not
+been disabled for the environment.
+
 ## Sidecar lifecycle
 
 ```

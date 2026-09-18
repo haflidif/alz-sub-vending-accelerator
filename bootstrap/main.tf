@@ -250,6 +250,7 @@ resource "github_repository_environment" "production" {
   environment = var.production_environment_name
 
   prevent_self_review = true
+  can_admins_bypass   = true
 
   dynamic "reviewers" {
     for_each = (
