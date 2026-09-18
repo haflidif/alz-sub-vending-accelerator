@@ -1029,7 +1029,7 @@ function Write-ProductionReviewerGuardrail {
     }
 
     if ($assessment.EligibleReviewerCount -eq 1) {
-        Write-Warn 'Only one eligible production environment reviewer was found while self-review prevention is enabled. If that person starts or merges a deployment-triggering change, nobody can approve the deployment. Add a second eligible reviewer before production use.'
+        Write-Warn 'Only one eligible production environment reviewer was found while self-review prevention is enabled. If that person starts or merges a deployment-triggering change, they cannot approve it normally. One-person setups are allowed: a repository administrator can use "Start all waiting jobs" while the job is pending, or you can add a second eligible reviewer.'
         return
     }
 
