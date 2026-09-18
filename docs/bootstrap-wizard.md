@@ -99,7 +99,7 @@ than one group.
 | 3 | `Rbac` | `alz_root_management_group_id`, `connectivity_subscription_id`, `grant_user_access_administrator` | Bare MG name (not a full resource ID), GUID for sub IDs |
 | 4 | `GitHubRepo` | `github_owner`, `github_repository_name`, `github_repository_visibility`, `github_default_branch`, `create_github_repository`, `github_oidc_subject_mode` | GitHub handle format and optional immutable owner-ID resolution |
 | 5 | `BranchProtection` | `enforce_branch_protection`, `branch_protection_required_status_checks`, `branch_protection_required_approving_review_count` | Non-empty check names |
-| 6 | `ProductionEnv` | `production_environment_name`, reviewer team handles + user handles | Resolves handles → numeric IDs via GitHub API |
+| 6 | `ProductionEnv` | `production_environment_name`, reviewer team handles + user handles | Resolves handles to numeric IDs and warns when team membership leaves fewer than two eligible approvers |
 | 7 | `BillingScopes` | One entry per scope: key, `agreement_type` (EA/MCA/MPA), matching nested fields. Must include a `default` key. | `default` present, agreement-type ↔ nested-object consistency, path-string format on render |
 | 8 | `ManagementGroups` | `management_group_ids` map with one entry per supported archetype | Full MG resource ID format |
 | 9 | `Network` | `hub_virtual_network_resource_id` (optional) | `/subscriptions/<guid>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<name>` regex |

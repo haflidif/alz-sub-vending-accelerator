@@ -66,6 +66,9 @@ repository.
 - `production` Environment with required reviewers and `protected_branches` policy
 - `push` repository access for production reviewer teams so GitHub can use
   them as environment reviewers and CODEOWNERS
+- Bootstrap configure and validate phases resolve reviewer-team membership and
+  warn if fewer than two people can approve while self-review prevention is
+  enabled.
 - **Seeds the repo with the runtime skeleton**: the selected engine package,
   `landingzones/` examples, operator docs, `.github/workflows/`, `README.md`,
   `CONTRIBUTING.md`, and `.gitignore`. Accelerator development files such as
