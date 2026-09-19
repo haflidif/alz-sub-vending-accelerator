@@ -143,7 +143,7 @@ jobs:
         run: bash tests/scripts/discover-subs.Tests.sh
 
       - uses: hashicorp/setup-terraform@v4
-        if: hashFiles('bootstrap/**') != ''
+        if: hashFiles('bootstrap/**') != '' || hashFiles('terraform/**') != ''
         with:
           terraform_version: 1.15.5
           terraform_wrapper: false
@@ -151,6 +151,14 @@ jobs:
       - name: Validate bootstrap Terraform
         if: hashFiles('bootstrap/**') != ''
         working-directory: bootstrap
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false
+          terraform validate
+
+      - name: Validate runtime Terraform
+        if: hashFiles('terraform/**') != ''
+        working-directory: terraform
         run: |
           terraform fmt -check -recursive
           terraform init -backend=false
@@ -271,18 +279,17 @@ jobs:
         shell: bash
         run: |
           az bicep install --version v0.47.16
-          validate_name="$(printf 'validate-%s-%s' '${{ matrix.name }}' '${{ github.run_id }}' | cut -c1-64)"
-          preview_name="$(printf 'preview-%s-%s' '${{ matrix.name }}' '${{ github.run_id }}' | cut -c1-64)"
+          deployment_name="$(printf 'vend-%s' '${{ matrix.name }}' | cut -c1-64)"
           az deployment mg validate \
             --management-group-id "${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}" \
             --location "${{ vars.AZURE_DEPLOYMENT_LOCATION }}" \
-            --name "$validate_name" \
+            --name "$deployment_name" \
             --template-file bicep/main.bicep \
             --parameters @bicep/request.parameters.json
           az deployment mg what-if \
             --management-group-id "${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}" \
             --location "${{ vars.AZURE_DEPLOYMENT_LOCATION }}" \
-            --name "$preview_name" \
+            --name "$deployment_name" \
             --template-file bicep/main.bicep \
             --parameters @bicep/request.parameters.json \
             --no-pretty-print > bicep/what-if.txt
