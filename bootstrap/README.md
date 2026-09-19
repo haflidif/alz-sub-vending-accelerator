@@ -191,7 +191,7 @@ Source layout under `bootstrap/`:
 
 | File | Purpose |
 |---|---|
-| [`terraform.tf`](terraform.tf) | Bootstrap provider pins: `azurerm 5.0.0`, `azuread 3.9.0`, and `github 6.13.0`. Terraform Core supports versions from 1.10 through the latest 1.x release, matching the runtime AVM module requirement. Configures `azurerm` against `platform_subscription_id` with `storage_use_azuread`, pins `azuread` to `tenant_id`, and reads `GITHUB_TOKEN` from the environment. |
+| [`terraform.tf`](terraform.tf) | Bootstrap provider pins: `azurerm 5.6.0`, `azuread 3.9.0`, and `github 6.13.0`. Terraform Core supports versions from 1.10 through the latest 1.x release, matching the runtime AVM module requirement. Configures `azurerm` against `platform_subscription_id` with `storage_use_azuread`, pins `azuread` to `tenant_id`, and reads `GITHUB_TOKEN` from the environment. |
 | [`variables.tf`](variables.tf) | ~20 inputs across identity/location, state, RBAC, GitHub repo, branch protection, production env, billing scopes (map with EA/MCA/MPA per entry), MG IDs, cost allocation, mandatory tags, CODEOWNERS, skeleton seeding. Validation rules enforce billing-scope structure, MG ID format, GitHub handles, tag-key naming. |
 | [`locals.tf`](locals.tf) | Resolves each `billing_scopes` entry into the full Azure billing scope path string. EA → `enrollmentAccounts/...`, MCA → `billingProfiles/.../invoiceSections/...`, MPA → `customers/...`. |
 | [`main.tf`](main.tf) | UAMI + 3 FICs, MG and network RBAC, optional Terraform state container and blob RBAC, optional repository creation, Actions variables, production environment, and branch protection. |

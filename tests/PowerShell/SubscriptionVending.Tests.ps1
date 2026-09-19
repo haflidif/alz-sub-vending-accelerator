@@ -237,7 +237,9 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Matches $bootstrapScript "Choices @\('standard', 'immutable'\)" 'The bootstrap wizard must support immutable GitHub OIDC subjects.'
   Assert-Matches $bootstrapScript "-MinVersion '1\.10\.0'" 'Bootstrap preflight must accept the AVM module minimum Terraform version.'
   Assert-Matches $bootstrapScript "-MaxVersionExclusive '2\.0\.0'" 'Bootstrap preflight must allow newer Terraform 1.x releases.'
-  Assert-Matches (Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/terraform.tf') -Raw) 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Bootstrap Terraform version range is incorrect.'
+  $bootstrapTerraform = Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/terraform.tf') -Raw
+  Assert-Matches $bootstrapTerraform 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Bootstrap Terraform version range is incorrect.'
+  Assert-Matches $bootstrapTerraform 'source\s*=\s*"hashicorp/azurerm"\s*version\s*=\s*"5\.6\.0"' 'Bootstrap AzureRM provider pin is incorrect.'
   $runtimeVersions = Get-Content -LiteralPath (Join-Path $repositoryRoot 'terraform/versions.tf') -Raw
   Assert-Matches $runtimeVersions 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Runtime Terraform version range is incorrect.'
   Assert-Matches $runtimeVersions 'azapi\s*=\s*\{ source = "Azure/azapi", version = "2\.12\.0" \}' 'Runtime AzAPI must satisfy the AVM subscription-vending module constraints.'

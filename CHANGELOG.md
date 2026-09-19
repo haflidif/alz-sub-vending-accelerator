@@ -42,6 +42,8 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Changed
 
+- Updated the bootstrap AzureRM provider to `5.6.0` after validating the
+  bootstrap configuration and provider schema with the new version.
 - Updated the Terraform subscription-vending AVM module to `0.3.2` and AzAPI
   to `2.12.0`. Accelerator CI now initializes and validates the runtime
   Terraform dependency graph so incompatible transitive constraints fail
