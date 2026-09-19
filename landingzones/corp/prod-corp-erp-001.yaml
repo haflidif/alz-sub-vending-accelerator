@@ -49,15 +49,12 @@ budget:
     - finops@example.com
 
 # --- Subscription-scoped role assignments ----------------------------------
-# Keys are arbitrary; values are passed straight to the AVM module's
-# `role_assignments` map. principal_id must be an Entra object id.
-roleAssignments:
-  owners:
-    principal_id:               "REPLACE-WITH-OWNER-GROUP-OBJECT-ID"
-    role_definition_id_or_name: "Owner"
-  contributors:
-    principal_id:               "REPLACE-WITH-CONTRIB-GROUP-OBJECT-ID"
-    role_definition_id_or_name: "Contributor"
+# Keys are arbitrary. principal_id must be a real Entra object ID.
+roleAssignments: {}
+# roleAssignments:
+#   contributors:
+#     principal_id:               "00000000-0000-0000-0000-000000000000"
+#     role_definition_id_or_name: "Contributor"
 
 # --- Optional: user-assigned managed identity -------------------------------
 # managedIdentity:

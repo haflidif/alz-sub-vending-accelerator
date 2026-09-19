@@ -241,8 +241,12 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Matches $bootstrapTerraform 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Bootstrap Terraform version range is incorrect.'
   Assert-Matches $bootstrapTerraform 'source\s*=\s*"hashicorp/azurerm"\s*version\s*=\s*"5\.6\.0"' 'Bootstrap AzureRM provider pin is incorrect.'
   $runtimeVersions = Get-Content -LiteralPath (Join-Path $repositoryRoot 'terraform/versions.tf') -Raw
+  $runtimeLocals = Get-Content -LiteralPath (Join-Path $repositoryRoot 'terraform/locals.tf') -Raw
   Assert-Matches $runtimeVersions 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Runtime Terraform version range is incorrect.'
   Assert-Matches $runtimeVersions 'azapi\s*=\s*\{ source = "Azure/azapi", version = "2\.12\.0" \}' 'Runtime AzAPI must satisfy the AVM subscription-vending module constraints.'
+  Assert-Matches $runtimeLocals 'name\s*=\s*try\(subnet\.name,\s*subnet_name\)' 'Terraform subnet inputs must derive the AVM-required name from the request map key.'
+  Assert-Matches $runtimeLocals 'default_outbound_access_enabled\s*=\s*subnet\.default_outbound_access' 'Terraform subnet inputs must normalize the shared outbound access field.'
+  Assert-Matches $runtimeLocals 'definition\s*=\s*assignment\.role_definition_id_or_name' 'Terraform role assignments must normalize the shared role definition field.'
   Assert-Matches $prValidateWorkflow "if: hashFiles\('bootstrap/\*\*'\) != '' \|\| hashFiles\('terraform/\*\*'\) != ''" 'Terraform setup must run for accelerator and generated Terraform repositories.'
   Assert-Matches $prValidateWorkflow '(?s)name: Validate runtime Terraform.*?terraform init -backend=false.*?terraform validate' 'Accelerator validation must initialize and validate the runtime dependency graph.'
   Assert-Matches $prValidateWorkflow "needs\.accelerator-validate\.outputs\.sources-available != 'true'" 'PR runtime previews must skip the accelerator source repository.'

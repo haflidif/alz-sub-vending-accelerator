@@ -50,8 +50,7 @@ Most-used optional fields:
 - `network` — `{ enabled, addressSpace, hubPeering, subnets }`. When `enabled: true`, `addressSpace` is required.
 - `budget` — `{ amount, contacts }`. **Required for `sandbox`** (schema-enforced).
 - `roleAssignments`: Map of `{ principal_id, role_definition_id_or_name, ... }`.
-  Terraform passes the map to its AVM. Bicep normalizes the fields supported
-  by its pinned AVM.
+  Each runtime normalizes the shared request fields for its pinned AVM.
 - `managedIdentity`: `{ name, resourceGroupName? }` to provision a UAMI
   alongside the subscription.
 

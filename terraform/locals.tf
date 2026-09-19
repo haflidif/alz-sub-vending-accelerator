@@ -147,7 +147,17 @@ locals {
       hub_network_resource_id = local.hub_peering_effective ? var.hub_virtual_network_resource_id : null
       hub_peering_enabled     = local.hub_peering_effective
       hub_peering_direction   = local.hub_peering_effective ? "both" : null
-      subnets                 = try(local.network_input.subnets, {})
+      subnets = {
+        for subnet_name, subnet in try(local.network_input.subnets, {}) : subnet_name => merge(
+          subnet,
+          {
+            name = try(subnet.name, subnet_name)
+          },
+          contains(keys(subnet), "default_outbound_access") ? {
+            default_outbound_access_enabled = subnet.default_outbound_access
+          } : {},
+        )
+      }
     }
   } : {}
 
@@ -203,7 +213,19 @@ locals {
   # ---------------------------------------------------------------------------
   # Role assignments + UMI passthrough
   # ---------------------------------------------------------------------------
-  role_assignments = lookup(local.sub, "roleAssignments", {})
+  role_assignments = {
+    for assignment_name, assignment in lookup(local.sub, "roleAssignments", {}) : assignment_name => {
+      principal_id              = assignment.principal_id
+      definition                = assignment.role_definition_id_or_name
+      relative_scope            = try(assignment.relative_scope, "")
+      resource_group_scope_key  = try(assignment.resource_group_scope_key, null)
+      condition                 = try(assignment.condition, null)
+      condition_version         = try(assignment.condition_version, null)
+      principal_type            = try(assignment.principal_type, null)
+      definition_lookup_enabled = try(assignment.definition_lookup_enabled, false)
+      use_random_uuid           = try(assignment.use_random_uuid, false)
+    }
+  }
   managed_identity = lookup(local.sub, "managedIdentity", null)
   user_managed_identities = local.managed_identity == null ? {} : {
     primary = {
