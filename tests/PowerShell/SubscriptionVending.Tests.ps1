@@ -159,6 +159,77 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Matches $bootstrapFiles '\^bicep/main\\\\\.json\$' 'Repository seeding must exclude the compiled Bicep artifact.'
   Assert-Matches $bootstrapMain 'resource "github_team_repository" "production_reviewers"' 'Production reviewer teams must receive repository access.'
   Assert-Matches $bootstrapMain 'depends_on = \[github_team_repository\.production_reviewers\]' 'Environment protection must wait for reviewer team access.'
+  Assert-Matches $bootstrapMain 'can_admins_bypass\s*=\s*true' 'Repository administrators must be able to bypass a one-person environment approval deadlock.'
+  Assert-Matches $bootstrapScript 'function Get-ProductionReviewerAssessment' 'Bootstrap must assess actual eligible production reviewers.'
+  Assert-Matches $bootstrapScript 'teams/\$teamId/members\?per_page=100' 'Production reviewer assessment must resolve team membership.'
+  Assert-Matches $bootstrapScript 'HashSet\[long\]' 'Production reviewer assessment must deduplicate users and team members.'
+  Assert-Matches $bootstrapScript 'One-person setups are allowed: a repository administrator can use "Start all waiting jobs"' 'Bootstrap must explain the supported one-person admin bypass.'
+  Assert-Equal 2 ([regex]::Matches($bootstrapScript, 'Write-ProductionReviewerGuardrail -Inputs \$Inputs').Count) 'Reviewer guardrail must run during configure and validate.'
+
+  $tokens = $null
+  $parseErrors = $null
+  $bootstrapAst = [System.Management.Automation.Language.Parser]::ParseFile(
+    $legacyBootstrapPath,
+    [ref] $tokens,
+    [ref] $parseErrors
+  )
+  Assert-Equal 0 $parseErrors.Count 'Bootstrap script must parse before reviewer functions are tested.'
+  foreach ($functionName in @('Get-ProductionReviewerAssessment', 'Write-ProductionReviewerGuardrail')) {
+    $functionAst = $bootstrapAst.Find(
+      {
+        param($node)
+        $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+          $node.Name -eq $functionName
+      },
+      $true
+    )
+    Invoke-Expression $functionAst.Extent.Text
+  }
+
+  $script:mockTeamMembers = @{
+    '100' = @(7, 8)
+    '200' = @(8)
+  }
+  function global:gh {
+    $teamMatch = [regex]::Match(($args -join ' '), 'teams/(\d+)/members')
+    $teamId = [long] $teamMatch.Groups[1].Value
+    if (-not $script:mockTeamMembers.ContainsKey("$teamId")) {
+      $global:LASTEXITCODE = 1
+      return
+    }
+    $global:LASTEXITCODE = 0
+    return $script:mockTeamMembers["$teamId"]
+  }
+
+  $assessment = Get-ProductionReviewerAssessment -Inputs @{
+    production_reviewer_user_ids = @(7)
+    production_reviewer_team_ids = @(100, 200)
+  }
+  Assert-Equal 2 $assessment.EligibleReviewerCount 'Reviewer assessment must deduplicate direct users and overlapping team membership.'
+  Assert-Equal $true $assessment.IsComplete 'Reviewer assessment must be complete when every team lookup succeeds.'
+
+  $failedAssessment = Get-ProductionReviewerAssessment -Inputs @{
+    production_reviewer_user_ids = @()
+    production_reviewer_team_ids = @(300)
+  }
+  Assert-Equal $false $failedAssessment.IsComplete 'Reviewer assessment must report failed team lookups.'
+  Assert-Equal 300 $failedAssessment.FailedTeamIds[0] 'Reviewer assessment must identify the team that could not be resolved.'
+
+  $script:reviewerWarning = ''
+  function Write-Warn { param([string] $Message) $script:reviewerWarning = $Message }
+  function Write-Ok { param([string] $Message) }
+  Write-ProductionReviewerGuardrail -Inputs @{
+    production_reviewer_user_ids = @(7)
+    production_reviewer_team_ids = @()
+  }
+  Assert-Matches $script:reviewerWarning 'Start all waiting jobs' 'One eligible reviewer must produce admin bypass guidance.'
+
+  Remove-Item Function:\Get-ProductionReviewerAssessment -ErrorAction SilentlyContinue
+  Remove-Item Function:\Write-ProductionReviewerGuardrail -ErrorAction SilentlyContinue
+  Remove-Item Function:\Write-Warn -ErrorAction SilentlyContinue
+  Remove-Item Function:\Write-Ok -ErrorAction SilentlyContinue
+  Remove-Item Function:\global:gh -ErrorAction SilentlyContinue
+
   Assert-Matches $bootstrapMain 'repo:\$\{var\.github_owner\}@\$\{var\.github_owner_id\}/\$\{var\.github_repository_name\}@\$\{local\.github_repository_numeric_id\}' 'Immutable GitHub OIDC subjects must include owner and repository IDs.'
   Assert-Matches $bootstrapMain '(?s)resource "azurerm_role_assignment" "mg_contributor".*?role_definition_name\s*=\s*"Contributor"' 'The pipeline identity must be able to run management-group deployments.'
   Assert-Matches $bootstrapVariables 'variable "github_oidc_subject_mode"' 'Bootstrap variables must expose GitHub OIDC subject mode.'
@@ -170,6 +241,18 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Matches (Get-Content -LiteralPath (Join-Path $repositoryRoot 'terraform/versions.tf') -Raw) 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Runtime Terraform version range is incorrect.'
   Assert-Matches $prValidateWorkflow "needs\.accelerator-validate\.outputs\.sources-available != 'true'" 'PR runtime previews must skip the accelerator source repository.'
   Assert-Matches $applyWorkflow 'Accelerator source repository detected; skipping runtime apply\.' 'Apply must skip sample subscriptions in the accelerator source repository.'
+  Assert-Matches $prValidateWorkflow "deployment_name=`"`\$\(printf 'vend-%s' '\$\{\{ matrix\.name \}\}' \| cut -c1-64\)`"" 'Bicep preview must use a stable per-subscription deployment name.'
+  Assert-Matches $applyWorkflow "deployment_name=`"`\$\(printf 'vend-%s' '\$\{\{ matrix\.name \}\}' \| cut -c1-64\)`"" 'Bicep apply must use a stable per-subscription deployment name.'
+  Assert-Equal $false ($prValidateWorkflow -match "deployment_name=.*github\.run_id") 'Bicep preview deployment names must not depend on the workflow run ID.'
+  Assert-Equal $false ($applyWorkflow -match "deployment_name=.*github\.run_id") 'Bicep apply deployment names must not depend on the workflow run ID.'
+  Assert-Matches $applyWorkflow 'az deployment mg create(?s).*?--no-wait' 'Bicep apply must start asynchronously so workflow progress can be reported.'
+  Assert-Matches $applyWorkflow 'Deployment state: \$\{provisioning_state\}\. Elapsed: \$\{elapsed\}s\.' 'Bicep apply must report deployment progress.'
+  Assert-Equal 2 ([regex]::Matches($applyWorkflow, '## Subscription vending result').Count) 'Both runtime engines must publish a deployment summary.'
+  Assert-Matches $applyWorkflow 'terraform output -json > vending-outputs\.json' 'Terraform apply must capture structured outputs.'
+  Assert-Matches $applyWorkflow '\.subscription_resource_id\.value' 'Terraform summary must publish the subscription resource ID.'
+  Assert-Matches $applyWorkflow '\.effective_tags\.value' 'Terraform summary must publish effective tags.'
+  Assert-Matches $applyWorkflow '\.properties\.outputs\.subscriptionId\.value' 'Bicep summary must publish the subscription ID.'
+  Assert-Matches $applyWorkflow 'BICEP_DEPLOYMENT_ELAPSED_SECONDS' 'Bicep summary must publish elapsed deployment time.'
   Assert-Matches $bootstrapFiles 'starter_name\s*=\s*var\.starter_name' 'CODEOWNERS rendering must receive the selected starter.'
   Assert-Matches $codeownersTemplate '%\{ if starter_name == "terraform" ~\}' 'CODEOWNERS must select the Terraform runtime path conditionally.'
   Assert-Matches $codeownersTemplate '/bicep/' 'CODEOWNERS must protect the Bicep runtime path.'

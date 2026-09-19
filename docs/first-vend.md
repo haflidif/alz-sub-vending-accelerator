@@ -80,6 +80,13 @@ When the PR is merged to `main`:
   (`<arch>/<name>.tfstate` in `subvending-tfstate`); Bicep uses
   management-group deployments.
 
+For a deliberate one-person setup, the workflow initiator cannot use the
+normal **Approve and deploy** action because self-review prevention remains
+enabled. While the job is pending, a repository administrator can instead
+select **Start all waiting jobs**, choose the production environment, record
+the reason, and confirm the bypass. GitHub records this as an explicit
+deployment-protection override.
+
 Each apply takes ~3–8 minutes for a fresh subscription (creating the alias,
 moving it under the MG, registering providers, optional VNet + peering, role
 assignments, UAMI + federated credentials).

@@ -11,6 +11,15 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Added
 
+- Bootstrap warnings for production environments with no eligible reviewers,
+  one-person approval deadlocks, or reviewer teams whose membership cannot be
+  verified. One-person setups now receive guidance for GitHub's audited
+  administrator bypass while self-review prevention remains enabled.
+- Visible Bicep deployment progress with periodic Azure provisioning-state
+  updates instead of a silent long-running CLI command.
+- Terraform and Bicep apply summaries containing the final subscription ID,
+  deployment status, and engine-specific operational outputs.
+- Bicep deployment response artifacts for successful and failed runs.
 - `SubscriptionVending` PowerShell module as the accelerator entry point, with
   engine discovery, Terraform bootstrap orchestration, configuration
   validation, and starter contract validation.
@@ -64,6 +73,10 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Fixed
 
+- Made Bicep management-group deployment names stable per subscription so AVM
+  deployment-script support resources remain idempotent across workflow runs.
+- Made Bicep PR validation and what-if use the same deployment name as apply so
+  previews evaluate the resource identities that apply will use.
 - Stopped Bicep bootstraps from requiring or creating Terraform runtime state
   storage, blob RBAC, or backend GitHub variables.
 - Fixed bootstrap plan-file argument handling so Terraform writes and applies

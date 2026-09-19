@@ -54,8 +54,18 @@ to Bicep templates, the request compiler, `platform.json`, or
    subscriptions in parallel:
    - Logs into Azure via `azure/login@v3` using OIDC against the operator's UAMI (FIC matches the trigger — branch / PR / environment).
    - Terraform initializes the per-sub backend, creates a saved plan, applies
-     it, and uploads the plan artifact.
-   - Bicep compiles the YAML request and runs `az deployment mg create`.
+     it, captures structured Terraform outputs, and uploads the plan and
+     output artifacts.
+   - Bicep compiles the YAML request, starts `az deployment mg create`
+     asynchronously, and reports the Azure provisioning state every 30
+     seconds.
+
+Both engines publish a GitHub job summary containing the request path,
+deployment status, subscription ID, and engine-specific operational details.
+The Bicep summary also reports the stable deployment name, budget resource ID,
+and any resource-provider registration failures. Failed Bicep deployments add
+the Azure error object to the summary and retain the deployment response as an
+artifact.
 
 The `production` GitHub Environment gates every job in this matrix —
 required reviewers are configured by `bootstrap/` from
@@ -129,6 +139,7 @@ down — see
 | `Expected — Waiting for status to be reported` on a PR that doesn't touch `landingzones/` | The `plan` matrix has `count=0` so the job didn't run. The required check `PR Validate Result` should still report. | Confirm the `PR Validate / PR Validate Result` check appears; if not, branch protection is referencing a job name that doesn't exist (rename mismatch). |
 | `AADSTS70021: No matching federated identity record found` | The workflow's subject claim doesn't match any FIC on the UAMI. | Re-check `repo:<owner>/<repo>:…` in the FIC vs the workflow's trigger context. If you renamed `main` or the `production` environment, update the FIC. |
 | Preview succeeds in PR but `apply` blocks forever | No reviewer has approved the `production` environment. | Settings → Environments → `production` → review the run, or update the environment reviewers in GitHub Settings. |
+| The only reviewer cannot approve their own deployment | Self-review prevention is enabled, as intended. | While the job is pending, a repository administrator can select **Start all waiting jobs**, choose the environment, enter an audit comment, and confirm the per-run bypass. |
 | `Error: state blob is already locked` | A previous `apply` job died without releasing the lease. | Azure portal → state SA → container → blob → break lease. Or `terraform force-unlock <lock-id>` from a workstation that has access. |
 | `mode=single` workflow_dispatch fails with `not found: …` | `SUB_PATH` doesn't resolve to a real file. | `discover-subs.sh` will append `.yaml` if missing — check the typed path and the actual filename. |
 

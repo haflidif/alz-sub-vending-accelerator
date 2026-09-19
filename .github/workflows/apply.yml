@@ -150,7 +150,52 @@ jobs:
 
       - name: Terraform apply
         working-directory: terraform
-        run: terraform apply -input=false -no-color tfplan
+        run: |
+          terraform apply -input=false -no-color tfplan
+          terraform output -json > vending-outputs.json
+
+      - name: Publish Terraform deployment summary
+        if: always()
+        working-directory: terraform
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          subscription_id="Unavailable"
+          subscription_resource_id="Unavailable"
+          management_group_id="Unavailable"
+          alias_name="${{ matrix.name }}"
+          effective_tags="Unavailable"
+
+          if [[ -f vending-outputs.json ]]; then
+            subscription_id="$(jq -r '.subscription_id.value // "Unavailable"' vending-outputs.json)"
+            subscription_resource_id="$(jq -r '.subscription_resource_id.value // "Unavailable"' vending-outputs.json)"
+            management_group_id="$(jq -r '.management_group_id.value // "Unavailable"' vending-outputs.json)"
+            alias_name="$(jq -r '.alias_name.value // "${{ matrix.name }}"' vending-outputs.json)"
+            effective_tags="$(jq -c '.effective_tags.value // "Unavailable"' vending-outputs.json)"
+          fi
+
+          {
+            echo "## Subscription vending result"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Engine | Terraform |"
+            echo "| Status | ${JOB_STATUS} |"
+            echo "| Request | \`${{ matrix.sub_path }}\` |"
+            echo "| Alias | \`${alias_name}\` |"
+            echo "| Archetype | \`${{ matrix.archetype }}\` |"
+            echo "| Subscription ID | \`${subscription_id}\` |"
+            echo "| Subscription resource ID | \`${subscription_resource_id}\` |"
+            echo "| Management group | \`${management_group_id}\` |"
+            echo "| State key | \`${{ matrix.state_key }}\` |"
+            echo ""
+            echo "### Effective tags"
+            echo ""
+            echo '```json'
+            echo "$effective_tags" | jq .
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v7
         if: always()
@@ -158,6 +203,7 @@ jobs:
           name: apply-${{ matrix.archetype }}-${{ matrix.name }}
           path: |
             terraform/tfplan
+            terraform/vending-outputs.json
           retention-days: 30
 
   bicep-apply:
@@ -199,10 +245,149 @@ jobs:
         shell: bash
         run: |
           az bicep install --version v0.47.16
-          deployment_name="$(printf 'vend-%s-%s' '${{ matrix.name }}' '${{ github.run_id }}' | cut -c1-64)"
+          deployment_name="$(printf 'vend-%s' '${{ matrix.name }}' | cut -c1-64)"
+          echo "BICEP_DEPLOYMENT_NAME=$deployment_name" >> "$GITHUB_ENV"
+          echo "::notice title=Subscription deployment started::Deploying ${{ matrix.name }}. Azure subscription propagation and resource provider registration can take 15 to 30 minutes."
+
           az deployment mg create \
             --management-group-id "${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}" \
             --location "${{ vars.AZURE_DEPLOYMENT_LOCATION }}" \
             --name "$deployment_name" \
             --template-file bicep/main.bicep \
-            --parameters @bicep/request.parameters.json
+            --parameters @bicep/request.parameters.json \
+            --no-wait \
+            --only-show-errors
+
+          started_at="$(date +%s)"
+          status_failures=0
+          while true; do
+            elapsed="$(( $(date +%s) - started_at ))"
+            if ! provisioning_state="$(az deployment mg show \
+              --management-group-id "${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}" \
+              --name "$deployment_name" \
+              --query properties.provisioningState \
+              --output tsv \
+              --only-show-errors 2>bicep/deployment-status-error.txt)"; then
+              status_failures="$(( status_failures + 1 ))"
+              if (( elapsed < 120 || status_failures < 4 )); then
+                echo "Deployment status is not available yet. Retrying in 15 seconds. Elapsed: ${elapsed}s."
+                sleep 15
+                continue
+              fi
+              cat bicep/deployment-status-error.txt
+              echo "BICEP_DEPLOYMENT_ELAPSED_SECONDS=$elapsed" >> "$GITHUB_ENV"
+              exit 1
+            fi
+            status_failures=0
+            : > bicep/deployment-status-error.txt
+
+            echo "Deployment state: ${provisioning_state}. Elapsed: ${elapsed}s."
+            case "$provisioning_state" in
+              Succeeded)
+                echo "BICEP_DEPLOYMENT_ELAPSED_SECONDS=$elapsed" >> "$GITHUB_ENV"
+                break
+                ;;
+              Failed|Canceled)
+                az deployment mg show \
+                  --management-group-id "${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}" \
+                  --name "$deployment_name" \
+                  --output json > bicep/deployment.json || true
+                az deployment operation mg list \
+                  --management-group-id "${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}" \
+                  --name "$deployment_name" \
+                  --query "[?properties.provisioningState=='Failed'].properties.statusMessage" \
+                  --output json || true
+                echo "BICEP_DEPLOYMENT_ELAPSED_SECONDS=$elapsed" >> "$GITHUB_ENV"
+                exit 1
+                ;;
+            esac
+
+            if (( elapsed >= 3600 )); then
+              echo "::error::Deployment did not complete within 60 minutes."
+              az deployment mg show \
+                --management-group-id "${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}" \
+                --name "$deployment_name" \
+                --output json > bicep/deployment.json || true
+              echo "BICEP_DEPLOYMENT_ELAPSED_SECONDS=$elapsed" >> "$GITHUB_ENV"
+              exit 1
+            fi
+            sleep 30
+          done
+
+          az deployment mg show \
+            --management-group-id "${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}" \
+            --name "$deployment_name" \
+            --output json > bicep/deployment.json
+
+      - name: Publish Bicep deployment summary
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          provisioning_state="Unavailable"
+          subscription_id="Unavailable"
+          subscription_resource_id="Unavailable"
+          budget_resource_id="Unavailable"
+          failed_providers="Unavailable"
+          failed_provider_features="Unavailable"
+
+          if [[ -f bicep/deployment.json ]]; then
+            provisioning_state="$(jq -r '.properties.provisioningState // "Unavailable"' bicep/deployment.json)"
+            subscription_id="$(jq -r '.properties.outputs.subscriptionId.value // "Unavailable"' bicep/deployment.json)"
+            subscription_resource_id="$(jq -r '.properties.outputs.subscriptionResourceId.value // "Unavailable"' bicep/deployment.json)"
+            budget_resource_id="$(jq -r '.properties.outputs.budgetResourceId.value // "Unavailable"' bicep/deployment.json)"
+            failed_providers="$(jq -r '.properties.outputs.failedResourceProviders.value // "Unavailable"' bicep/deployment.json)"
+            failed_provider_features="$(jq -r '.properties.outputs.failedResourceProviderFeatures.value // "Unavailable"' bicep/deployment.json)"
+          fi
+
+          {
+            echo "## Subscription vending result"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Engine | Bicep |"
+            echo "| Job status | ${JOB_STATUS} |"
+            echo "| Azure deployment state | ${provisioning_state} |"
+            echo "| Request | \`${{ matrix.sub_path }}\` |"
+            echo "| Archetype | \`${{ matrix.archetype }}\` |"
+            echo "| Deployment | \`${BICEP_DEPLOYMENT_NAME:-Unavailable}\` |"
+            echo "| Elapsed | ${BICEP_DEPLOYMENT_ELAPSED_SECONDS:-Unavailable} seconds |"
+            echo "| Subscription ID | \`${subscription_id}\` |"
+            echo "| Subscription resource ID | \`${subscription_resource_id}\` |"
+            echo "| Management group | \`${{ vars.ALZ_ROOT_MANAGEMENT_GROUP_ID }}\` |"
+            echo "| Budget resource ID | \`${budget_resource_id}\` |"
+            echo "| Failed resource providers | ${failed_providers} |"
+            echo "| Failed provider features | ${failed_provider_features} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ -f bicep/deployment.json ]] && jq -e '.properties.error != null' bicep/deployment.json > /dev/null; then
+            {
+              echo ""
+              echo "### Azure deployment error"
+              echo ""
+              echo '```json'
+              jq '.properties.error' bicep/deployment.json
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          elif [[ -s bicep/deployment-status-error.txt ]]; then
+            {
+              echo ""
+              echo "### Deployment status error"
+              echo ""
+              echo '```text'
+              cat bicep/deployment-status-error.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: deployment-${{ matrix.archetype }}-${{ matrix.name }}
+          path: |
+            bicep/request.parameters.json
+            bicep/deployment.json
+            bicep/deployment-status-error.txt
+          if-no-files-found: ignore
+          retention-days: 30
