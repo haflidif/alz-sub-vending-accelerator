@@ -238,7 +238,11 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Matches $bootstrapScript "-MinVersion '1\.10\.0'" 'Bootstrap preflight must accept the AVM module minimum Terraform version.'
   Assert-Matches $bootstrapScript "-MaxVersionExclusive '2\.0\.0'" 'Bootstrap preflight must allow newer Terraform 1.x releases.'
   Assert-Matches (Get-Content -LiteralPath (Join-Path $repositoryRoot 'bootstrap/terraform.tf') -Raw) 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Bootstrap Terraform version range is incorrect.'
-  Assert-Matches (Get-Content -LiteralPath (Join-Path $repositoryRoot 'terraform/versions.tf') -Raw) 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Runtime Terraform version range is incorrect.'
+  $runtimeVersions = Get-Content -LiteralPath (Join-Path $repositoryRoot 'terraform/versions.tf') -Raw
+  Assert-Matches $runtimeVersions 'required_version\s*=\s*">= 1\.10\.0, < 2\.0\.0"' 'Runtime Terraform version range is incorrect.'
+  Assert-Matches $runtimeVersions 'azapi\s*=\s*\{ source = "Azure/azapi", version = "2\.12\.0" \}' 'Runtime AzAPI must satisfy the AVM subscription-vending module constraints.'
+  Assert-Matches $prValidateWorkflow "if: hashFiles\('bootstrap/\*\*'\) != '' \|\| hashFiles\('terraform/\*\*'\) != ''" 'Terraform setup must run for accelerator and generated Terraform repositories.'
+  Assert-Matches $prValidateWorkflow '(?s)name: Validate runtime Terraform.*?terraform init -backend=false.*?terraform validate' 'Accelerator validation must initialize and validate the runtime dependency graph.'
   Assert-Matches $prValidateWorkflow "needs\.accelerator-validate\.outputs\.sources-available != 'true'" 'PR runtime previews must skip the accelerator source repository.'
   Assert-Matches $applyWorkflow 'Accelerator source repository detected; skipping runtime apply\.' 'Apply must skip sample subscriptions in the accelerator source repository.'
   Assert-Matches $prValidateWorkflow "deployment_name=`"`\$\(printf 'vend-%s' '\$\{\{ matrix\.name \}\}' \| cut -c1-64\)`"" 'Bicep preview must use a stable per-subscription deployment name.'

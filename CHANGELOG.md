@@ -42,6 +42,10 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Changed
 
+- Updated the Terraform subscription-vending AVM module to `0.3.2` and AzAPI
+  to `2.12.0`. Accelerator CI now initializes and validates the runtime
+  Terraform dependency graph so incompatible transitive constraints fail
+  before merge.
 - Made the PowerShell module the preferred bootstrap interface while retaining
   `bootstrap/Invoke-Bootstrap.ps1` as the current Terraform implementation.
 - Excluded accelerator development assets, tests, starter metadata, and

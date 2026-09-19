@@ -143,7 +143,7 @@ jobs:
         run: bash tests/scripts/discover-subs.Tests.sh
 
       - uses: hashicorp/setup-terraform@v4
-        if: hashFiles('bootstrap/**') != ''
+        if: hashFiles('bootstrap/**') != '' || hashFiles('terraform/**') != ''
         with:
           terraform_version: 1.15.5
           terraform_wrapper: false
@@ -151,6 +151,14 @@ jobs:
       - name: Validate bootstrap Terraform
         if: hashFiles('bootstrap/**') != ''
         working-directory: bootstrap
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false
+          terraform validate
+
+      - name: Validate runtime Terraform
+        if: hashFiles('terraform/**') != ''
+        working-directory: terraform
         run: |
           terraform fmt -check -recursive
           terraform init -backend=false
