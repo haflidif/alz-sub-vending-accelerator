@@ -147,7 +147,7 @@ You only need to do **one** thing manually:
    pre-filled).
 
 That's it — open a PR against an example YAML in `landingzones/` to verify
-the pipeline end-to-end. See [`docs/first-vend.md`](../docs/first-vend.md).
+the pipeline end-to-end. See [Consumer walkthrough](../docs/consumers/first-subscription.md).
 
 > **Day-2 changes go to the seeded repo, not back here.** Bootstrap can be
 > resumed after a partial failure, but a successfully completed bootstrap is
@@ -155,7 +155,7 @@ the pipeline end-to-end. See [`docs/first-vend.md`](../docs/first-vend.md).
 > is **not** reapplied to rotate values or synchronize source files. Anything in
 > `terraform/terraform.auto.tfvars` or `bicep/platform.json` in the seeded repo
 > is changed by editing that file directly via PR. See
-> [`docs/onboarding.md` → "Updating platform inputs after bootstrap"](../docs/onboarding.md#updating-platform-inputs-after-bootstrap)
+> [Updating platform inputs after bootstrap](../docs/operators/run.md#updating-platform-inputs-after-bootstrap)
 > for the full table. Future starter and engine updates are tracked separately
 > in [#34](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/issues/34).
 

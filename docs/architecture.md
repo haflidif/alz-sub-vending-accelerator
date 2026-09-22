@@ -76,6 +76,10 @@ a management-group deployment after approval.
 
 ## sub YAML schema
 
+Use the [request contract](../landingzones/README.md) and
+[JSON Schema](../landingzones/sub.schema.json) as the contract references.
+The table below summarizes the architecture's request inputs.
+
 Each subscription is described by a single flat file at
 `landingzones/<archetype>/<sub-name>.yaml`. The filename (minus `.yaml`)
 becomes the default `aliasName` and `displayName`.

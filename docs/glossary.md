@@ -103,7 +103,7 @@ repo:<owner>/<repo>:pull_request             ← pr-validate.yml on PR
 repo:<owner>/<repo>:environment:production   ← apply.yml's apply job (gated)
 ```
 
-See [`.github/CICD.md → OIDC subject claims`](../.github/CICD.md#oidc-subject-claims).
+See [OIDC subject claims](../.github/CICD.md#oidc-subject-claims-federated-credentials).
 
 ## G
 

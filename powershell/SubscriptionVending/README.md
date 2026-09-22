@@ -1,5 +1,7 @@
 # SubscriptionVending PowerShell module
 
+[Documentation index](../../docs/README.md) | [Bootstrap guide](../../docs/operators/bootstrap.md)
+
 The `SubscriptionVending` module is the accelerator entry point. It provides a
 stable operator interface for selecting and bootstrapping a subscription-vending
 starter.

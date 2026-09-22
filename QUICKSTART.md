@@ -1,124 +1,75 @@
 # Quick start
 
-You've created a repository from the **Azure Subscription Vending** template.
-This page gives you the short path from "fresh repo" to "I vended my first
-subscription." For full details, follow the linked docs.
+This is the short operator path to a working subscription-vending service.
+If your platform team has already provided a vending repository, skip setup
+and follow [Your first subscription](docs/consumers/first-subscription.md).
 
----
+## Planning
 
-## Prerequisites (5 min read)
+Choose Terraform or Bicep, identify your existing platform and billing scopes,
+and agree on archetypes, networking, tags, and reviewers.
+Record these decisions using [Planning](docs/operators/planning.md).
+An established repository cannot switch engines in place.
 
-Before anything else, confirm the items in the
-[prerequisite table](docs/onboarding.md#prerequisites--confirm-you-have-these):
+<a name="prerequisites-5-min-read"></a>
 
-- Azure Landing Zones deployed (root MG + child MGs for your archetypes)
-- Platform / management subscription
-- Terraform starter only: an existing state storage account
-- Billing scope ID(s) (EA, MCA, or MPA)
-- GitHub org + a PAT (`repo` scope, `admin:org` if creating a new repo)
-- Az CLI + `gh` CLI installed, logged in to your tenant
+## Prerequisites
 
-If any of those are missing, the bootstrap wizard will tell you exactly
-which one on the first run.
+Verify [Prerequisites](docs/operators/prerequisites.md) before running commands.
+Both engines require Terraform for bootstrap. Only the Terraform runtime
+requires the vending state storage account and container.
 
----
+Use an **accelerator source checkout** containing `powershell/`, `starters/`,
+and `bootstrap/`. These directories do not exist in generated vending
+repositories.
 
-## Day 1: bootstrap (15 min)
+<a name="day-1-bootstrap-15-min"></a>
+
+## Bootstrap
+
+From the accelerator source root:
 
 ```powershell
 az login --tenant <your-tenant-id>
-$env:GITHUB_TOKEN = "<your PAT>"   # or rely on `gh auth login`
+gh auth login
 
 Import-Module ./powershell/SubscriptionVending/SubscriptionVending.psd1
 Get-SubscriptionVendingEngine
 Initialize-SubscriptionVending -Engine Terraform # or Bicep
 ```
 
-The PowerShell module is the accelerator entry point. Both available starters
-delegate repository and identity setup to the shared
-`bootstrap/Invoke-Bootstrap.ps1` workflow. It prompts for every input,
-validates values against Azure and GitHub APIs, and uses Terraform for the
-one-time bootstrap. When it finishes, it prints:
+Review the configuration and Terraform plan before applying. Follow
+[Bootstrap](docs/operators/bootstrap.md) to capture the outputs, grant
+SubscriptionCreator on the billing scope, and validate readiness.
+Repository creation alone does not complete the billing-role step.
 
-- `uami_principal_id` (needed for the billing-role grant below)
-- `github_repository_full_name` (your new vending repo)
+The wizard can resume an incomplete initial bootstrap. Once the handoff
+succeeds, make changes through PRs in the generated repository.
+Do not rerun bootstrap to synchronize files or update the engine.
 
-**Immediately after bootstrap**, grant the billing-scope role following
-[Step 2 in the onboarding doc](docs/onboarding.md#step-2--grant-subscriptioncreator-on-the-billing-scope).
+<a name="day-1-vend-your-first-subscription-5-min"></a>
 
-Full bootstrap reference: [`docs/bootstrap-wizard.md`](docs/bootstrap-wizard.md)
+## Run
 
-The selected engine is persisted for the generated repository and cannot be
-switched in place.
+Switch to the **generated vending repository**. Follow
+[Run](docs/operators/run.md) to verify a first request through schema
+validation, preview, review, merge, production approval, and deployment output.
+Give workload teams the [consumer walkthrough](docs/consumers/first-subscription.md).
 
----
+<a name="day-7-settle-in"></a>
+<a name="day-30-operationalize"></a>
 
-## Day 1: vend your first subscription (5 min)
-
-In the newly created GitHub repo:
-
-1. Copy an example YAML from `landingzones/<archetype>/`
-2. Fill in the contract fields (see [`docs/first-vend.md`](docs/first-vend.md))
-3. Open a PR, review the plan output, merge
-4. Approve the `production` environment gate in GitHub Actions
-5. Subscription appears in Azure within ~5 minutes
-
----
-
-## Day 7: settle in
-
-- Add team members as CODEOWNERS per archetype
-  ([`CONTRIBUTING.md`](CONTRIBUTING.md))
-- Review tagging and cost-allocation settings
-  ([`docs/tagging.md`](docs/tagging.md))
-- Enable Azure Policy tag inheritance at the MG scope
-  (recommended in [`docs/tagging.md`](docs/tagging.md#azure-policy-tag-inheritance-recommended))
-- Familiarize with the PR validation + apply workflow
-  ([`.github/CICD.md`](.github/CICD.md))
-
----
-
-## Day 30: operationalize
-
-- Review Dependabot PRs for GitHub Actions and Terraform dependencies
-- Review and bump the selected engine's AVM pin when a new version ships
-  ([`CONTRIBUTING.md`](CONTRIBUTING.md#bumping-the-avm-module-pin))
-- Add new archetypes if your MG hierarchy needs them
-  ([`CONTRIBUTING.md`](CONTRIBUTING.md#adding-a-new-archetype))
-- Review budget and cost-allocation tags across vended subscriptions
-
----
-
-## Key documentation
-
-| Doc | What it covers |
-|-----|----------------|
-| [`docs/onboarding.md`](docs/onboarding.md) | Full prerequisite list + bootstrap walkthrough |
-| [`docs/first-vend.md`](docs/first-vend.md) | Step-by-step first subscription vend |
-| [`docs/architecture.md`](docs/architecture.md) | How the skeleton works under the hood |
-| [`docs/archetypes.md`](docs/archetypes.md) | Corp / online / sandbox rules and defaults |
-| [`docs/billing-scopes.md`](docs/billing-scopes.md) | Billing scope formats + CLI discovery commands |
-| [`docs/tagging.md`](docs/tagging.md) | Tag strategy, cost allocation, Policy inheritance |
-| [`docs/teardown.md`](docs/teardown.md) | Decommissioning a vended subscription |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to modify archetypes, bump pins, add features |
-| [`CHANGELOG.md`](CHANGELOG.md) | Release notes |
-
----
+Use Run for [platform changes](docs/operators/run.md#updating-platform-inputs-after-bootstrap),
+[wider deployments](docs/operators/run.md#reruns-and-wider-changes), and
+[starter updates](docs/operators/run.md#updating-the-starter-itself).
 
 ## Need help?
 
-If something goes wrong during bootstrap, the wizard is resumable. Re-run
-`Initialize-SubscriptionVending` with the same engine and it picks up where
-it left off.
+Use the [wizard reference](docs/bootstrap-wizard.md) for initial bootstrap
+errors and [CI/CD troubleshooting](.github/CICD.md#troubleshooting) for
+delivery problems. Undoing bootstrap and retiring a single subscription are
+different privileged operations; start with [recovery guidance](docs/operators/run.md#retirement-and-recovery).
 
-To undo a bootstrap that went sideways, use destroy mode:
+<a name="key-documentation"></a>
 
-```powershell
-# The legacy script remains the Terraform lifecycle implementation for now.
-cd bootstrap
-pwsh ./Invoke-Bootstrap.ps1 -Destroy -WhatIf   # preview what would be removed
-pwsh ./Invoke-Bootstrap.ps1 -Destroy            # tear it down
-```
-
-See [`docs/bootstrap-wizard.md`](docs/bootstrap-wizard.md#destroying--undoing-a-bootstrap)
-for the full destroy reference.
+[Documentation index](docs/README.md) | [Architecture](docs/architecture.md) | [Changelog](CHANGELOG.md)

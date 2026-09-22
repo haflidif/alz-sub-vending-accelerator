@@ -9,6 +9,17 @@ template itself, not the AVM modules pinned by the engines. See
 
 ## [Unreleased]
 
+### Changed
+
+- Organized operator documentation into Planning, Prerequisites, Bootstrap,
+  and Run, with a separate consumer walkthrough and proposal index.
+- Moved onboarding, first-vend, and retirement guidance into audience folders.
+  Former page URLs and section anchors remain available as compatibility
+  pages, including the onboarding heading renamed during bootstrap hardening.
+- Consolidated documentation navigation and the detailed repository tree,
+  corrected section links, and retained source-only links for documentation
+  excluded from generated vending repositories.
+
 ## [0.2.0] - 2026-09-23
 
 ### Added

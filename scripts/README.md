@@ -64,6 +64,6 @@ pwsh ./scripts/Reset-LocalState.ps1 -SkipPrompt
 
 ## See also
 
-- [`docs/onboarding.md → "Iterating on the skeleton itself"`](../docs/onboarding.md#iterating-on-the-skeleton-itself) — when to run this script
-- [`docs/teardown.md`](../docs/teardown.md) — retiring a vended subscription (different scope: Azure-side resource cleanup, not local file cleanup)
+- [Starter updates](../docs/operators/run.md#updating-the-starter-itself) and local cleanup context
+- [Retire a subscription](../docs/operators/retire-subscription.md) for Azure-side cleanup, not local file cleanup
 - [`.gitignore`](../.gitignore) — the canonical list of files that should never be committed (this script's targets are a superset)

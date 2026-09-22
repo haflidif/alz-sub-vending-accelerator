@@ -6,7 +6,7 @@ vended. One subscription = one YAML file at
 `landingzones/<archetype>/<sub-name>.yaml`.
 
 > ✏️ **Quickstart for consumers:** see
-> [`docs/first-vend.md`](../docs/first-vend.md) for the PR walkthrough.
+> [Consumer walkthrough](../docs/consumers/first-subscription.md) for the PR walkthrough.
 
 ## What lives here
 
@@ -88,7 +88,7 @@ short version:
 
 ## See also
 
-- [`docs/first-vend.md`](../docs/first-vend.md) — vend your first sub
+- [Consumer walkthrough](../docs/consumers/first-subscription.md) for your first subscription
 - [`docs/naming-convention.md`](../docs/naming-convention.md) — naming rules
 - [`docs/schema-validation.md`](../docs/schema-validation.md) — full schema reference
 - [`docs/archetypes.md`](../docs/archetypes.md) — archetype concept + add new ones

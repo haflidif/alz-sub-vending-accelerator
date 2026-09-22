@@ -21,16 +21,25 @@ subscription before running `bootstrap/`. The Terraform starter additionally
 needs a state storage account. Create those by any means for POC/test use; if
 you already have an Azure Landing Zone, they usually exist already.
 
-## Full directory tree (skeleton)
+<a name="full-directory-tree-skeleton"></a>
+
+## Directory tree (accelerator source)
+
+This is the canonical documentation tree. Parenthesized configuration files
+are rendered into the generated repository, not committed to the source.
 
 ```
 subscription-vending/
 ├── .editorconfig
 ├── .gitignore                       # Terraform/IDE/secret/sidecar exclusions
 ├── CHANGELOG.md                     # Skeleton release notes
+├── CODEOWNERS                       # Upstream accelerator owners (not seeded)
 ├── CONTRIBUTING.md                  # How to vend / modify archetypes / bump AVM
 ├── LICENSE
+├── QUICKSTART.md                    # Short operator journey
 ├── README.md                        # ⭐ Top-level entry point — start here
+├── SECURITY.md                      # Source-only security policy
+├── SUPPORT.md                       # Source-only support guide
 │
 ├── .github/
 │   ├── PULL_REQUEST_TEMPLATE.md     # PR description scaffold
@@ -61,6 +70,7 @@ subscription-vending/
 │   ├── locals.tf                    # Billing-scope path string resolution
 │   ├── variables.tf                 # ~20 operator inputs (validated)
 │   ├── main.tf                      # UAMI + 3 FICs + RBAC + container + GitHub
+│   ├── migrations.tf                # Bootstrap state-address migrations
 │   ├── files.tf                     # Skeleton seeder + auto.tfvars renderer + CODEOWNERS
 │   ├── outputs.tf                   # UAMI principal_id, billing-role reminder
 │   ├── terraform.tfvars.example     # Schema-correct example — copy + edit (or use wizard)
@@ -80,11 +90,13 @@ subscription-vending/
 │   └── (terraform.auto.tfvars)      # Rendered by bootstrap, only in vending repo
 │
 ├── bicep/                           # ★ Bicep vending engine
+│   ├── README.md                    # Bicep reference
 │   ├── main.bicep                   # Pinned AVM wrapper
 │   ├── SubscriptionVending.Bicep.psm1 # YAML request compiler
 │   ├── modules/                     # Budget deployment helpers
 │   ├── default-resource-providers.json
 │   ├── platform.schema.json
+│   ├── platform.example.json
 │   └── (platform.json)              # Rendered by bootstrap, only in vending repo
 │
 ├── landingzones/                    # ★ One file = one subscription
@@ -97,29 +109,44 @@ subscription-vending/
 │   └── sandbox/
 │       └── dev-sandbox-platform-001.yaml
 │
-├── docs/                            # ★ Topic-by-topic reference
+├── docs/
+│   ├── README.md                    # Audience routes and reference catalog
+│   ├── operators/
+│   │   ├── planning.md              # Decisions before setup
+│   │   ├── prerequisites.md         # Tools, resources, permissions
+│   │   ├── bootstrap.md             # Initial setup and repository handoff
+│   │   ├── run.md                   # First run and service operation
+│   │   └── retire-subscription.md   # Advanced operator lifecycle guidance
+│   ├── consumers/
+│   │   └── first-subscription.md    # YAML-and-PR walkthrough
+│   ├── proposals/                  # Source-only design material
+│   │   ├── README.md                # Proposal status index
+│   │   ├── subscription-vending-accelerator.md
+│   │   └── subscription-vending-delivery-plan.md
 │   ├── architecture.md              # End-to-end design
 │   ├── archetypes.md                # corp / online / sandbox + add new
 │   ├── billing-scopes.md            # EA / MCA / MPA paths and engine configuration
 │   ├── bootstrap-wizard.md          # Invoke-Bootstrap.ps1 full reference
-│   ├── first-vend.md                # ⭐ Vend your first subscription (consumer)
+│   ├── first-vend.md                # Legacy URL and section compatibility
 │   ├── glossary.md                  # Every term defined
 │   ├── naming-convention.md         # Filename + alias + RG / VNet naming
-│   ├── onboarding.md                # ⭐ One-time operator setup
+│   ├── onboarding.md                # Legacy URL and section compatibility
 │   ├── repository-layout.md         # ← you are here
 │   ├── schema-validation.md         # What the schema enforces + where
 │   ├── starter-contract.md          # Terraform/Bicep capability baseline
 │   ├── state-storage.md             # Backend container + per-sub key
 │   ├── tagging.md                   # CAF tag baseline + cost-allocation tag
-│   └── teardown.md                  # Retire a vended subscription
+│   └── teardown.md                  # Legacy URL and section compatibility
 │
 ├── scripts/
 │   ├── README.md                    # Local-helper scripts reference
+│   ├── Grant-SubscriptionCreatorRole.ps1 # Approval-gated billing role helper
 │   └── Reset-LocalState.ps1         # Wipe local operator state
 │
 └── tests/
     ├── PowerShell/
     │   ├── SubscriptionVending.Tests.ps1
+    │   ├── BillingRole.Tests.ps1
     │   └── BicepStarter.Tests.ps1
     └── scripts/
         └── discover-subs.Tests.sh
@@ -134,7 +161,10 @@ subscription-vending/
 |---|---|---|
 | `bootstrap/` | Present (operator runs it locally) | **Excluded** by `bootstrap/files.tf` from the seed |
 | `powershell/`, `starters/`, `tests/` | Accelerator development and bootstrap assets | **Excluded** |
-| `docs/proposals/`, `docs/starter-contract.md` | Accelerator design material | **Excluded** |
+| `docs/proposals/` | Extended and historical design, including its index | **Excluded** |
+| `docs/starter-contract.md` | Implemented contributor contract | **Excluded** |
+| `SECURITY.md`, `SUPPORT.md`, root `CODEOWNERS` | Accelerator policies and owners | **Excluded** |
+| `docs/README.md`, `docs/operators/`, `docs/consumers/`, legacy compatibility pages | Shared operating documentation | **Included** |
 | Selected engine configuration | Absent (`terraform/terraform.auto.tfvars` or `bicep/platform.json`) | **Rendered by `bootstrap/files.tf`** with platform context |
 | Unselected engine package | Present in the accelerator skeleton | **Excluded** |
 | `.github/CODEOWNERS` | Absent | **Rendered from `bootstrap/templates/CODEOWNERS.tftpl`** with operator-chosen teams |
@@ -145,6 +175,12 @@ subscription-vending/
 `tests/`, `docs/proposals/`, `.git/`, `.terraform/`, `.vs/`, `.vscode/`,
 `.devcontainer/`) and `skeleton_excluded_regexes`
 (state files, plans, `.env`, `.DS_Store`, stray shell artefacts).
+
+Shared documentation uses relative links for shipped pages and explicit
+accelerator-source links for excluded files, including proposals and the
+unselected engine. Bootstrap pages explain which commands require the source
+checkout. Existing vending repositories receive documentation updates through
+reviewed PRs, not another bootstrap apply.
 
 ## Where to make a change
 
@@ -159,12 +195,13 @@ subscription-vending/
 | Bump GitHub Actions / Terraform provider versions | Wait for Dependabot, or edit `terraform/versions.tf` / `.github/workflows/*.yml` / `bootstrap/terraform.tf` | See [`.github/CICD.md → Dependabot cadence`](../.github/CICD.md#dependabot-cadence) |
 | Tune CI behaviour (branch protection, required reviewers, env name) | `bootstrap/variables.tf` defaults — but only matters for the next bootstrap. For an existing vending repo, edit directly in GitHub Settings or via `github_branch_protection` / `github_repository_environment` in your own day-2 IaC. | See [`.github/CICD.md → Required status checks`](../.github/CICD.md#required-status-checks) |
 | Skeleton iteration (this repo) | Anywhere | Verify in a throwaway tenant; ship via PR to the vending repo |
-| Start a new vending repo | Use this template (or run `bootstrap/`) | See [`docs/onboarding.md`](onboarding.md) |
+| Start a new vending repo | Use the accelerator source checkout | Follow [Planning](operators/planning.md), Prerequisites, Bootstrap, and Run |
 
 ## See also
 
 - [`README.md`](../README.md) — top-level entry point
-- [`docs/onboarding.md`](onboarding.md) — operator setup
-- [`docs/first-vend.md`](first-vend.md) — vend a subscription
+- [Documentation index](README.md)
+- [Planning](operators/planning.md), [Prerequisites](operators/prerequisites.md), [Bootstrap](operators/bootstrap.md), and [Run](operators/run.md)
+- [Consumer walkthrough](consumers/first-subscription.md) for requesting a subscription
 - [`docs/architecture.md`](architecture.md) — design rationale
 - [`docs/glossary.md`](glossary.md) — terminology
