@@ -211,6 +211,14 @@ $capture | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION_VENDING_T
   Set-TestInput -Inputs $emptyInputs
   Assert-Equal 'preserved' $emptyInputs.test_value 'Hashtable mutations must propagate across typed function boundaries.'
 
+  $persistedInputsPath = Join-Path $testRoot 'persisted-inputs.json'
+  '{"tenant_id":"test-tenant"}' | Set-Content -LiteralPath $persistedInputsPath
+  $persistedInputs = Get-Inputs -Path $persistedInputsPath
+  Assert-Equal 'Hashtable' $persistedInputs.GetType().Name 'Persisted bootstrap inputs must be normalized to a mutable Hashtable.'
+  Set-TestInput -Inputs $persistedInputs
+  Assert-Equal 'preserved' $persistedInputs.test_value 'Persisted input mutations must propagate across typed function boundaries.'
+  Assert-Equal 'test-tenant' $persistedInputs.tenant_id 'Persisted input values must survive Hashtable normalization.'
+
   function Edit-Group { return $true }
   function Read-PromptString { return 'production' }
   function Get-GitHubNumericIds {

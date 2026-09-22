@@ -423,8 +423,10 @@ function Get-Inputs {
     try {
         $raw = Get-Content -Path $Path -Raw -ErrorAction Stop
         if ([string]::IsNullOrWhiteSpace($raw)) { return @{} }
-        # Convert to hashtable so we can add keys easily.
-        return ConvertFrom-Json -InputObject $raw -AsHashtable -Depth 32
+        # PowerShell returns an OrderedHashtable here. Copy into a regular
+        # Hashtable so mutations survive [hashtable] parameter binding.
+        $parsed = ConvertFrom-Json -InputObject $raw -AsHashtable -Depth 32
+        return @{} + $parsed
     }
     catch {
         Write-Fail "Failed to parse inputs file: $Path"
