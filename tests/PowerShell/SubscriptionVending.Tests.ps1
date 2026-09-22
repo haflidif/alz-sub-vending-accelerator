@@ -78,7 +78,17 @@ param(
   [string] $InputsPath,
   [string] $TfvarsPath
 )
-$PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION_VENDING_TEST_CAPTURE
+$strictModeAllowsMissingKey = $true
+try {
+  $probe = @{}
+  $null = $probe.optional
+}
+catch {
+  $strictModeAllowsMissingKey = $false
+}
+$capture = @{} + $PSBoundParameters
+$capture.strict_mode_allows_missing_key = $strictModeAllowsMissingKey
+$capture | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION_VENDING_TEST_CAPTURE
 '@ | Set-Content -LiteralPath (Join-Path $bootstrapPath 'Invoke-Bootstrap.ps1')
 
   $env:SUBSCRIPTION_VENDING_TEST_CAPTURE = $capturePath
@@ -165,6 +175,7 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Matches $bootstrapScript 'HashSet\[long\]' 'Production reviewer assessment must deduplicate users and team members.'
   Assert-Matches $bootstrapScript 'One-person setups are allowed: a repository administrator can use "Start all waiting jobs"' 'Bootstrap must explain the supported one-person admin bypass.'
   Assert-Equal 2 ([regex]::Matches($bootstrapScript, 'Write-ProductionReviewerGuardrail -Inputs \$Inputs').Count) 'Reviewer guardrail must run during configure and validate.'
+  Assert-Matches $bootstrapScript 'Az CLI not signed in \(\$\(\$_\.Exception\.Message\)\)' 'Azure CLI preflight failures must preserve the underlying error.'
 
   $tokens = $null
   $parseErrors = $null
@@ -174,7 +185,12 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
     [ref] $parseErrors
   )
   Assert-Equal 0 $parseErrors.Count 'Bootstrap script must parse before reviewer functions are tested.'
-  foreach ($functionName in @('Get-ProductionReviewerAssessment', 'Write-ProductionReviewerGuardrail')) {
+  foreach ($functionName in @(
+    'Get-Inputs',
+    'Configure-ProductionEnv',
+    'Get-ProductionReviewerAssessment',
+    'Write-ProductionReviewerGuardrail'
+  )) {
     $functionAst = $bootstrapAst.Find(
       {
         param($node)
@@ -185,6 +201,40 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
     )
     Invoke-Expression $functionAst.Extent.Text
   }
+
+  $emptyInputs = Get-Inputs -Path (Join-Path $testRoot 'missing-inputs.json')
+  Assert-Equal 'Hashtable' $emptyInputs.GetType().Name 'New bootstrap inputs must use a mutable Hashtable.'
+  function Set-TestInput {
+    param([hashtable] $Inputs)
+    $Inputs.test_value = 'preserved'
+  }
+  Set-TestInput -Inputs $emptyInputs
+  Assert-Equal 'preserved' $emptyInputs.test_value 'Hashtable mutations must propagate across typed function boundaries.'
+
+  function Edit-Group { return $true }
+  function Read-PromptString { return 'production' }
+  function Get-GitHubNumericIds {
+    param([string] $Kind, [array] $Existing)
+    if ($Kind -eq 'user') {
+      return 7
+    }
+  }
+  function Write-Warn { param([string] $Message) }
+  function Write-Ok { param([string] $Message) }
+  function Write-Host { param([Parameter(ValueFromRemainingArguments)] $Message) }
+  $singleReviewerInputs = @{}
+  Configure-ProductionEnv -Inputs $singleReviewerInputs
+  Assert-Equal $true $singleReviewerInputs.production_reviewer_user_ids.GetType().IsArray 'A single user reviewer ID must remain an array.'
+  Assert-Equal 1 $singleReviewerInputs.production_reviewer_user_ids.Count 'A single user reviewer ID array must contain one item.'
+  Assert-Equal $true $singleReviewerInputs.production_reviewer_team_ids.GetType().IsArray 'An empty team reviewer result must remain an array.'
+  Assert-Equal 0 $singleReviewerInputs.production_reviewer_team_ids.Count 'An empty team reviewer array must contain no items.'
+  Remove-Item Function:\Set-TestInput
+  Remove-Item Function:\Edit-Group
+  Remove-Item Function:\Read-PromptString
+  Remove-Item Function:\Get-GitHubNumericIds
+  Remove-Item Function:\Write-Host
+  Remove-Item Function:\Configure-ProductionEnv
+  Remove-Item Function:\Get-Inputs
 
   $script:mockTeamMembers = @{
     '100' = @(7, 8)
@@ -298,6 +348,7 @@ $PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION
   Assert-Equal $true $captured.NonInteractive 'NonInteractive was not forwarded.'
   Assert-Equal $true $captured.PlanOnly 'PlanOnly was not forwarded.'
   Assert-Equal 'inputs.json' $captured.InputsPath 'InputsPath was not forwarded.'
+  Assert-Equal $true $captured.strict_mode_allows_missing_key 'The module must isolate the legacy bootstrap from its strict-mode scope.'
 
   Initialize-SubscriptionVending `
     -Engine Bicep `

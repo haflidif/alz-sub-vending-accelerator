@@ -134,7 +134,10 @@ function Invoke-LegacyTerraformBootstrap {
   }
 
   $global:LASTEXITCODE = 0
-  & $ScriptPath @scriptParameters
+  & {
+    Set-StrictMode -Off
+    & $ScriptPath @scriptParameters
+  }
   $exitCode = $LASTEXITCODE
   if ($exitCode -ne 0) {
     throw "$Engine bootstrap exited with code $exitCode."
