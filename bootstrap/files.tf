@@ -34,6 +34,14 @@ resource "github_branch" "bootstrap_seed" {
 locals {
   seed_branch = var.enforce_branch_protection ? github_branch.bootstrap_seed[0].branch : var.github_default_branch
 
+  # `[skip ci]` belongs only on the direct-push path, where it stops apply.yml
+  # (push to the default branch) from firing before the repo's Actions
+  # variables exist. On the PR path the commits land on the seed branch, which
+  # triggers nothing -- and `[skip ci]` there would suppress the `PR Validate`
+  # runs whose checks branch protection requires to merge, leaving the PR
+  # stuck on "Expected -- Waiting for status to be reported" forever.
+  seed_commit_suffix = var.enforce_branch_protection ? "" : " [skip ci]"
+
   skeleton_root             = abspath("${path.module}/${var.skeleton_source_path}")
   starter_manifest          = jsondecode(file("${local.skeleton_root}/starters/${var.starter_name}/starter.json"))
   selected_package_prefixes = local.starter_manifest.package.includePrefixes
@@ -100,9 +108,7 @@ resource "github_repository_file" "skeleton" {
   file       = each.value
   content    = file("${local.skeleton_root}/${each.value}")
 
-  # [skip ci] prevents the seeded files from auto-triggering apply.yml
-  # before all repo Actions variables are guaranteed to exist.
-  commit_message = "chore(bootstrap): seed ${each.value} [skip ci]"
+  commit_message = "chore(bootstrap): seed ${each.value}${local.seed_commit_suffix}"
   commit_author  = var.skeleton_commit_author
   commit_email   = var.skeleton_commit_email
 
@@ -164,7 +170,7 @@ resource "github_repository_file" "platform_auto_tfvars" {
   file       = "terraform/terraform.auto.tfvars"
   content    = local.auto_tfvars_content
 
-  commit_message = "chore(bootstrap): seed terraform/terraform.auto.tfvars [skip ci]"
+  commit_message = "chore(bootstrap): seed terraform/terraform.auto.tfvars${local.seed_commit_suffix}"
   commit_author  = var.skeleton_commit_author
   commit_email   = var.skeleton_commit_email
 
@@ -207,7 +213,7 @@ resource "github_repository_file" "bicep_platform" {
   file       = "bicep/platform.json"
   content    = local.bicep_platform_content
 
-  commit_message = "chore(bootstrap): seed bicep/platform.json [skip ci]"
+  commit_message = "chore(bootstrap): seed bicep/platform.json${local.seed_commit_suffix}"
   commit_author  = var.skeleton_commit_author
   commit_email   = var.skeleton_commit_email
 
@@ -243,7 +249,7 @@ resource "github_repository_file" "codeowners" {
     archetype_owners = local.codeowners_archetypes
   })
 
-  commit_message = "chore(bootstrap): seed .github/CODEOWNERS [skip ci]"
+  commit_message = "chore(bootstrap): seed .github/CODEOWNERS${local.seed_commit_suffix}"
   commit_author  = var.skeleton_commit_author
   commit_email   = var.skeleton_commit_email
 
@@ -258,12 +264,14 @@ resource "github_repository_file" "codeowners" {
 #
 # NOTE: `terraform apply` cannot itself pause for a human to approve/merge
 # this PR — Invoke-Bootstrap.ps1 polls `gh pr view` after apply and waits.
-# NOTE: if a prior run's PR was already merged (and its branch deleted) and
-# nothing has changed since, github_branch.bootstrap_seed is recreated with
-# content identical to the default branch, and GitHub will refuse to open a
-# PR with no diff. `terraform apply` will report that error plainly if it
-# happens -- it means there was nothing left to seed, so just re-run without
-# -Reconfigure once the underlying config change (if any) is in place.
+# NOTE: the repo sets delete_branch_on_merge, so after a seed PR is merged
+# the branch is gone and the next apply cuts a fresh one from the default
+# branch. If nothing has changed since, that branch is identical to its base
+# and GitHub refuses to open a PR with no diff ("No commits between ..."),
+# failing this resource. That error means there was nothing left to seed --
+# the repo already has what the bootstrap would push. It is accepted rather
+# than worked around: suppressing it would need the branch/base diff at plan
+# time, which Terraform cannot know before the file resources have run.
 ###############################################################################
 
 resource "github_repository_pull_request" "bootstrap_seed" {

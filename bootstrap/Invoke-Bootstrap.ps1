@@ -1607,25 +1607,41 @@ function Wait-ForPullRequestMerge {
     Write-Header 'Branch protection routed the seed files through a pull request'
     Write-Host "    $Url" -ForegroundColor Cyan
 
-    if ($NonInteractive) {
-        Write-Warn 'NonInteractive: not waiting for merge. Merge the PR above, then re-run to pick up anything further.'
+    # Waiting is for a human at a console. A build agent has nobody to merge
+    # it, so blocking there would hang the pipeline instead of ending the run.
+    $ciMarker = @('CI', 'GITHUB_ACTIONS', 'TF_BUILD', 'BUILD_BUILDID') |
+        Where-Object {
+            $value = [Environment]::GetEnvironmentVariable($_)
+            $value -and $value -notin @('false', '0')  # `CI=false` is a deliberate opt-out
+        } |
+        Select-Object -First 1
+    if ($NonInteractive -or $ciMarker) {
+        $why = if ($NonInteractive) { 'NonInteractive' } else { "`$env:$ciMarker is set" }
+        Write-Warn "Not waiting for merge ($why). Merge the PR above, then re-run to pick up anything further."
         return
     }
 
     Write-Host '    Waiting for it to be merged (review/merge it in GitHub). Ctrl+C to stop waiting -- the PR stays open either way.' -ForegroundColor Yellow
+    $failures = 0
     while ($true) {
-        Start-Sleep -Seconds 15
         $raw = & gh pr view $Url --json state 2>$null
         if ($LASTEXITCODE -ne 0 -or -not $raw) {
-            Write-Warn '    Could not query PR state (gh pr view failed). Retrying...'
-            continue
+            $failures++
+            if ($failures -ge 5) {
+                throw "Gave up querying the PR state after $failures consecutive failures. Check ``gh auth status``, then merge and re-run: $Url"
+            }
+            Write-Warn "    Could not query PR state (gh pr view failed, $failures/5). Retrying..."
         }
-        $state = ($raw | ConvertFrom-Json).state
-        switch ($state) {
-            'MERGED' { Write-Ok '    PR merged.'; return }
-            'CLOSED' { throw "PR was closed without merging: $Url" }
-            default { Write-Host '    ...still open, checking again in 15s' -ForegroundColor DarkGray }
+        else {
+            $failures = 0
+            $state = ($raw | ConvertFrom-Json).state
+            switch ($state) {
+                'MERGED' { Write-Ok '    PR merged.'; return }
+                'CLOSED' { throw "PR was closed without merging: $Url" }
+                default { Write-Host '    ...still open, checking again in 15s' -ForegroundColor DarkGray }
+            }
         }
+        Start-Sleep -Seconds 15
     }
 }
 
