@@ -82,6 +82,9 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Fixed
 
+- Incorporated bootstrap wizard reliability fixes contributed by
+  [@cystig](https://github.com/cystig) in #33, with focused regression
+  coverage in the replacement implementation.
 - Preserved single production reviewer IDs as arrays in rendered bootstrap
   inputs.
 - Kept mutable bootstrap input state attached across typed PowerShell function
