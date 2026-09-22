@@ -5,6 +5,8 @@
 *.tfstate.*
 *.tfplan
 *.tfplan.*
+# Invoke-Bootstrap.ps1 writes its plan to a bare `tfplan` (no extension)
+**/tfplan
 crash.log
 crash.*.log
 

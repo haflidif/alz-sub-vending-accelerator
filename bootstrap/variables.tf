@@ -137,6 +137,12 @@ variable "github_default_branch" {
   description = "Default branch — used in OIDC subject claims."
 }
 
+variable "bootstrap_seed_branch_name" {
+  type        = string
+  default     = "bootstrap/seed-files"
+  description = "Working branch used to seed/update bootstrap-managed files (skeleton, terraform.auto.tfvars, CODEOWNERS) via pull request when enforce_branch_protection = true, since the default branch then rejects direct commits."
+}
+
 variable "github_oidc_subject_mode" {
   type        = string
   default     = "standard"

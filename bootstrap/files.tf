@@ -13,7 +13,27 @@
 #      so day-to-day commits become free-form.
 ###############################################################################
 
+###############################################################################
+# When the default branch is protected, direct pushes via the Contents API
+# (what every github_repository_file resource below does) are rejected with a
+# 409 "Changes must be made through a pull request." Route the seed commits
+# through a working branch + PR in that case instead, and leave it to the
+# operator (Invoke-Bootstrap.ps1 waits for it) to review and merge. With no
+# branch protection there's nothing to work around, so keep pushing straight
+# to the default branch.
+###############################################################################
+
+resource "github_branch" "bootstrap_seed" {
+  count = var.enforce_branch_protection ? 1 : 0
+
+  repository    = local.github_repo_name
+  branch        = var.bootstrap_seed_branch_name
+  source_branch = var.github_default_branch
+}
+
 locals {
+  seed_branch = var.enforce_branch_protection ? github_branch.bootstrap_seed[0].branch : var.github_default_branch
+
   skeleton_root             = abspath("${path.module}/${var.skeleton_source_path}")
   starter_manifest          = jsondecode(file("${local.skeleton_root}/starters/${var.starter_name}/starter.json"))
   selected_package_prefixes = local.starter_manifest.package.includePrefixes
@@ -76,7 +96,7 @@ resource "github_repository_file" "skeleton" {
   for_each = var.copy_skeleton_files ? toset(local.skeleton_files) : toset([])
 
   repository = local.github_repo_name
-  branch     = var.github_default_branch
+  branch     = local.seed_branch
   file       = each.value
   content    = file("${local.skeleton_root}/${each.value}")
 
@@ -140,7 +160,7 @@ resource "github_repository_file" "platform_auto_tfvars" {
   count = var.starter_name == "terraform" ? 1 : 0
 
   repository = local.github_repo_name
-  branch     = var.github_default_branch
+  branch     = local.seed_branch
   file       = "terraform/terraform.auto.tfvars"
   content    = local.auto_tfvars_content
 
@@ -183,7 +203,7 @@ resource "github_repository_file" "bicep_platform" {
   count = var.starter_name == "bicep" ? 1 : 0
 
   repository = local.github_repo_name
-  branch     = var.github_default_branch
+  branch     = local.seed_branch
   file       = "bicep/platform.json"
   content    = local.bicep_platform_content
 
@@ -215,7 +235,7 @@ locals {
 
 resource "github_repository_file" "codeowners" {
   repository = local.github_repo_name
-  branch     = var.github_default_branch
+  branch     = local.seed_branch
   file       = ".github/CODEOWNERS"
   content = templatefile("${path.module}/templates/CODEOWNERS.tftpl", {
     starter_name     = var.starter_name
@@ -228,4 +248,43 @@ resource "github_repository_file" "codeowners" {
   commit_email   = var.skeleton_commit_email
 
   overwrite_on_create = true
+}
+
+###############################################################################
+# Open the PR that lands the seed commits above on the default branch. Only
+# needed when we routed through bootstrap_seed_branch (enforce_branch_protection
+# = true); with no protection the file resources already committed straight to
+# the default branch and there's nothing to review.
+#
+# NOTE: `terraform apply` cannot itself pause for a human to approve/merge
+# this PR — Invoke-Bootstrap.ps1 polls `gh pr view` after apply and waits.
+# NOTE: if a prior run's PR was already merged (and its branch deleted) and
+# nothing has changed since, github_branch.bootstrap_seed is recreated with
+# content identical to the default branch, and GitHub will refuse to open a
+# PR with no diff. `terraform apply` will report that error plainly if it
+# happens -- it means there was nothing left to seed, so just re-run without
+# -Reconfigure once the underlying config change (if any) is in place.
+###############################################################################
+
+resource "github_repository_pull_request" "bootstrap_seed" {
+  count = var.enforce_branch_protection ? 1 : 0
+
+  base_repository = local.github_repo_name
+  base_ref        = var.github_default_branch
+  head_ref        = github_branch.bootstrap_seed[0].branch
+  title           = "chore(bootstrap): seed/update bootstrap-managed files"
+  body            = <<-EOT
+    Opened automatically by the bootstrap wizard because `${var.github_default_branch}`
+    requires pull requests (enforce_branch_protection = true).
+
+    Contains whichever of these changed: skeleton files, `terraform/terraform.auto.tfvars`,
+    `.github/CODEOWNERS`. Review and merge to apply them.
+  EOT
+
+  depends_on = [
+    github_repository_file.skeleton,
+    github_repository_file.platform_auto_tfvars,
+    github_repository_file.bicep_platform,
+    github_repository_file.codeowners,
+  ]
 }

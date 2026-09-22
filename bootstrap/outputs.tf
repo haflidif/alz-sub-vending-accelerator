@@ -28,6 +28,11 @@ output "github_repository_full_name" {
   description = "Configured GitHub repository."
 }
 
+output "bootstrap_seed_pull_request_url" {
+  value       = try("https://github.com/${var.github_owner}/${local.github_repo_name}/pull/${github_repository_pull_request.bootstrap_seed[0].number}", null)
+  description = "PR seeding/updating bootstrap-managed files, opened because enforce_branch_protection = true blocks direct commits. Null when branch protection is off (files were pushed straight to the default branch instead). Invoke-Bootstrap.ps1 waits for this to be merged."
+}
+
 output "next_step_billing_role" {
   value = join("\n", concat(
     [

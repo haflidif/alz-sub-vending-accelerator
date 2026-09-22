@@ -301,10 +301,10 @@ resource "github_branch_protection" "default" {
     }
   }
 
+  # The seed file resources no longer need to precede this: when protection
+  # is on they commit to bootstrap_seed_branch (files.tf), not the default
+  # branch, so there's no more first-apply race to order against.
   depends_on = [
     github_repository.this,
-    github_repository_file.skeleton,
-    github_repository_file.platform_auto_tfvars,
-    github_repository_file.bicep_platform,
   ]
 }

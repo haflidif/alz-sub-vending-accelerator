@@ -201,6 +201,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# The script relies throughout on lax hashtable property access ($Inputs.foo
+# returning $null for a missing key). Reset strict mode here so that being
+# invoked from a caller with `Set-StrictMode -Version Latest` (e.g. the
+# SubscriptionVending module) doesn't turn those into PropertyNotFoundException.
+Set-StrictMode -Off
 
 if (-not $InputsPath) { $InputsPath = Join-Path $ScriptRoot '.bootstrap-inputs.json' }
 if (-not $TfvarsPath) { $TfvarsPath = Join-Path $ScriptRoot 'terraform.tfvars.json' }
@@ -417,12 +422,18 @@ function Read-PromptBool {
 
 function Get-Inputs {
     param([string] $Path)
+    # Must be a genuine Hashtable, not an OrderedDictionary: every function in
+    # this script types its $Inputs parameter as [hashtable], and binding an
+    # OrderedDictionary argument to a [hashtable] parameter makes PowerShell
+    # convert it into a brand-new Hashtable at that call boundary -- silently
+    # detaching it from the caller's copy, so mutations made inside stop
+    # propagating back up.
     if (-not (Test-Path -Path $Path -PathType Leaf)) {
-        return [ordered]@{}
+        return @{}
     }
     try {
         $raw = Get-Content -Path $Path -Raw -ErrorAction Stop
-        if ([string]::IsNullOrWhiteSpace($raw)) { return [ordered]@{} }
+        if ([string]::IsNullOrWhiteSpace($raw)) { return @{} }
         # Convert to hashtable so we can add keys easily.
         return ConvertFrom-Json -InputObject $raw -AsHashtable -Depth 32
     }
@@ -612,7 +623,7 @@ function Invoke-Preflight {
         }
     }
     catch {
-        Write-Fail 'Az CLI not signed in. Run `az login --tenant <tenant-id>`.'
+        Write-Fail "Az CLI not signed in ($($_.Exception.Message)). Run ``az login --tenant <tenant-id>``."
         $ok = $false
     }
 
@@ -915,8 +926,12 @@ function Configure-ProductionEnv {
     Write-Host '    Leave both empty if you will configure approvers later in the UI.' -ForegroundColor DarkGray
     Write-Host ''
 
-    $Inputs.production_reviewer_user_ids = Get-GitHubNumericIds -Kind 'user' -Existing $Inputs.production_reviewer_user_ids
-    $Inputs.production_reviewer_team_ids = Get-GitHubNumericIds -Kind 'team' -Existing $Inputs.production_reviewer_team_ids
+    # @(...) forces array-ness: a function returning a single-element array
+    # unrolls through the pipeline, so a plain assignment here would collapse
+    # a 1-item result back down to a bare scalar (breaking the tfvars schema,
+    # which always expects a list).
+    $Inputs.production_reviewer_user_ids = @(Get-GitHubNumericIds -Kind 'user' -Existing $Inputs.production_reviewer_user_ids)
+    $Inputs.production_reviewer_team_ids = @(Get-GitHubNumericIds -Kind 'team' -Existing $Inputs.production_reviewer_team_ids)
     Write-ProductionReviewerGuardrail -Inputs $Inputs
 }
 
@@ -1580,6 +1595,40 @@ function Render-Tfvars {
 # Section 8 -- Terraform phase
 # =============================================================================
 
+function Wait-ForPullRequestMerge {
+    <#
+    Blocks until the given PR is merged, or throws if it's closed unmerged.
+    `terraform apply` has no way to pause mid-run for a human approval, so
+    this runs as a separate step after apply completes.
+    #>
+    param([string] $Url)
+
+    Write-Host ''
+    Write-Header 'Branch protection routed the seed files through a pull request'
+    Write-Host "    $Url" -ForegroundColor Cyan
+
+    if ($NonInteractive) {
+        Write-Warn 'NonInteractive: not waiting for merge. Merge the PR above, then re-run to pick up anything further.'
+        return
+    }
+
+    Write-Host '    Waiting for it to be merged (review/merge it in GitHub). Ctrl+C to stop waiting -- the PR stays open either way.' -ForegroundColor Yellow
+    while ($true) {
+        Start-Sleep -Seconds 15
+        $raw = & gh pr view $Url --json state 2>$null
+        if ($LASTEXITCODE -ne 0 -or -not $raw) {
+            Write-Warn '    Could not query PR state (gh pr view failed). Retrying...'
+            continue
+        }
+        $state = ($raw | ConvertFrom-Json).state
+        switch ($state) {
+            'MERGED' { Write-Ok '    PR merged.'; return }
+            'CLOSED' { throw "PR was closed without merging: $Url" }
+            default { Write-Host '    ...still open, checking again in 15s' -ForegroundColor DarkGray }
+        }
+    }
+}
+
 function Invoke-Terraform {
     param([hashtable] $Inputs)
     Write-Header 'Terraform: init -> plan -> apply'
@@ -1634,6 +1683,12 @@ function Invoke-Terraform {
     Write-Info ("terraform " + ($applyArgs -join ' '))
     & terraform @applyArgs
     if ($LASTEXITCODE -ne 0) { throw "terraform apply failed (exit $LASTEXITCODE)" }
+
+    $outputsRaw = & terraform $chdir output -json 2>$null
+    if ($LASTEXITCODE -eq 0 -and $outputsRaw) {
+        $prUrl = ($outputsRaw | ConvertFrom-Json).bootstrap_seed_pull_request_url.value
+        if ($prUrl) { Wait-ForPullRequestMerge -Url $prUrl }
+    }
 
     Write-Header 'Outputs'
     & terraform $chdir output
