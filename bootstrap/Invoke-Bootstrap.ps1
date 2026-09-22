@@ -418,13 +418,15 @@ function Read-PromptBool {
 function Get-Inputs {
     param([string] $Path)
     if (-not (Test-Path -Path $Path -PathType Leaf)) {
-        return [ordered]@{}
+        return @{}
     }
     try {
         $raw = Get-Content -Path $Path -Raw -ErrorAction Stop
-        if ([string]::IsNullOrWhiteSpace($raw)) { return [ordered]@{} }
-        # Convert to hashtable so we can add keys easily.
-        return ConvertFrom-Json -InputObject $raw -AsHashtable -Depth 32
+        if ([string]::IsNullOrWhiteSpace($raw)) { return @{} }
+        # PowerShell returns an OrderedHashtable here. Copy into a regular
+        # Hashtable so mutations survive [hashtable] parameter binding.
+        $parsed = ConvertFrom-Json -InputObject $raw -AsHashtable -Depth 32
+        return @{} + $parsed
     }
     catch {
         Write-Fail "Failed to parse inputs file: $Path"
@@ -612,7 +614,7 @@ function Invoke-Preflight {
         }
     }
     catch {
-        Write-Fail 'Az CLI not signed in. Run `az login --tenant <tenant-id>`.'
+        Write-Fail "Az CLI not signed in ($($_.Exception.Message)). Run ``az login --tenant <tenant-id>``."
         $ok = $false
     }
 
@@ -915,8 +917,8 @@ function Configure-ProductionEnv {
     Write-Host '    Leave both empty if you will configure approvers later in the UI.' -ForegroundColor DarkGray
     Write-Host ''
 
-    $Inputs.production_reviewer_user_ids = Get-GitHubNumericIds -Kind 'user' -Existing $Inputs.production_reviewer_user_ids
-    $Inputs.production_reviewer_team_ids = Get-GitHubNumericIds -Kind 'team' -Existing $Inputs.production_reviewer_team_ids
+    $Inputs.production_reviewer_user_ids = @(Get-GitHubNumericIds -Kind 'user' -Existing $Inputs.production_reviewer_user_ids)
+    $Inputs.production_reviewer_team_ids = @(Get-GitHubNumericIds -Kind 'team' -Existing $Inputs.production_reviewer_team_ids)
     Write-ProductionReviewerGuardrail -Inputs $Inputs
 }
 

@@ -42,6 +42,9 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Changed
 
+- Clarified that bootstrap is resumable only until the initial repository
+  handoff completes. Generated repositories own their source files afterward,
+  and future starter upgrades are delivered separately from bootstrap.
 - Updated the bootstrap AzureRM provider to `5.6.0` after validating the
   bootstrap configuration and provider schema with the new version.
 - Updated the Terraform subscription-vending AVM module to `0.3.2` and AzAPI
@@ -79,6 +82,17 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Fixed
 
+- Incorporated bootstrap wizard reliability fixes contributed by
+  [@cystig](https://github.com/cystig) in #33, with focused regression
+  coverage in the replacement implementation.
+- Preserved single production reviewer IDs as arrays in rendered bootstrap
+  inputs.
+- Kept mutable bootstrap input state attached across typed PowerShell function
+  boundaries.
+- Isolated the legacy bootstrap script from the module's strict-mode scope.
+- Included the underlying Azure CLI error when bootstrap preflight cannot read
+  the active account.
+- Ignored the extensionless `tfplan` artifact written by the bootstrap wizard.
 - Made Bicep management-group deployment names stable per subscription so AVM
   deployment-script support resources remain idempotent across workflow runs.
 - Made Bicep PR validation and what-if use the same deployment name as apply so

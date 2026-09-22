@@ -44,7 +44,9 @@ Bicep platform configuration.
 
 The module, legacy wizard, and manual Terraform flow leave **identical
 Terraform state** behind. The module is now the stable product boundary while
-the legacy script remains the current Terraform implementation.
+the legacy script remains the current Terraform implementation. Reruns are for
+resuming an incomplete bootstrap, not for synchronizing files after the
+generated repository has been handed over.
 
 ## Phases
 
@@ -64,7 +66,7 @@ is `all`.
 | `preflight` | Verifies Terraform is `>= 1.10.0` and `< 2.0.0`, Azure CLI is 2.64.0 or newer, GitHub CLI is 2.50.0 or newer, and PowerShell is 7.2 or newer. Resolves a GitHub token from `$env:GITHUB_TOKEN` or `gh auth token` without persisting it. Verifies the Azure session matches the configured tenant. | Always | None |
 | `configure` | Prompts you for every bootstrap input, grouped by concern (see [Group reference](#group-reference)). Persists to `bootstrap/.bootstrap-inputs.json` (gitignored) **atomically per group** — Ctrl-C never loses more than one group's progress. On rerun, current values are shown as defaults; press Enter to keep. | Always — keep / edit per group | Writes to `.bootstrap-inputs.json` + rotates `.bak` |
 | `validate` | Calls Azure (resource-group/SA/MG existence) + GitHub (`/user`, `/repos/...`, team/user lookups) to confirm the inputs are sane **before** `terraform apply` discovers them. Catches typos, missing scopes, wrong tenant, MG ID format mistakes. | Always | None — read-only |
-| `terraform` | Renders `terraform.tfvars.json` from the sidecar (drift-aware — warns on hand-edits), runs `terraform init` (with `-reconfigure` when `-Reconfigure` is set), `terraform plan -out=tfplan`, then asks before `apply`. | Always (Terraform handles its own state) | Writes `terraform.tfvars.json`, runs Terraform |
+| `terraform` | Renders `terraform.tfvars.json` from the sidecar (drift-aware — warns on hand-edits), runs `terraform init` (with `-reconfigure` when `-Reconfigure` is set), `terraform plan -out=tfplan`, then asks before `apply`. | Initial bootstrap or partial-failure recovery | Writes `terraform.tfvars.json`, runs Terraform |
 
 ## Parameters
 
@@ -148,6 +150,12 @@ This guards against the classic `azuread` / `azurerm` "fell through to
 the default tenant" foot-gun.
 
 ## Resumability scenarios
+
+These scenarios apply until the initial bootstrap succeeds. After handoff, the
+generated repository owns its source files. Engine and workflow updates must be
+delivered through repository pull requests, not another bootstrap apply. The
+versioned upgrade mechanism is tracked in
+[#34](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/issues/34).
 
 | Scenario | What to do |
 |---|---|
