@@ -64,6 +64,10 @@ branch_protection_required_approving_review_count = 1
 #   "PR Validate / YAML schema validation",
 #   "PR Validate / PR Validate Result",
 # ]
+# With enforce_branch_protection = true, seed files (skeleton,
+# terraform.auto.tfvars, CODEOWNERS) are committed to this working branch
+# and opened as a PR instead of pushed straight to the default branch.
+# bootstrap_seed_branch_name = "bootstrap/seed-files"
 
 # Production environment reviewers (look up numeric IDs via the GitHub API or
 # `gh api /users/<login>` / `gh api /orgs/<org>/teams/<team-slug>`).

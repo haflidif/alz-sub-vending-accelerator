@@ -295,6 +295,8 @@ Two ways to push skeleton changes downstream:
    `copy_skeleton_files = true` and `create_github_repository = false`.
    This force-overwrites every file in the seeded repo with the skeleton
    version — only do this on a repo with no local commits worth keeping.
+   If the repo has `enforce_branch_protection = true`, this lands as a PR
+   (the wizard waits for you to merge it) rather than a direct commit.
 
 The skeleton folder is the template you publish (as a GitHub template
 repo). The included

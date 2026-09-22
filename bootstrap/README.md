@@ -86,6 +86,16 @@ repository.
   ALZ accelerator's `alz/github` module). Only `bootstrap/` itself, ephemeral
   Terraform state, and the root `terraform.tfvars` (consumer-specific
   placeholders) are excluded.
+  - **With `enforce_branch_protection = true`**, these files (and the rendered
+    `terraform.auto.tfvars` / `CODEOWNERS`) can't be pushed straight to the
+    protected default branch, so they're committed to a working branch
+    (`bootstrap_seed_branch_name`, default `bootstrap/seed-files`) and opened
+    as a PR instead (`github_branch` + `github_repository_pull_request`,
+    output as `bootstrap_seed_pull_request_url`). The wizard waits for that
+    PR to be merged before it considers the run finished — see
+    [`docs/bootstrap-wizard.md`](../docs/bootstrap-wizard.md).
+  - **With `enforce_branch_protection = false`**, they're pushed straight to
+    `github_default_branch` with no PR involved.
 
 ## What it does NOT do (deliberately)
 
@@ -163,7 +173,9 @@ the pipeline end-to-end. See [`docs/first-vend.md`](../docs/first-vend.md).
 The skeleton files are pushed via `github_repository_file`. By default this
 means subsequent `terraform apply` runs will revert any manual edits to
 those files — useful while iterating on the bootstrap, painful during normal
-operation.
+operation. With `enforce_branch_protection = true` this lands as a PR rather
+than a direct commit, so a revert at least surfaces for review before it's
+merged — but it's still a revert, and Option A/B below still apply.
 
 After the first successful seed, do **one** of the following:
 
@@ -192,12 +204,12 @@ Source layout under `bootstrap/`:
 | File | Purpose |
 |---|---|
 | [`terraform.tf`](terraform.tf) | Bootstrap provider pins: `azurerm 5.6.0`, `azuread 3.9.0`, and `github 6.13.0`. Terraform Core supports versions from 1.10 through the latest 1.x release, matching the runtime AVM module requirement. Configures `azurerm` against `platform_subscription_id` with `storage_use_azuread`, pins `azuread` to `tenant_id`, and reads `GITHUB_TOKEN` from the environment. |
-| [`variables.tf`](variables.tf) | ~20 inputs across identity/location, state, RBAC, GitHub repo, branch protection, production env, billing scopes (map with EA/MCA/MPA per entry), MG IDs, cost allocation, mandatory tags, CODEOWNERS, skeleton seeding. Validation rules enforce billing-scope structure, MG ID format, GitHub handles, tag-key naming. |
+| [`variables.tf`](variables.tf) | ~20 inputs across identity/location, state, RBAC, GitHub repo, branch protection, production env, billing scopes (map with EA/MCA/MPA per entry), MG IDs, cost allocation, mandatory tags, CODEOWNERS, skeleton seeding, and the `bootstrap_seed_branch_name` working branch used when branch protection is on. Validation rules enforce billing-scope structure, MG ID format, GitHub handles, tag-key naming. |
 | [`locals.tf`](locals.tf) | Resolves each `billing_scopes` entry into the full Azure billing scope path string. EA → `enrollmentAccounts/...`, MCA → `billingProfiles/.../invoiceSections/...`, MPA → `customers/...`. |
 | [`main.tf`](main.tf) | UAMI + 3 FICs, MG and network RBAC, optional Terraform state container and blob RBAC, optional repository creation, Actions variables, production environment, and branch protection. |
 | [`migrations.tf`](migrations.tf) | State-address migrations that preserve existing Terraform bootstrap resources after engine-conditional resources were introduced. |
-| [`files.tf`](files.tf) | Seeds shared runtime files plus the selected engine package, renders `terraform/terraform.auto.tfvars` or `bicep/platform.json`, and renders `.github/CODEOWNERS`. |
-| [`outputs.tf`](outputs.tf) | Selected starter, UAMI identifiers, optional Terraform state container, GitHub repository, and `next_step_billing_role`. |
+| [`files.tf`](files.tf) | Seeds shared runtime files plus the selected engine package, renders `terraform/terraform.auto.tfvars` or `bicep/platform.json`, and renders `.github/CODEOWNERS`. When `enforce_branch_protection = true`, also creates the `bootstrap_seed` working branch and opens the PR that lands these commits on the default branch. |
+| [`outputs.tf`](outputs.tf) | Selected starter, UAMI identifiers, optional Terraform state container, GitHub repository, `next_step_billing_role`, and `bootstrap_seed_pull_request_url` (null unless branch protection routed the seed commits through a PR). |
 | [`templates/CODEOWNERS.tftpl`](templates/CODEOWNERS.tftpl) | Single template rendered with the operator's `codeowners_default_team` + `codeowners_archetype_teams`. Only the **rendered** file lands in the seeded repo. |
 | [`Invoke-Bootstrap.ps1`](Invoke-Bootstrap.ps1) | The interactive wizard. Handles both **create** (bootstrap; default) and **destroy** (`-Destroy`; with optional `-IncludeStateContainer`, `-IncludeGitHubRepo`, `-CleanBootstrapFolder`, standard `-WhatIf`). 9 + 1 sections; see [`docs/bootstrap-wizard.md → Implementation notes`](../docs/bootstrap-wizard.md#implementation-notes) and [`docs/bootstrap-wizard.md → Destroying / undoing a bootstrap`](../docs/bootstrap-wizard.md#destroying--undoing-a-bootstrap). |
 | [`terraform.tfvars.example`](terraform.tfvars.example) | Schema-correct example — copy to `terraform.tfvars` for the manual flow, or use the wizard which writes a JSON sidecar instead. |

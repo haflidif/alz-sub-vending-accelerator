@@ -79,6 +79,22 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Fixed
 
+- Made repository seeding (skeleton files, `terraform.auto.tfvars`,
+  `CODEOWNERS`) work with `enforce_branch_protection = true` by routing the
+  seed commits through a working branch and pull request instead of pushing
+  directly to the protected default branch; the wizard waits for the PR to
+  be merged before completing.
+- Fixed single production reviewer users or teams being rendered as a bare
+  number instead of a one-item list in the generated `terraform.tfvars.json`.
+- Fixed the bootstrap wizard losing configured values between the Configure
+  and Validate phases on a first run, caused by a PowerShell
+  ordered-dictionary-to-hashtable conversion at a typed parameter boundary.
+- Made the bootstrap wizard resilient to callers (such as the
+  `SubscriptionVending` PowerShell module) that enable PowerShell strict
+  mode.
+- Surfaced the underlying Azure CLI error in the bootstrap preflight check
+  instead of always reporting a generic "not signed in" message.
+- Excluded the bootstrap's `tfplan` file from git.
 - Made Bicep management-group deployment names stable per subscription so AVM
   deployment-script support resources remain idempotent across workflow runs.
 - Made Bicep PR validation and what-if use the same deployment name as apply so

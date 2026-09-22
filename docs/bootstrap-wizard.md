@@ -64,7 +64,7 @@ is `all`.
 | `preflight` | Verifies Terraform is `>= 1.10.0` and `< 2.0.0`, Azure CLI is 2.64.0 or newer, GitHub CLI is 2.50.0 or newer, and PowerShell is 7.2 or newer. Resolves a GitHub token from `$env:GITHUB_TOKEN` or `gh auth token` without persisting it. Verifies the Azure session matches the configured tenant. | Always | None |
 | `configure` | Prompts you for every bootstrap input, grouped by concern (see [Group reference](#group-reference)). Persists to `bootstrap/.bootstrap-inputs.json` (gitignored) **atomically per group** — Ctrl-C never loses more than one group's progress. On rerun, current values are shown as defaults; press Enter to keep. | Always — keep / edit per group | Writes to `.bootstrap-inputs.json` + rotates `.bak` |
 | `validate` | Calls Azure (resource-group/SA/MG existence) + GitHub (`/user`, `/repos/...`, team/user lookups) to confirm the inputs are sane **before** `terraform apply` discovers them. Catches typos, missing scopes, wrong tenant, MG ID format mistakes. | Always | None — read-only |
-| `terraform` | Renders `terraform.tfvars.json` from the sidecar (drift-aware — warns on hand-edits), runs `terraform init` (with `-reconfigure` when `-Reconfigure` is set), `terraform plan -out=tfplan`, then asks before `apply`. | Always (Terraform handles its own state) | Writes `terraform.tfvars.json`, runs Terraform |
+| `terraform` | Renders `terraform.tfvars.json` from the sidecar (drift-aware — warns on hand-edits), runs `terraform init` (with `-reconfigure` when `-Reconfigure` is set), `terraform plan -out=tfplan`, then asks before `apply`. If `enforce_branch_protection = true`, the seed files land via a PR (`bootstrap_seed_pull_request_url` output) and the wizard blocks after `apply`, polling until it's merged — Ctrl-C stops watching without closing the PR; skipped entirely under `-NonInteractive`. | Always (Terraform handles its own state) | Writes `terraform.tfvars.json`, runs Terraform |
 
 ## Parameters
 
@@ -194,6 +194,8 @@ pwsh ./Invoke-Bootstrap.ps1 -SkipPreflight
 | `Group 'BillingScopes' has 0 entries — at least 1 (default) required` | Pressed Enter through every prompt | Re-run, type at least the `default` entry's fields. |
 | Wizard hangs on a prompt | Running in a non-PTY environment (e.g. some CI runners) | Use `-NonInteractive` and ensure `.bootstrap-inputs.json` is pre-populated; combine with `-AutoApprove` if you also want apply. |
 | `tfplan` exists but `apply` was skipped | You ran `-PlanOnly` or declined the y/N prompt | `pwsh ./Invoke-Bootstrap.ps1 -Phase terraform -AutoApprove` will apply the existing plan. |
+| `409 Repository rule violations found` / `Changes must be made through a pull request` on `github_repository_file.*` | `enforce_branch_protection = true` rejects direct commits to the default branch — expected once protection is active, not a failure to fix | Nothing to do — this is exactly what the seed-branch + PR flow handles. Merge the PR the wizard prints/waits on (`bootstrap_seed_pull_request_url`). |
+| Wizard sits at "...still open, checking again in 15s" | Waiting for you to merge `bootstrap_seed_pull_request_url` | Review and merge the PR in GitHub. Ctrl-C stops watching (the PR stays open) if you'd rather merge later and re-run. |
 
 ## Implementation notes
 
