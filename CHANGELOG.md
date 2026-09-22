@@ -9,6 +9,8 @@ template itself, not the AVM modules pinned by the engines. See
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-23
+
 ### Added
 
 - Bootstrap warnings for production environments with no eligible reviewers,
@@ -160,6 +162,12 @@ template itself, not the AVM modules pinned by the engines. See
   subscription creation, management-group placement, tags, budgets,
   networking, hub peering, and role assignments.
 
+### New contributors
+
+- Thank you to [@cystig](https://github.com/cystig) for real-world bootstrap
+  testing and the initial implementation in #33. The accepted reliability
+  fixes and regression coverage shipped through #35.
+
 ## [0.1.0] - 2026-06-01
 
 A GitHub **template** for Azure Subscription Vending
@@ -213,5 +221,6 @@ with per-subscription Terraform state and YAML-driven subscription contracts.
   archetypes, billing scopes, tagging, naming convention, schema validation,
   state storage, teardown, and a glossary under `docs/`.
 
-[Unreleased]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/releases/tag/v0.1.0
