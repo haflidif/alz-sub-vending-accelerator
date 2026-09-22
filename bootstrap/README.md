@@ -149,33 +149,29 @@ You only need to do **one** thing manually:
 That's it — open a PR against an example YAML in `landingzones/` to verify
 the pipeline end-to-end. See [`docs/first-vend.md`](../docs/first-vend.md).
 
-> **Day-2 changes go to the seeded repo, not back here.** The bootstrap is
-> one-shot. Its Terraform state lives on the operator workstation that ran it
-> and is **not** reapplied to rotate values. Anything in
+> **Day-2 changes go to the seeded repo, not back here.** Bootstrap can be
+> resumed after a partial failure, but a successfully completed bootstrap is
+> a one-time handoff. Its Terraform state lives on the operator workstation and
+> is **not** reapplied to rotate values or synchronize source files. Anything in
 > `terraform/terraform.auto.tfvars` or `bicep/platform.json` in the seeded repo
 > is changed by editing that file directly via PR. See
 > [`docs/onboarding.md` → "Updating platform inputs after bootstrap"](../docs/onboarding.md#updating-platform-inputs-after-bootstrap)
-> for the full table. Re-running `bootstrap/` is reserved for recovery
-> (rebuilding the UAMI / repo).
+> for the full table. Future starter and engine updates are tracked separately
+> in [#34](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/issues/34).
 
-## Stop managing the seeded files (recommended)
+## Repository ownership after bootstrap
 
-The skeleton files are pushed via `github_repository_file`. By default this
-means subsequent `terraform apply` runs will revert any manual edits to
-those files — useful while iterating on the bootstrap, painful during normal
-operation.
+The initial files are delivered with `github_repository_file` resources, but
+the generated repository becomes the source of truth when bootstrap succeeds.
+Do not run another bootstrap apply to deliver starter changes. A later apply
+would reconcile the original file resources and could overwrite repository
+customizations.
 
-After the first successful seed, do **one** of the following:
-
-```powershell
-# Option A — toggle off, keep the resources in state for safety
-# (terraform.tfvars):
-copy_skeleton_files = false
-terraform apply
-
-# Option B — drop them from state entirely, free-form from now on
-terraform state rm 'github_repository_file.skeleton'
-```
+Bootstrap reruns are supported only while recovering an incomplete initial
+apply. Intentional control-plane recovery after handoff must be planned from
+the saved state and reviewed to ensure it does not recreate or replace seeded
+files. Versioned starter upgrades will use the separate mechanism tracked in
+[#34](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/issues/34).
 
 ## Why a UAMI instead of an app registration?
 

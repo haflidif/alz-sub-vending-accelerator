@@ -34,7 +34,8 @@ entirely.
 > protection + production environment, and seeds the vending skeleton
 > into that new repo with either `terraform/terraform.auto.tfvars` or
 > `bicep/platform.json` pre-filled.
-> It is idempotent and safe to re-run.
+> A partial bootstrap is resumable. After a successful initial handoff, do not
+> rerun it to synchronize repository files or deliver engine updates.
 >
 > For green-field POC tenants you'll first need the prerequisites (root MG
 > hierarchy and platform/management subscription) in
@@ -71,7 +72,7 @@ The wizard runs four phases:
 | `preflight` | Verifies `terraform`, `az`, `gh`, `pwsh` versions and resolves a GitHub token. | Yes |
 | `configure` | Prompts you for every bootstrap input, grouped by concern. Answers are persisted to `bootstrap/.bootstrap-inputs.json` (gitignored) and the wizard re-shows current values as defaults on the next run. | Yes — keep / edit per group |
 | `validate` | Calls Azure + GitHub APIs to confirm the inputs are sane *before* you wait for `terraform apply` to discover them. | Yes |
-| `terraform` | Renders `terraform.tfvars.json`, then runs `init → plan → apply`. Apply asks for an explicit `y/N` (or pass `-AutoApprove`). | Yes (Terraform handles its own state) |
+| `terraform` | Renders `terraform.tfvars.json`, then runs `init → plan → apply`. Apply asks for an explicit `y/N` (or pass `-AutoApprove`). | During the initial bootstrap or recovery from a partial failure |
 
 Two of the inputs carry the most variation; the wizard prompts
 for both but they deserve up-front thought:
@@ -271,7 +272,7 @@ Day-2 changes are made via PR to the seeded repo:
 | Add a new archetype + MG | Selected engine rules + platform configuration + `landingzones/<arch>/` + schema enum; see [`docs/archetypes.md`](archetypes.md) |
 | Add a new billing scope key | Update the selected engine configuration, then grant SubscriptionCreator on the new scope manually |
 | Change branch protection / production approvers | Edit directly in GitHub (Settings → Branches / Environments) — the bootstrap configured these once but no longer manages them |
-| Rotate the pipeline UAMI or recreate the repo | This is recovery, not day-2: re-run `bootstrap/` after restoring or recreating its local state. Avoid unless you have to. |
+| Rotate the pipeline UAMI or recreate the repo | This is control-plane recovery, not day-2 operation. Plan it from the saved bootstrap state and verify the plan does not reconcile seeded files. |
 
 Changes to runtime engine files select all subscriptions for preview or
 deployment. To re-apply *every* subscription after a platform change, use
@@ -279,22 +280,18 @@ deployment. To re-apply *every* subscription after a platform change, use
 
 ---
 
-## Iterating on the skeleton itself
+## Updating the starter itself
 
-The folder you ran `bootstrap/` from is the **skeleton source of truth**.
-Local edits to it do *not* propagate to a seeded vending repo
-automatically — `bootstrap/` only copies the skeleton during initial seed.
+The accelerator repository is the starter source, but local changes to it do
+not propagate to an already generated repository. Bootstrap copies the starter
+only during the initial handoff.
 
-Two ways to push skeleton changes downstream:
-
-1. **PR against the seeded repo** (preferred for day-2 changes). Copy the
-   changed file(s) from the skeleton into the seeded repo, open a PR,
-   merge. This is how every CI/Terraform/doc change reaches a deployed
-   environment.
-2. **Re-seed (recovery only).** Re-run `bootstrap/` with
-   `copy_skeleton_files = true` and `create_github_repository = false`.
-   This force-overwrites every file in the seeded repo with the skeleton
-   version — only do this on a repo with no local commits worth keeping.
+Until the versioned upgrade mechanism in
+[#34](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/issues/34)
+is available, move an intentional engine or workflow change into the generated
+repository through a normal pull request. Do not rerun bootstrap to reseed it.
+Repository-specific requests, platform values, CODEOWNERS, and customizations
+must remain under the generated repository's ownership.
 
 The skeleton folder is the template you publish (as a GitHub template
 repo). The included
