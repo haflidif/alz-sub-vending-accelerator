@@ -11,6 +11,11 @@ template itself, not the AVM modules pinned by the engines. See
 
 ### Changed
 
+- Required an explicit `Apply` run with `mode=all` after shared engine,
+  platform, schema, workflow, or discovery changes. Pull requests still preview
+  every affected subscription, while automatic push deployments remain limited
+  to request-only changes. Request YAML files merged with a shared change are
+  held for the explicit run too.
 - Organized operator documentation into Planning, Prerequisites, Bootstrap,
   and Run, with a separate consumer walkthrough and proposal index.
 - Moved onboarding, first-vend, and retirement guidance into audience folders.

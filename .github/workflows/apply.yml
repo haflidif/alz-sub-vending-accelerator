@@ -3,7 +3,9 @@ name: Apply
 # -----------------------------------------------------------------------------
 # Three trigger modes:
 #   1. push to main         — auto: applies subscriptions whose YAML changed
-#                             between the previous and current commit
+#                             between the previous and current commit. Shared
+#                             engine/platform changes require a manual mode=all
+#                             run after merge.
 #   2. workflow_dispatch    — manual: choose mode
 #                               • changed (default)
 #                               • single  (specify sub_path)
@@ -14,8 +16,11 @@ on:
     branches: [main]
     paths:
       - 'landingzones/*/*.yaml'
+      - 'landingzones/sub.schema.json'
       - 'terraform/**'
       - 'bicep/**'
+      - '.github/workflows/**'
+      - '.github/scripts/**'
   workflow_dispatch:
     inputs:
       mode:
@@ -73,6 +78,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set.outputs.matrix }}
       count:  ${{ steps.set.outputs.count }}
+      shared_changed: ${{ steps.set.outputs.shared_changed }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -86,10 +92,33 @@ jobs:
           BASE:     ${{ github.event.before || 'HEAD~1' }}
           HEAD:     ${{ github.sha }}
           VENDING_ENGINE: ${{ vars.VENDING_ENGINE || 'terraform' }}
+          INCLUDE_SHARED_CHANGES: ${{ github.event_name == 'push' && 'false' || 'true' }}
         run: bash .github/scripts/discover-subs.sh
 
   # ---------------------------------------------------------------------------
-  # 2) Apply each subscription with its own state
+  # 2) Explain why a shared change did not deploy automatically
+  # ---------------------------------------------------------------------------
+  shared-change-notice:
+    name: Shared change requires explicit deployment
+    needs: discover
+    if: github.event_name == 'push' && needs.discover.outputs.shared_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish deployment guidance
+        shell: bash
+        run: |
+          {
+            echo "## Shared change merged without automatic deployment"
+            echo ""
+            echo "This merge changed shared engine, platform, schema, or delivery files."
+            echo "No subscriptions were selected automatically."
+            echo ""
+            echo "Review the merged change, then run **Actions > Apply > Run workflow**"
+            echo "with **mode = all** when you are ready to deploy it across the fleet."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # 3) Apply each subscription with its own state
   # ---------------------------------------------------------------------------
   apply:
     name: Apply ${{ matrix.archetype }}/${{ matrix.name }}

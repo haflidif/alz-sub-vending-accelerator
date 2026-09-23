@@ -9,6 +9,8 @@
 #
 # Modes:
 #   changed  — subs whose YAML was added/modified between $BASE and $HEAD
+#              Shared engine/platform changes select every subscription when
+#              $INCLUDE_SHARED_CHANGES is true (the default for PR previews).
 #   single   — only the subscription at $SUB_PATH (the .yaml file, OR just the
 #              <archetype>/<sub-name> stem; .yaml is appended if missing)
 #   all      — every landingzones/*/*.yaml in the repo
@@ -16,6 +18,7 @@
 # Outputs (written to $GITHUB_OUTPUT):
 #   matrix=<json>            -- {"include":[{"sub_path":"...","archetype":"...","name":"...","state_key":"..."}]}
 #   count=<int>
+#   shared_changed=<bool>    -- selected-engine/shared delivery files changed
 # =============================================================================
 set -euo pipefail
 
@@ -24,10 +27,16 @@ BASE="${BASE:-origin/main}"
 HEAD="${HEAD:-HEAD}"
 SUB_PATH="${SUB_PATH:-}"
 VENDING_ENGINE="${VENDING_ENGINE:-terraform}"
+INCLUDE_SHARED_CHANGES="${INCLUDE_SHARED_CHANGES:-true}"
+shared_changed=false
 
 case "$VENDING_ENGINE" in
   terraform|bicep) ;;
   *) echo "::error::unknown VENDING_ENGINE: $VENDING_ENGINE" >&2; exit 1 ;;
+esac
+case "$INCLUDE_SHARED_CHANGES" in
+  true|false) ;;
+  *) echo "::error::INCLUDE_SHARED_CHANGES must be true or false" >&2; exit 1 ;;
 esac
 
 repo_root="$(git rev-parse --show-toplevel)"
@@ -37,7 +46,7 @@ discover_all() {
   find landingzones -mindepth 2 -maxdepth 2 -type f -name '*.yaml' | sort
 }
 
-discover_changed() {
+validate_diff_refs() {
   # Only fetch when BASE looks like a remote ref. Commit SHAs (from
   # github.event.before on push) are already in the repo when fetch-depth=0.
   if [[ "$BASE" == origin/* ]]; then
@@ -54,15 +63,38 @@ discover_changed() {
     echo "::error::HEAD does not resolve to a commit: $HEAD" >&2
     return 1
   fi
+}
 
+changed_files() {
+  git diff --name-only "${BASE}...${HEAD}" -- \
+    "$VENDING_ENGINE" \
+    '.github/workflows/**' \
+    '.github/scripts/**' \
+    'landingzones/sub.schema.json' \
+    'landingzones/*/*.yaml'
+}
+
+detect_shared_change() {
   local changed
-  changed="$(git diff --name-only "${BASE}...${HEAD}" -- "$VENDING_ENGINE" 'landingzones/*/*.yaml')"
+  changed="$(changed_files)"
   if [[ "$VENDING_ENGINE" == "terraform" ]] \
     && grep -Eq '^terraform/.*\.tf(\.json)?$' <<<"$changed"; then
-    discover_all
+    echo true
   elif [[ "$VENDING_ENGINE" == "bicep" ]] \
     && grep -Eq '^bicep/(.*\.(bicep|psm1)|platform\.json|default-resource-providers\.json)$' <<<"$changed"; then
-    discover_all
+    echo true
+  elif grep -Eq '^(\.github/(workflows|scripts)/|landingzones/sub\.schema\.json$)' <<<"$changed"; then
+    echo true
+  else
+    echo false
+  fi
+}
+
+discover_changed() {
+  if [[ "$shared_changed" == "true" ]]; then
+    if [[ "$INCLUDE_SHARED_CHANGES" == "true" ]]; then
+      discover_all
+    fi
   else
     git diff --name-only --diff-filter=AM "${BASE}...${HEAD}" \
       -- 'landingzones/*/*.yaml' | sort -u
@@ -76,6 +108,8 @@ case "$MODE" in
     [[ -z "$discovered" ]] || mapfile -t files <<<"$discovered"
     ;;
   changed)
+    validate_diff_refs
+    shared_changed="$(detect_shared_change)"
     discovered="$(discover_changed)"
     [[ -z "$discovered" ]] || mapfile -t files <<<"$discovered"
     ;;
@@ -113,7 +147,9 @@ matrix=$(jq -nc --argjson inc "$include" '{include:$inc}')
 {
   echo "matrix=${matrix}"
   echo "count=${count}"
+  echo "shared_changed=${shared_changed}"
 } >>"${GITHUB_OUTPUT:-/dev/stdout}"
 
 echo "Discovered $count subscription(s) for mode=$MODE"
+echo "Shared change detected: $shared_changed"
 jq . <<<"$matrix" || true
