@@ -70,6 +70,7 @@ jobs:
           BASE: origin/${{ github.base_ref }}
           HEAD: ${{ github.event.pull_request.head.sha }}
           VENDING_ENGINE: ${{ vars.VENDING_ENGINE || 'terraform' }}
+          INCLUDE_SHARED_CHANGES: 'true'
         run: bash .github/scripts/discover-subs.sh
 
   # ---------------------------------------------------------------------------

@@ -1,7 +1,8 @@
 # `.github/` — CI/CD machinery
 
-The skeleton ships everything CI needs to validate PRs and apply
-subscriptions on merge. GitHub Actions only — **no external runners, no
+The skeleton ships everything CI needs to validate PRs, apply changed
+subscription requests on merge, and explicitly deploy shared changes. GitHub
+Actions only — **no external runners, no
 shared service-principal secrets**. Auth is OIDC →
 UAMI federation; every workflow runs inside the operator's tenant.
 
@@ -10,7 +11,7 @@ UAMI federation; every workflow runs inside the operator's tenant.
 | Path | Purpose |
 |---|---|
 | [`workflows/pr-validate.yml`](workflows/pr-validate.yml) | Runs on every PR. Validates YAML and accelerator contracts, discovers affected subscriptions, then runs Terraform plan or Bicep validate/what-if and posts the preview as a PR comment. |
-| [`workflows/apply.yml`](workflows/apply.yml) | Runs on `push` to `main` and `workflow_dispatch`. Discovers affected subscriptions and deploys them with the selected engine behind the `production` GitHub Environment gate. |
+| [`workflows/apply.yml`](workflows/apply.yml) | Runs on `push` to `main` and `workflow_dispatch`. Automatically deploys changed request YAML files. Shared engine, platform, schema, and delivery changes require an explicit `mode=all` run. |
 | [`scripts/discover-subs.sh`](scripts/discover-subs.sh) | Single bash script consumed by **both** workflows. Emits a `matrix` JSON listing every `(sub_path, archetype, name, state_key)` to operate on. |
 | [`dependabot.yml`](dependabot.yml) | Weekly updates for GitHub Actions pins, monthly updates for the `terraform/` and `bootstrap/` providers. |
 | [`PULL_REQUEST_TEMPLATE.md`](PULL_REQUEST_TEMPLATE.md) | PR description scaffold — change type + per-track checklists. |
@@ -20,8 +21,8 @@ UAMI federation; every workflow runs inside the operator's tenant.
 
 | Event | Workflow | Mode | Selection |
 |---|---|---|---|
-| `pull_request` to `main` | `pr-validate.yml` | always `changed` | Subs whose YAML added/modified vs `origin/<base_ref>` |
-| `push` to `main` | `apply.yml` | `changed` | Subs whose YAML changed between `before` and `sha` |
+| `pull_request` to `main` | `pr-validate.yml` | always `changed` | Changed request YAML files, or every request when selected-engine/shared delivery files change |
+| `push` to `main` | `apply.yml` | `changed` | Request YAML files changed between `before` and `sha`, unless the same merge contains a shared change. Shared changes emit guidance and select no subscriptions. |
 | `workflow_dispatch` (apply) | `apply.yml` | `changed` / `single` / `all` | Operator-selected. `single` needs `sub_path`; `all` re-applies every `landingzones/*/*.yaml`. |
 
 ## `discover-subs.sh` — modes
@@ -30,13 +31,14 @@ Single source of truth for "which subscriptions does this run touch?"
 
 | Mode | Inputs | Behaviour |
 |---|---|---|
-| `changed` | `BASE`, `HEAD` env vars | `git diff --name-only --diff-filter=AM "$BASE...$HEAD" -- 'landingzones/*/*.yaml'` |
+| `changed` | `BASE`, `HEAD`, `INCLUDE_SHARED_CHANGES` env vars | Selects changed request YAML files. When `INCLUDE_SHARED_CHANGES=true`, selected-engine, workflow, discovery-script, or schema changes select every request for preview. |
 | `single` | `SUB_PATH` env var | Exactly one sub. Accepts either `landingzones/corp/prod-corp-erp-001.yaml` OR the `.yaml`-less stem (`landingzones/corp/prod-corp-erp-001`). |
 | `all` | (none) | `find landingzones -mindepth 2 -maxdepth 2 -type f -name '*.yaml'` |
 
 Output written to `$GITHUB_OUTPUT`:
 - `matrix=<json>` — `{"include":[{"sub_path":"…","archetype":"…","name":"…","state_key":"…/….tfstate"}]}`
 - `count=<int>` — used by downstream jobs as `if: needs.discover.outputs.count != '0'`
+- `shared_changed=<bool>` — lets the push workflow explain why no automatic fleet deployment occurred
 
 `state_key` is always `<archetype>/<name>.tfstate` — this is what the
 `terraform init -backend-config="key=…"` step in each job uses. Per-sub
@@ -46,11 +48,21 @@ state isolation is enforced here. Bicep ignores this compatibility field.
 runtime `.tf` files selects all requests in a Terraform repository. A change
 to Bicep templates, the request compiler, `platform.json`, or
 `default-resource-providers.json` selects all requests in a Bicep repository.
+Shared workflows, discovery logic, and the request schema select all requests
+for PR preview in either engine.
+
+On a `push` event, `apply.yml` sets `INCLUDE_SHARED_CHANGES=false`. The same
+shared changes therefore select no subscriptions after merge. The workflow
+publishes a summary directing the operator to run `mode=all` explicitly. This
+also blocks co-committed request YAML files from deploying under the changed
+shared implementation.
 
 ## How the `apply.yml` matrix runs
 
 1. **`discover` job** — runs `discover-subs.sh`, emits the matrix.
-2. The matching engine job fans out over the matrix, with at most five
+2. **`shared-change-notice` job** — on a shared push, records that deployment
+   was intentionally deferred and explains how to run `mode=all`.
+3. The matching engine job fans out over the matrix, with at most five
    subscriptions in parallel:
    - Logs into Azure via `azure/login@v3` using OIDC against the operator's UAMI (FIC matches the trigger — branch / PR / environment).
    - Terraform initializes the per-sub backend, creates a saved plan, applies

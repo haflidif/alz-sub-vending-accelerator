@@ -50,18 +50,22 @@ synchronization mechanism.
 | Change branch protection or production approvers | GitHub repository settings or your separately maintained day-2 configuration |
 | Rotate the pipeline identity or recreate the repository | Separate control-plane recovery, planned from saved bootstrap state; verify that it does not reconcile seeded files |
 
-Make runtime configuration changes through reviewed PRs. Shared engine
-changes can select every subscription for preview and deployment.
+Make runtime configuration changes through reviewed PRs. Shared engine,
+platform, schema, and delivery changes select every subscription for preview,
+but they do not deploy automatically after merge. If the same merge also
+changes request YAML files, those requests are held for the explicit run too.
 
 ## Reruns and wider changes
 
-Use **Actions > Apply > Run workflow**:
+After merging a shared change, review the completed Apply workflow summary.
+It confirms that no subscriptions were selected automatically. Then use
+**Actions > Apply > Run workflow**:
 
 | Mode | Use |
 |---|---|
 | `single` | Retry one request using its `landingzones/<archetype>/<name>.yaml` path |
 | `all` | Deliberately deploy all requests after reviewing a platform-wide change |
-| `changed` | Use the normal change-discovery path |
+| `changed` | Re-run change discovery manually; shared files still participate in discovery |
 
 The production environment gate still applies. See the
 [CI/CD trigger and discovery reference](../../.github/CICD.md#trigger-matrix)

@@ -55,7 +55,8 @@ tree, generated-package boundaries, and where to make changes.
 
 Each request is a separate workflow matrix item. Terraform isolates state
 per subscription; Bicep uses management-group deployments. Shared engine
-changes can affect all requests.
+changes preview all requests, but require an explicit Apply run with
+`mode=all` after merge.
 
 The [CI/CD reference](.github/CICD.md) documents `changed`, `single`, and
 `all` modes, approval gates, outputs, and troubleshooting.

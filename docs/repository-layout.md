@@ -187,11 +187,11 @@ reviewed PRs, not another bootstrap apply.
 | You want to… | Edit here | Then… |
 |---|---|---|
 | Vend a new subscription | `landingzones/<arch>/<sub>.yaml` (in the **vending repo**) | Open a PR |
-| Modify archetype defaults | Terraform: `terraform/archetypes.tf`; Bicep: `bicep/SubscriptionVending.Bicep.psm1` | PR + preview + apply with `mode=all` |
+| Modify archetype defaults | Terraform: `terraform/archetypes.tf`; Bicep: `bicep/SubscriptionVending.Bicep.psm1` | PR previews all requests; after merge, explicitly run Apply with `mode=all` |
 | Add a new archetype | Engine rules + `landingzones/<arch>/` + schema enum + selected engine configuration | See [`docs/archetypes.md`](archetypes.md) |
-| Rotate platform inputs | `terraform/terraform.auto.tfvars` or `bicep/platform.json` in the vending repo | PR + apply with `mode=all` if existing subscriptions need the new values |
+| Rotate platform inputs | `terraform/terraform.auto.tfvars` or `bicep/platform.json` in the vending repo | PR previews all requests; after merge, explicitly run Apply with `mode=all` if existing subscriptions need the new values |
 | Add a new optional YAML field | Schema + both engine adapters + engine docs + tests | New PR to the accelerator, then propagate via PR to existing vending repos |
-| Bump the AVM module version | `terraform/main.tf` or `bicep/main.bicep` | Test with `mode=all` in a non-production tenant first |
+| Bump the AVM module version | `terraform/main.tf` or `bicep/main.bicep` | PR previews all requests; test and explicitly deploy with `mode=all` in a non-production tenant first |
 | Bump GitHub Actions / Terraform provider versions | Wait for Dependabot, or edit `terraform/versions.tf` / `.github/workflows/*.yml` / `bootstrap/terraform.tf` | See [`.github/CICD.md → Dependabot cadence`](../.github/CICD.md#dependabot-cadence) |
 | Tune CI behaviour (branch protection, required reviewers, env name) | `bootstrap/variables.tf` defaults — but only matters for the next bootstrap. For an existing vending repo, edit directly in GitHub Settings or via `github_branch_protection` / `github_repository_environment` in your own day-2 IaC. | See [`.github/CICD.md → Required status checks`](../.github/CICD.md#required-status-checks) |
 | Skeleton iteration (this repo) | Anywhere | Verify in a throwaway tenant; ship via PR to the vending repo |

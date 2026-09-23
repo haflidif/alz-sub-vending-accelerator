@@ -143,7 +143,8 @@ that the PR also added.
 ## Modifying an existing archetype
 
 Edit the relevant engine rule. Treat with care because a runtime engine change
-selects every request in the repository on the next preview and deployment.
+selects every request in the repository for preview. After merge, deployment
+is intentionally deferred until an operator runs Apply with `mode=all`.
 
 Recommended PR checklist:
 - [ ] `workflow_dispatch` of `apply.yml` with `mode=all` in a non-prod tenant first
