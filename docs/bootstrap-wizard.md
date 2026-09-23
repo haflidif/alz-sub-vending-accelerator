@@ -64,7 +64,7 @@ is `all`.
 | Phase | What happens | Re-runnable? | Side effects |
 |---|---|---|---|
 | `preflight` | Verifies Terraform is `>= 1.10.0` and `< 2.0.0`, Azure CLI is 2.64.0 or newer, GitHub CLI is 2.50.0 or newer, and PowerShell is 7.2 or newer. Resolves a GitHub token from `$env:GITHUB_TOKEN` or `gh auth token` without persisting it. Verifies the Azure session matches the configured tenant. | Always | None |
-| `configure` | Prompts you for every bootstrap input, grouped by concern (see [Group reference](#group-reference)). Persists to `bootstrap/.bootstrap-inputs.json` (gitignored) **atomically per group** — Ctrl-C never loses more than one group's progress. On rerun, current values are shown as defaults; press Enter to keep. | Always — keep / edit per group | Writes to `.bootstrap-inputs.json` + rotates `.bak` |
+| `configure` | Prompts you for every bootstrap input, grouped by concern (see [Group reference](#group-reference-configure-phase)). Persists to `bootstrap/.bootstrap-inputs.json` (gitignored) **atomically per group**. Ctrl-C never loses more than one group's progress. On rerun, current values are shown as defaults; press Enter to keep. | Always; keep or edit per group | Writes to `.bootstrap-inputs.json` + rotates `.bak` |
 | `validate` | Calls Azure (resource-group/SA/MG existence) + GitHub (`/user`, `/repos/...`, team/user lookups) to confirm the inputs are sane **before** `terraform apply` discovers them. Catches typos, missing scopes, wrong tenant, MG ID format mistakes. | Always | None — read-only |
 | `terraform` | Renders `terraform.tfvars.json` from the sidecar (drift-aware — warns on hand-edits), runs `terraform init` (with `-reconfigure` when `-Reconfigure` is set), `terraform plan -out=tfplan`, then asks before `apply`. | Initial bootstrap or partial-failure recovery | Writes `terraform.tfvars.json`, runs Terraform |
 
@@ -247,7 +247,7 @@ want to delete the resources before re-running with corrected inputs.
 | Situation | Use |
 |---|---|
 | You ran the bootstrap against the wrong tenant / wrong GitHub repo and want to start over | `Invoke-Bootstrap.ps1 -Destroy` (this section) |
-| You want to **decommission a single vended subscription** (not the platform itself) | [`docs/teardown.md`](teardown.md) |
+| You want to **decommission a single vended subscription** (not the platform itself) | [Retire a subscription](operators/retire-subscription.md) |
 | You want to re-collect bootstrap inputs without destroying anything | `Invoke-Bootstrap.ps1 -Phase configure` |
 | You just want to see what bootstrap created without changing anything | `Invoke-Bootstrap.ps1 -Destroy -WhatIf` |
 | You want to wipe local Terraform state + the sidecar files (no Azure / GitHub action) | `Invoke-Bootstrap.ps1 -CleanBootstrapFolder` |
@@ -470,7 +470,7 @@ when triaging unexpected behaviour.
 ## See also
 
 - [Bootstrap reference](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md)
-- [`docs/onboarding.md`](onboarding.md) — operator setup (where the wizard fits in)
+- [Operator guide](operators/bootstrap.md) for setup and where the wizard fits
 - [`docs/billing-scopes.md`](billing-scopes.md) — `billing_scopes` map format
 - [`docs/tagging.md`](tagging.md) — `cost_allocation_tag` + `mandatory_tags`
 - [`docs/glossary.md`](glossary.md) — UAMI, FIC, OIDC subject claims, etc.

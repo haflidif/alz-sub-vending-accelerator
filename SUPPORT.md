@@ -8,7 +8,7 @@ duplicates. For new issues, file your bug or feature request as a new issue.
 
 For help and questions about using this project, please:
 
-- Read the documentation in the [`docs/`](docs/) folder and each component's `README.md`.
+- Use the [documentation index](docs/README.md) for operator, consumer, and component references.
 - Start with [`QUICKSTART.md`](QUICKSTART.md) for a day-1 walkthrough.
 - Open a [GitHub Discussion](https://docs.github.com/en/discussions) (if enabled) or a
   GitHub Issue for questions not covered by the docs.

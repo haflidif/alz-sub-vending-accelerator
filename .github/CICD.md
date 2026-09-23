@@ -130,7 +130,7 @@ re-run `bootstrap/`).
 
 Teams with stricter change-management windows usually slow these
 down — see
-[`docs/onboarding.md → "Tuning Dependabot cadence"`](../docs/onboarding.md#tuning-dependabot-cadence).
+[Tuning Dependabot cadence](../docs/operators/run.md#tuning-dependabot-cadence).
 
 ## Troubleshooting
 
@@ -145,8 +145,8 @@ down — see
 
 ## See also
 
-- [`docs/onboarding.md`](../docs/onboarding.md) — one-time operator setup
-- [`docs/first-vend.md`](../docs/first-vend.md) — vend your first sub
+- [Operator guide](../docs/operators/bootstrap.md) for initial setup
+- [Consumer walkthrough](../docs/consumers/first-subscription.md) for your first subscription
 - [Bootstrap reference](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md)
 - [`docs/state-storage.md`](../docs/state-storage.md) — backend container + per-sub key
 - [GitHub OIDC with Azure](https://docs.github.com/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-azure)

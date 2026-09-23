@@ -14,41 +14,21 @@ it under the project's [MIT License](LICENSE) (the
 summary of this expectation).
 
 Please be respectful and constructive in issues and pull requests. Security
-issues are handled per the project's security policy (`SECURITY.md`); for
-support options see the support guide (`SUPPORT.md`).
+issues follow the [security policy][security]; for support options see the
+[support guide][support]. These links open the accelerator source because
+the policies are not copied into generated vending repositories.
 
 ## Vending a new subscription
 
-1. **Pick an archetype** (`corp`, `online`, `sandbox`).
-   See [`docs/archetypes.md`](docs/archetypes.md).
-2. **Create a YAML file** under `landingzones/<archetype>/` named per the
-   [naming convention](docs/naming-convention.md), e.g.
-   `landingzones/corp/prod-corp-erp-001.yaml`.
-3. **Author the contract.** This is the only file you need. The schema is
-   documented in [`docs/architecture.md`](docs/architecture.md#sub-yaml-schema).
-   Required fields: `archetype`, `location`, `owner`.
-4. **Open a PR.** CI will:
-   - Detect that you changed `landingzones/<archetype>/<your-sub>.yaml`
-   - Validate the shared YAML schema
-   - Run Terraform plan or Bicep validate and what-if for your request
-   - Post the engine preview as a PR comment
-5. **Review** requires the archetype CODEOWNER. Follow your organization's
-   process for confirming the request with the subscription owner listed in
-   the YAML.
-6. **Merge to `main`** triggers the `Apply` workflow. After approval in the
-   `production` GitHub Environment, your sub is applied.
+Use the [consumer walkthrough](docs/consumers/first-subscription.md) and
+[request contract](landingzones/README.md) in the generated vending repository.
+Subscription requests are not contributions to the upstream accelerator.
 
 ## Modifying an archetype default
 
-Archetype rules live in `terraform/archetypes.tf` and the `$archetypes` map in
-`bicep/SubscriptionVending.Bicep.psm1`. Change the adapter for the engine you
-support. Treat the change as repository-wide because runtime engine changes
-select every existing request:
-
-1. Open an RFC issue describing the change and the blast radius.
-2. Include a `mode=all` result from a non-production tenant, or attach
-   Terraform plan or Bicep what-if output for representative requests.
-3. Requires sign-off from the platform lead.
+Follow [Archetypes](docs/archetypes.md#modifying-an-existing-archetype) for
+the change and review requirements. Operators use the
+[Run guide](docs/operators/run.md) for platform configuration and deployment.
 
 ## Bumping an AVM module version
 
@@ -121,3 +101,22 @@ az bicep build --file bicep/main.bicep
 pwsh -File tests/PowerShell/SubscriptionVending.Tests.ps1
 pwsh -File tests/PowerShell/BicepStarter.Tests.ps1
 ```
+
+## Documentation changes
+
+Start at the [documentation index](docs/README.md). Keep operator procedures,
+consumer instructions, component references, and [proposals][proposals]
+separate. The [starter contract][contract] documents current implementation,
+not future product direction.
+
+When moving a page, preserve its former path and heading anchors with a
+section-aware compatibility page. Update maintained Markdown links and check
+the source repository plus both generated engine packages. Source-only files
+need explicit upstream links from shared documentation. Do not edit request
+YAML or runtime Terraform comments just to update a link if that would trigger
+an unrelated deployment; a compatibility page keeps the old reference valid.
+
+[security]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/SECURITY.md
+[support]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/SUPPORT.md
+[proposals]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/docs/proposals/README.md
+[contract]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/docs/starter-contract.md

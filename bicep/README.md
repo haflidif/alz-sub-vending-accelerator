@@ -1,5 +1,7 @@
 # Bicep subscription-vending starter
 
+[Documentation index](../docs/README.md) | [Operator guide](../docs/operators/run.md)
+
 This package is the Bicep engine for the subscription-vending accelerator. It
 wraps the official Azure Verified Modules pattern
 `br/public:avm/ptn/lz/sub-vending:0.8.0` and preserves the repository's existing

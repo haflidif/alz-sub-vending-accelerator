@@ -13,7 +13,7 @@ request selects one through `billingScopeKey:`.
 > selected engine configuration directly via PR:
 > `terraform/terraform.auto.tfvars` (`billing_scopes`) or
 > `bicep/platform.json` (`billingScopes`). See
-> [`docs/onboarding.md` → "Updating platform inputs after bootstrap"](onboarding.md#updating-platform-inputs-after-bootstrap).
+> [Updating platform inputs after bootstrap](operators/run.md#updating-platform-inputs-after-bootstrap).
 
 ---
 
@@ -159,7 +159,7 @@ Current verification level:
 
 ## See also
 
-* [docs/onboarding.md](onboarding.md) — full operator onboarding flow
+* [Operator journey](README.md#platform-operators)
 * [docs/tagging.md](tagging.md) — cost-allocation tag configuration
 * [Terraform AVM module: `subscription_billing_scope`](https://registry.terraform.io/modules/Azure/avm-ptn-alz-sub-vending/azure/latest)
 * [Bicep AVM subscription-vending pattern](https://github.com/Azure/bicep-registry-modules/tree/main/avm/ptn/lz/sub-vending)
