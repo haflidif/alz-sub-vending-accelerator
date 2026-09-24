@@ -32,6 +32,7 @@ are rendered into the generated repository, not committed to the source.
 subscription-vending/
 ├── .editorconfig
 ├── .gitignore                       # Terraform/IDE/secret/sidecar exclusions
+├── accelerator.json                 # Release identity and source repository
 ├── CHANGELOG.md                     # Skeleton release notes
 ├── CODEOWNERS                       # Upstream accelerator owners (not seeded)
 ├── CONTRIBUTING.md                  # How to vend / modify archetypes / bump AVM
@@ -40,6 +41,7 @@ subscription-vending/
 ├── README.md                        # ⭐ Top-level entry point — start here
 ├── SECURITY.md                      # Source-only security policy
 ├── SUPPORT.md                       # Source-only support guide
+├── upgrade-manifest.json            # Managed-file ownership for upgrades
 │
 ├── .github/
 │   ├── PULL_REQUEST_TEMPLATE.md     # PR description scaffold
@@ -116,6 +118,7 @@ subscription-vending/
 │   │   ├── prerequisites.md         # Tools, resources, permissions
 │   │   ├── bootstrap.md             # Initial setup and repository handoff
 │   │   ├── run.md                   # First run and service operation
+│   │   ├── upgrade.md               # Versioned managed-file upgrades
 │   │   └── retire-subscription.md   # Advanced operator lifecycle guidance
 │   ├── consumers/
 │   │   └── first-subscription.md    # YAML-and-PR walkthrough
@@ -140,6 +143,7 @@ subscription-vending/
 │
 ├── scripts/
 │   ├── README.md                    # Local-helper scripts reference
+│   ├── Update-SubscriptionVending.ps1 # Tagged generated-repository upgrades
 │   ├── Grant-SubscriptionCreatorRole.ps1 # Approval-gated billing role helper
 │   └── Reset-LocalState.ps1         # Wipe local operator state
 │
@@ -151,6 +155,11 @@ subscription-vending/
     └── scripts/
         └── discover-subs.Tests.sh
 ```
+
+The generated repository also receives `.accelerator/metadata.json`, rendered
+by bootstrap with its selected starter, accelerator version, and managed-file
+hashes. The file is updated only when a versioned upgrade changes managed
+content.
 
 ⭐ = start here for each persona.
 ★ = aggregated reference index.
@@ -201,7 +210,7 @@ reviewed PRs, not another bootstrap apply.
 
 - [`README.md`](../README.md) — top-level entry point
 - [Documentation index](README.md)
-- [Planning](operators/planning.md), [Prerequisites](operators/prerequisites.md), [Bootstrap](operators/bootstrap.md), and [Run](operators/run.md)
+- [Planning](operators/planning.md), [Prerequisites](operators/prerequisites.md), [Bootstrap](operators/bootstrap.md), [Run](operators/run.md), and [Upgrade](operators/upgrade.md)
 - [Consumer walkthrough](consumers/first-subscription.md) for requesting a subscription
 - [`docs/architecture.md`](architecture.md) — design rationale
 - [`docs/glossary.md`](glossary.md) — terminology

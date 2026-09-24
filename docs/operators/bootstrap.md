@@ -7,8 +7,11 @@ Complete [Prerequisites](prerequisites.md) before running these steps.
 
 **Run from the accelerator source checkout**, not the generated vending
 repository. The generated repository excludes `bootstrap/`, `powershell/`,
-and starter metadata. If you are reading this in a generated repository,
-use the [accelerator source][source] for initial setup or reviewed recovery.
+and the source starter manifests. It receives only the small
+`.accelerator/metadata.json` record needed for later upgrades, including the
+selected starter, source version, and hashes of the managed files seeded at
+handoff. If you are reading this in a generated repository, use the
+[accelerator source][source] for initial setup or reviewed recovery.
 
 ## One shared Terraform bootstrap layer
 
@@ -19,7 +22,8 @@ inputs for the vending runtime are collected only for Terraform.
 
 A partial bootstrap is resumable. After a successful initial handoff, do not
 rerun it to synchronize repository files or deliver engine updates. Keep the
-bootstrap state for explicitly reviewed control-plane recovery.
+bootstrap state for explicitly reviewed control-plane recovery. Use the
+generated repository's versioned upgrade command for source updates.
 
 ## Step 1: Run the bootstrap module
 

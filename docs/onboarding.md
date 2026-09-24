@@ -94,7 +94,7 @@ Continue to [Updating platform inputs](operators/run.md#updating-platform-inputs
 
 ## Starter changes
 
-Continue to [Updating the starter](operators/run.md#updating-the-starter-itself).
+Continue to [Upgrade a generated repository](operators/upgrade.md).
 
 <a name="tuning-dependabot-cadence"></a>
 

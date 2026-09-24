@@ -156,8 +156,9 @@ the pipeline end-to-end. See [Consumer walkthrough](../docs/consumers/first-subs
 > `terraform/terraform.auto.tfvars` or `bicep/platform.json` in the seeded repo
 > is changed by editing that file directly via PR. See
 > [Updating platform inputs after bootstrap](../docs/operators/run.md#updating-platform-inputs-after-bootstrap)
-> for the full table. Future starter and engine updates are tracked separately
-> in [#34](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/issues/34).
+> for the full table. Use the generated repository's
+> `scripts/Update-SubscriptionVending.ps1` command for tagged starter and
+> engine updates.
 
 ## Repository ownership after bootstrap
 
@@ -170,8 +171,8 @@ customizations.
 Bootstrap reruns are supported only while recovering an incomplete initial
 apply. Intentional control-plane recovery after handoff must be planned from
 the saved state and reviewed to ensure it does not recreate or replace seeded
-files. Versioned starter upgrades will use the separate mechanism tracked in
-[#34](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/issues/34).
+files. Versioned starter upgrades use the generated repository's explicit
+PowerShell upgrade command and normal pull request controls.
 
 ## Why a UAMI instead of an app registration?
 

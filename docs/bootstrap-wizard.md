@@ -153,9 +153,9 @@ the default tenant" foot-gun.
 
 These scenarios apply until the initial bootstrap succeeds. After handoff, the
 generated repository owns its source files. Engine and workflow updates must be
-delivered through repository pull requests, not another bootstrap apply. The
-versioned upgrade mechanism is tracked in
-[#34](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/issues/34).
+delivered through repository pull requests, not another bootstrap apply. Use
+the generated repository's `scripts/Update-SubscriptionVending.ps1` command to
+prepare versioned upgrade pull requests.
 
 | Scenario | What to do |
 |---|---|

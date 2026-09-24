@@ -68,6 +68,13 @@ Process:
 - PowerShell helpers: PascalCase function names, `[CmdletBinding()]`,
   `$ErrorActionPreference = 'Stop'`.
 
+## Preparing an accelerator release
+
+Before tagging a release, update `accelerator.json` so `version` exactly
+matches the planned Git tag, including the leading `v`. Generated repositories
+record this value with the managed-file hashes used by later upgrades. Keep
+`upgrade-manifest.json` aligned with any new seeded paths or ownership changes.
+
 ## Commit messages
 
 Conventional Commits:
@@ -84,6 +91,7 @@ Run the smallest relevant checks before you open a PR:
 
 - `tests/PowerShell/SubscriptionVending.Tests.ps1`
 - `tests/PowerShell/BicepStarter.Tests.ps1`
+- `tests/PowerShell/Upgrade.Tests.ps1`
 - `tests/scripts/discover-subs.Tests.sh`
 - JSON Schema validation for subscription requests and Bicep platform config
 - `terraform fmt -check` and `terraform validate`

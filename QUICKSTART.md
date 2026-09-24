@@ -61,7 +61,9 @@ Give workload teams the [consumer walkthrough](docs/consumers/first-subscription
 
 Use Run for [platform changes](docs/operators/run.md#updating-platform-inputs-after-bootstrap),
 [wider deployments](docs/operators/run.md#reruns-and-wider-changes), and
-[starter updates](docs/operators/run.md#updating-the-starter-itself).
+[starter upgrades](docs/operators/upgrade.md).
+Starter updates are previewed and applied locally with
+`scripts/Update-SubscriptionVending.ps1`; bootstrap is not rerun.
 
 ## Need help?
 

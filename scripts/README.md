@@ -7,7 +7,38 @@ Local helpers — PowerShell only. Each script is self-contained,
 
 | Script | Purpose |
 |---|---|
+| [`Update-SubscriptionVending.ps1`](Update-SubscriptionVending.ps1) | Previews and applies a tagged accelerator release to managed files in a generated repository. |
+| [`Grant-SubscriptionCreatorRole.ps1`](Grant-SubscriptionCreatorRole.ps1) | Grants the pipeline identity SubscriptionCreator on an EA or MCA billing scope. |
 | [`Reset-LocalState.ps1`](Reset-LocalState.ps1) | Wipes local operator state from the working tree. Removes tfvars / sidecar JSON / `.terraform/` caches / tfstate / tfplans / local logs in a single command. Handy before committing, sharing a fork, or starting a clean run. |
+
+## `Update-SubscriptionVending.ps1`
+
+Run this helper from a generated vending repository. Preview is the default:
+
+```powershell
+pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.3.0
+```
+
+Use `-Apply` to create `upgrade/accelerator-<version>` and update the working
+tree. Add `-CreatePullRequest` only when the script should also commit, push,
+and call `gh pr create`. `-Latest` is available as an explicit alternative to
+`-TargetVersion`.
+
+The updater downloads the target tagged source archive, evaluates its
+`upgrade-manifest.json`, and compares it with the managed-file hashes recorded
+at bootstrap or the previous upgrade. Older repositories without hashes use
+their explicitly supplied current release as the comparison baseline.
+Repository-owned requests, rendered platform configuration, CODEOWNERS, and
+local additions are excluded. A locally changed managed file becomes a
+blocking conflict only when the target release also changes or removes it.
+All conflicts are reported before any file is written.
+
+Repositories without `.accelerator/metadata.json` must supply both
+`-CurrentVersion` and `-Starter` during their first upgrade. Run the updater
+from the target accelerator release checkout with `-RepositoryRoot` pointing
+to the older generated repository. See the
+[upgrade runbook](../docs/operators/upgrade.md) for
+the full lifecycle and post-merge deployment step.
 
 ## `Reset-LocalState.ps1`
 
@@ -64,6 +95,6 @@ pwsh ./scripts/Reset-LocalState.ps1 -SkipPrompt
 
 ## See also
 
-- [Starter updates](../docs/operators/run.md#updating-the-starter-itself) and local cleanup context
+- [Upgrade a generated repository](../docs/operators/upgrade.md) and local cleanup context
 - [Retire a subscription](../docs/operators/retire-subscription.md) for Azure-side cleanup, not local file cleanup
 - [`.gitignore`](../.gitignore) — the canonical list of files that should never be committed (this script's targets are a superset)

@@ -12,6 +12,7 @@ teams manage subscription requests.
 | [Prerequisites](operators/prerequisites.md) | Verify tools, existing Azure resources, and Azure, billing, and GitHub access |
 | [Bootstrap](operators/bootstrap.md) | Create the delivery environment, complete the billing-role grant, and hand off the repository |
 | [Run](operators/run.md) | Verify the first request, maintain configuration, review deployments, and find recovery guidance |
+| [Upgrade](operators/upgrade.md) | Preview and apply a tagged accelerator release without overwriting repository-owned content |
 
 Already operating a service? Start at [Run](operators/run.md).
 
@@ -40,6 +41,7 @@ YAML and the references below when reviewing placement, ownership, and cost.
 | Bootstrap module interface | [PowerShell module][powershell] (accelerator source) |
 | Runtime engine details | [Terraform][terraform] or [Bicep][bicep] (accelerator source; only the selected engine folder exists in a generated repository) |
 | Local helper scripts | [Scripts](../scripts/README.md) |
+| Versioned starter upgrades | [Upgrade runbook](operators/upgrade.md) |
 | Subscription retirement | [Advanced operator runbook](operators/retire-subscription.md), with review warnings |
 
 ## Contributing to the accelerator
