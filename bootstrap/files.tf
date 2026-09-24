@@ -15,8 +15,11 @@
 
 locals {
   skeleton_root             = abspath("${path.module}/${var.skeleton_source_path}")
+  accelerator_manifest      = jsondecode(file("${local.skeleton_root}/accelerator.json"))
+  upgrade_manifest          = jsondecode(file("${local.skeleton_root}/upgrade-manifest.json"))
   starter_manifest          = jsondecode(file("${local.skeleton_root}/starters/${var.starter_name}/starter.json"))
   selected_package_prefixes = local.starter_manifest.package.includePrefixes
+  upgrade_engine_manifest   = local.upgrade_manifest.engines[var.starter_name]
   skeleton_include_patterns = concat(
     ["*", ".github/**/*", "docs/**/*", "landingzones/**/*", "scripts/**/*"],
     [for prefix in local.selected_package_prefixes : "${prefix}**/*"]
@@ -70,6 +73,49 @@ locals {
     if alltrue([for p in local.skeleton_excluded_prefixes : !startswith(f, p)])
     && alltrue([for r in local.skeleton_excluded_regexes : length(regexall(r, f)) == 0])
   ]
+
+  upgrade_managed_files = [
+    for f in local.skeleton_files : f
+    if(
+      contains(local.upgrade_manifest.common.includeFiles, f)
+      || anytrue([for p in local.upgrade_manifest.common.includePrefixes : startswith(f, p)])
+      || anytrue([for p in local.upgrade_engine_manifest.includePrefixes : startswith(f, p)])
+    )
+    && !contains(local.upgrade_manifest.common.excludeFiles, f)
+    && !contains(local.upgrade_engine_manifest.excludeFiles, f)
+    && alltrue([for p in local.upgrade_manifest.common.excludePrefixes : !startswith(f, p)])
+    && alltrue([for p in local.upgrade_engine_manifest.excludePrefixes : !startswith(f, p)])
+    && alltrue([for r in local.upgrade_manifest.common.excludePatterns : length(regexall(r, f)) == 0])
+    && alltrue([for r in local.upgrade_engine_manifest.excludePatterns : length(regexall(r, f)) == 0])
+  ]
+}
+
+resource "github_repository_file" "accelerator_metadata" {
+  repository = local.github_repo_name
+  branch     = var.github_default_branch
+  file       = ".accelerator/metadata.json"
+  content = jsonencode({
+    schemaVersion      = "1.0"
+    sourceRepository   = local.accelerator_manifest.repository
+    acceleratorVersion = local.accelerator_manifest.version
+    starter            = var.starter_name
+    managedFiles = {
+      for f in local.upgrade_managed_files :
+      f => sha256(replace(file("${local.skeleton_root}/${f}"), "\r\n", "\n"))
+    }
+  })
+
+  commit_message = "chore(bootstrap): record accelerator version [skip ci]"
+  commit_author  = var.skeleton_commit_author
+  commit_email   = var.skeleton_commit_email
+
+  overwrite_on_create = true
+
+  # Bootstrap records the initial handoff only. The generated repository's
+  # upgrade command owns subsequent version changes.
+  lifecycle {
+    ignore_changes = [content]
+  }
 }
 
 resource "github_repository_file" "skeleton" {

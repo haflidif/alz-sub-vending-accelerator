@@ -73,19 +73,16 @@ and [approval troubleshooting](../../.github/CICD.md#troubleshooting).
 
 ## Updating the starter itself
 
-The accelerator repository is the starter source, but local changes to it do
-not propagate to an already generated repository. Bootstrap copies the starter
-only during the initial handoff.
+Use the dedicated [upgrade runbook](upgrade.md) to preview and apply tagged
+accelerator releases:
 
-Until the versioned upgrade mechanism in
-[#34](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/issues/34)
-is available, move an intentional engine or workflow change into the generated
-repository through a normal pull request. Do not rerun bootstrap to reseed it.
-Repository-specific requests, platform values, CODEOWNERS, and customizations
-must remain under the generated repository's ownership.
+```powershell
+pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.3.0
+```
 
-Documentation updates follow the same reviewed-PR path. Existing generated
-repositories do not receive this documentation layout automatically.
+The runbook covers managed-file ownership, conflict resolution, older
+repository adoption, pull request review, and the explicit `mode=all`
+deployment required after merge. Do not rerun bootstrap to update source.
 
 For local accelerator cleanup, see the [helper reference](../../scripts/README.md).
 Local file cleanup is not an upgrade or a resource-retirement operation.

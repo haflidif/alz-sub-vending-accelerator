@@ -125,6 +125,15 @@ $capture | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION_VENDING_T
   Assert-Equal $true ('scripts/Grant-SubscriptionCreatorRole.ps1' -in $terraformPackage) 'The billing role helper must be included in the Terraform package.'
   Assert-Equal $true ('terraform/main.tf' -in $terraformPackage) 'Terraform files must be included in the Terraform package.'
   Assert-Equal $false ('bicep/main.bicep' -in $terraformPackage) 'Non-selected Bicep files must be excluded from the Terraform package.'
+  $acceleratorManifest = Get-Content -LiteralPath (Join-Path $repositoryRoot 'accelerator.json') -Raw | ConvertFrom-Json
+  Assert-Matches $acceleratorManifest.version '^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$' 'Accelerator version must be a semantic release identifier.'
+  Assert-Equal 'haflidif/alz-sub-vending-terraform-accelerator' $acceleratorManifest.repository 'Accelerator source repository is incorrect.'
+  $upgradeManifest = Get-Content -LiteralPath (Join-Path $repositoryRoot 'upgrade-manifest.json') -Raw | ConvertFrom-Json
+  Assert-Equal '1.0' $upgradeManifest.schemaVersion 'Upgrade manifest version is incorrect.'
+  Assert-Equal $true ('terraform/terraform.auto.tfvars' -in $upgradeManifest.engines.terraform.excludeFiles) 'Terraform rendered configuration must be repository-owned.'
+  Assert-Equal $true ('bicep/platform.json' -in $upgradeManifest.engines.bicep.excludeFiles) 'Bicep rendered configuration must be repository-owned.'
+  Assert-Equal $true ('docs/proposals/' -in $upgradeManifest.common.excludePrefixes) 'Source-only proposals must be excluded from upgrades.'
+  Assert-Equal $true (Test-Path -LiteralPath (Join-Path $repositoryRoot 'scripts/Update-SubscriptionVending.ps1')) 'Upgrade command is missing.'
   $bicepManifest = Get-Content -LiteralPath (Join-Path $starterRoot 'bicep/starter.json') -Raw | ConvertFrom-Json
   Assert-Equal 'bicep' $bicepManifest.runtime.enginePath 'Bicep engine path is incorrect.'
   Assert-Equal 'arm-what-if' $bicepManifest.runtime.previewMode 'Bicep preview mode is incorrect.'
@@ -326,6 +335,11 @@ $capture | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION_VENDING_T
   Assert-Matches $applyWorkflow '\.properties\.outputs\.subscriptionId\.value' 'Bicep summary must publish the subscription ID.'
   Assert-Matches $applyWorkflow 'BICEP_DEPLOYMENT_ELAPSED_SECONDS' 'Bicep summary must publish elapsed deployment time.'
   Assert-Matches $bootstrapFiles 'starter_name\s*=\s*var\.starter_name' 'CODEOWNERS rendering must receive the selected starter.'
+  Assert-Matches $bootstrapFiles 'file\s*=\s*"\.accelerator/metadata\.json"' 'Bootstrap must record generated-repository accelerator metadata.'
+  Assert-Matches $bootstrapFiles 'acceleratorVersion\s*=\s*local\.accelerator_manifest\.version' 'Generated metadata must record the accelerator release.'
+  Assert-Matches $bootstrapFiles 'managedFiles\s*=\s*\{' 'Generated metadata must record managed-file hashes.'
+  Assert-Matches $bootstrapFiles 'f => sha256\(replace\(file\(' 'Managed-file metadata must hash normalized seeded text.'
+  Assert-Matches $bootstrapFiles '(?s)resource "github_repository_file" "accelerator_metadata".*?ignore_changes\s*=\s*\[content\]' 'Bootstrap must not overwrite upgrade-owned version metadata after handoff.'
   Assert-Matches $codeownersTemplate '%\{ if starter_name == "terraform" ~\}' 'CODEOWNERS must select the Terraform runtime path conditionally.'
   Assert-Matches $codeownersTemplate '/bicep/' 'CODEOWNERS must protect the Bicep runtime path.'
   Assert-Equal $false ($codeownersTemplate -match '/bootstrap/') 'Generated CODEOWNERS must not reference accelerator-only bootstrap files.'

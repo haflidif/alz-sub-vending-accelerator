@@ -91,10 +91,22 @@ the vending repository, not another bootstrap apply.
 
 ## Wide upgrades
 
-Use [Run](docs/operators/run.md#reruns-and-wider-changes) for deliberate
-repository-wide deployment and
-[starter updates](docs/operators/run.md#updating-the-starter-itself) for
-the distinction between runtime changes and upstream updates.
+Generated repositories include a local, version-aware upgrade command:
+
+```powershell
+# Preview a specific tagged release
+pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.3.0
+
+# Create a local upgrade branch and apply the managed-file changes
+pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.3.0 -Apply
+```
+
+The command preserves requests, rendered platform configuration, CODEOWNERS,
+and local additions. It stops before changing anything when an upstream change
+conflicts with a locally modified managed file. See
+[the upgrade runbook](docs/operators/upgrade.md) and use
+[Run](docs/operators/run.md#reruns-and-wider-changes) for the explicit
+`mode=all` deployment after an upgrade is reviewed and merged.
 
 ## Documentation index
 

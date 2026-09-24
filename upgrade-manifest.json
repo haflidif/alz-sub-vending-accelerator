@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "1.0",
+  "common": {
+    "includeFiles": [
+      ".editorconfig",
+      ".gitignore",
+      "accelerator.json",
+      "CHANGELOG.md",
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "QUICKSTART.md",
+      "README.md",
+      "upgrade-manifest.json",
+      "landingzones/sub.schema.json"
+    ],
+    "includePrefixes": [
+      ".github/",
+      "docs/",
+      "scripts/"
+    ],
+    "excludeFiles": [
+      "docs/starter-contract.md"
+    ],
+    "excludePrefixes": [
+      "docs/proposals/"
+    ],
+    "excludePatterns": [
+      "(^|/)\\.terraform/",
+      "(^|/)\\.terraform\\.lock",
+      "(^|/)terraform\\.tfstate(\\..*)?$",
+      "(^|/)tfplan$",
+      "\\.tfplan$",
+      "(^|/)terraform\\.tfvars$",
+      "(^|/)terraform\\.auto\\.tfvars$",
+      "^bicep/main\\.json$",
+      "(^|/)\\.env$",
+      "\\.DS_Store$",
+      "/\\.gitkeep$",
+      "(^|/)-[a-zA-Z]$",
+      "(^|/)\\.run\\.log$"
+    ]
+  },
+  "engines": {
+    "terraform": {
+      "includePrefixes": [
+        "terraform/"
+      ],
+      "excludeFiles": [
+        "terraform/terraform.auto.tfvars"
+      ],
+      "excludePrefixes": [],
+      "excludePatterns": []
+    },
+    "bicep": {
+      "includePrefixes": [
+        "bicep/"
+      ],
+      "excludeFiles": [
+        "bicep/main.json",
+        "bicep/platform.json"
+      ],
+      "excludePrefixes": [
+        "bicep/out/"
+      ],
+      "excludePatterns": []
+    }
+  }
+}

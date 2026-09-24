@@ -9,6 +9,20 @@ template itself, not the AVM modules pinned by the engines. See
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-24
+
+### Added
+
+- Added an explicit PowerShell upgrade command for generated repositories.
+  Operators can preview or apply a tagged Terraform or Bicep starter release,
+  detect managed-file conflicts, create a local upgrade branch, and optionally
+  open a pull request.
+- Added generated-repository metadata and a release-level managed-file
+  manifest. Requests, rendered platform configuration, CODEOWNERS, local
+  additions, and bootstrap state remain repository-owned.
+- Added a dedicated operator upgrade runbook covering preview, conflicts,
+  older-repository adoption, pull request review, and explicit deployment.
+
 ### Changed
 
 - Required an explicit `Apply` run with `mode=all` after shared engine,
@@ -237,6 +251,7 @@ with per-subscription Terraform state and YAML-driven subscription contracts.
   archetypes, billing scopes, tagging, naming convention, schema validation,
   state storage, teardown, and a glossary under `docs/`.
 
-[Unreleased]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/releases/tag/v0.1.0
