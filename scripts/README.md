@@ -16,7 +16,7 @@ Local helpers — PowerShell only. Each script is self-contained,
 Run this helper from a generated vending repository. Preview is the default:
 
 ```powershell
-pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.3.0
+pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.4.0
 ```
 
 Use `-Apply` to create `upgrade/accelerator-<version>` and update the working

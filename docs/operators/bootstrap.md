@@ -20,10 +20,12 @@ identity, OIDC federation, management-group permissions, GitHub repository,
 branch protection, production environment, and initial files. State storage
 inputs for the vending runtime are collected only for Terraform.
 
-A partial bootstrap is resumable. After a successful initial handoff, do not
-rerun it to synchronize repository files or deliver engine updates. Keep the
-bootstrap state for explicitly reviewed control-plane recovery. Use the
-generated repository's versioned upgrade command for source updates.
+A partial bootstrap is resumable. After a successful wizard apply, the
+bootstrap automatically removes seeded source files from Terraform state and
+records the completed handoff in its local inputs. Later plans can manage
+control-plane resources without reconciling repository-owned source. Do not
+rerun bootstrap to deliver engine updates. Use the generated repository's
+versioned upgrade command for source updates.
 
 ## Step 1: Run the bootstrap module
 
@@ -64,8 +66,11 @@ describes every resource the bootstrap creates.
 
 For preview and unattended options, use the [wizard parameter reference](../bootstrap-wizard.md#parameters).
 For direct Terraform invocation, use the [manual bootstrap flow][manual].
-Both leave the same bootstrap state; neither is a post-handoff source
-synchronization mechanism.
+Direct Terraform does not run the wizard's automatic handoff. Before setting
+`repository_source_handoff_complete = true`, remove every
+`github_repository_file` resource declared in `bootstrap/files.tf` from state.
+Never enable the flag while those resources remain managed because Terraform
+would plan to delete the repository files.
 
 ---
 

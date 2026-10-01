@@ -1352,7 +1352,7 @@ function Configure-Skeleton {
     $Inputs.copy_skeleton_files = Read-PromptBool `
         -Label 'copy_skeleton_files' `
         -Default $currentCopy `
-        -HelpText 'If true, bootstrap copies skeleton files into the seeded repo. Disable after the first apply to make the seeded repo free-form.'
+        -HelpText 'If true, bootstrap copies skeleton files into the seeded repo during the initial apply. The wizard automatically relinquishes ownership after that apply succeeds.'
 
     $Inputs.skeleton_commit_author = Read-PromptString `
         -Label 'skeleton_commit_author' `
@@ -1582,6 +1582,50 @@ function Render-Tfvars {
 # Section 8 -- Terraform phase
 # =============================================================================
 
+function Complete-RepositorySourceHandoff {
+    param(
+        [hashtable] $Inputs,
+        [string] $InputsPath,
+        [string] $TfvarsPath
+    )
+
+    if ($Inputs.repository_source_handoff_complete) {
+        Write-Info 'Repository source handoff was already completed.'
+        return
+    }
+
+    Write-Header 'Repository source handoff'
+    $chdir = "-chdir=$ScriptRoot"
+    $stateAddresses = @(& terraform $chdir 'state' 'list')
+    if ($LASTEXITCODE -ne 0) {
+        throw "terraform state list failed during repository source handoff (exit $LASTEXITCODE)"
+    }
+
+    $sourceFilePattern = '^github_repository_file\.(accelerator_metadata|skeleton|platform_auto_tfvars|bicep_platform|codeowners)(\[.+\])?$'
+    $sourceFileAddresses = @($stateAddresses | Where-Object { $_ -match $sourceFilePattern })
+    if ($sourceFileAddresses.Count -eq 0) {
+        throw 'No seeded repository file resources were found in Terraform state. Refusing to mark the source handoff complete.'
+    }
+
+    Write-Info "Relinquishing Terraform ownership of $($sourceFileAddresses.Count) seeded repository files."
+    & terraform $chdir 'state' 'rm' @sourceFileAddresses
+    if ($LASTEXITCODE -ne 0) {
+        throw "terraform state rm failed during repository source handoff (exit $LASTEXITCODE). The handoff flag was not changed."
+    }
+
+    $Inputs.repository_source_handoff_complete = $true
+    $Inputs.copy_skeleton_files = $false
+    try {
+        Save-Inputs -Path $InputsPath -Inputs $Inputs
+        Render-Tfvars -Inputs $Inputs -Path $TfvarsPath
+    }
+    catch {
+        throw "Seeded files were detached from Terraform state, but the completed handoff could not be persisted. Set repository_source_handoff_complete=true and copy_skeleton_files=false in $InputsPath before running Terraform again. $($_.Exception.Message)"
+    }
+
+    Write-Ok 'Repository source handoff complete. Future bootstrap plans cannot reconcile or delete seeded source files.'
+}
+
 function Invoke-Terraform {
     param([hashtable] $Inputs)
     Write-Header 'Terraform: init -> plan -> apply'
@@ -1636,6 +1680,8 @@ function Invoke-Terraform {
     Write-Info ("terraform " + ($applyArgs -join ' '))
     & terraform @applyArgs
     if ($LASTEXITCODE -ne 0) { throw "terraform apply failed (exit $LASTEXITCODE)" }
+
+    Complete-RepositorySourceHandoff -Inputs $Inputs -InputsPath $InputsPath -TfvarsPath $TfvarsPath
 
     Write-Header 'Outputs'
     & terraform $chdir output

@@ -16,7 +16,7 @@ with consistent input contracts, telemetry, and tested release processes.
 The accelerator wraps one subscription-vending pattern for each engine.
 
 **AVM module pin**: The exact upstream version in `terraform/main.tf` or
-`bicep/main.bicep`. Terraform uses `0.3.1`; Bicep uses `0.8.0`. Review every
+`bicep/main.bicep`. Terraform uses `0.3.2`; Bicep uses `0.8.0`. Review every
 bump because both input contracts are pre-1.0.
 
 ## B

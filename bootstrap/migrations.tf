@@ -24,3 +24,15 @@ moved {
   from = github_actions_variable.backend_container
   to   = github_actions_variable.backend_container[0]
 }
+
+# Preserve source-file addresses while introducing the post-bootstrap handoff
+# gate. The wizard detaches these resources after the upgraded apply succeeds.
+moved {
+  from = github_repository_file.accelerator_metadata
+  to   = github_repository_file.accelerator_metadata[0]
+}
+
+moved {
+  from = github_repository_file.codeowners
+  to   = github_repository_file.codeowners[0]
+}

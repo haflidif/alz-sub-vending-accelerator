@@ -127,6 +127,7 @@ $capture | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION_VENDING_T
   Assert-Equal $false ('bicep/main.bicep' -in $terraformPackage) 'Non-selected Bicep files must be excluded from the Terraform package.'
   $acceleratorManifest = Get-Content -LiteralPath (Join-Path $repositoryRoot 'accelerator.json') -Raw | ConvertFrom-Json
   Assert-Matches $acceleratorManifest.version '^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$' 'Accelerator version must be a semantic release identifier.'
+  Assert-Equal 'v0.4.0' $acceleratorManifest.version 'Accelerator release version is incorrect.'
   Assert-Equal 'haflidif/alz-sub-vending-terraform-accelerator' $acceleratorManifest.repository 'Accelerator source repository is incorrect.'
   $upgradeManifest = Get-Content -LiteralPath (Join-Path $repositoryRoot 'upgrade-manifest.json') -Raw | ConvertFrom-Json
   Assert-Equal '1.0' $upgradeManifest.schemaVersion 'Upgrade manifest version is incorrect.'
@@ -170,12 +171,20 @@ $capture | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION_VENDING_T
   Assert-Matches $bootstrapOutputs 'try\(azurerm_storage_container\.tfstate\[0\]\.name, null\)' 'Bicep state container output must be null-safe.'
   Assert-Matches $bootstrapOutputs 'pwsh \./scripts/Grant-SubscriptionCreatorRole\.ps1' 'Bootstrap output must use the accelerator billing role helper.'
   Assert-Equal $false ($bootstrapOutputs -match 'Install-Module ALZ') 'Bootstrap output must not depend on the ALZ module.'
-  Assert-Equal 5 ([regex]::Matches($bootstrapMigrations, '(?m)^moved \{').Count) 'Conditional resources must preserve existing Terraform state addresses.'
+  Assert-Equal 7 ([regex]::Matches($bootstrapMigrations, '(?m)^moved \{').Count) 'Conditional resources must preserve existing Terraform state addresses.'
+  Assert-Matches $bootstrapMigrations '(?s)from = github_repository_file\.accelerator_metadata.*?to\s+= github_repository_file\.accelerator_metadata\[0\]' 'Accelerator metadata state must migrate to its handoff-gated address.'
+  Assert-Matches $bootstrapMigrations '(?s)from = github_repository_file\.codeowners.*?to\s+= github_repository_file\.codeowners\[0\]' 'CODEOWNERS state must migrate to its handoff-gated address.'
   Assert-Matches $bootstrapScript "Terraform runtime state configuration is not used by the Bicep starter" 'Bicep configuration must skip Terraform runtime state prompts.'
   Assert-Matches $bootstrapScript '\$planArgs = @\(\$chdir, ''plan'', ''-input=false'', "-out=\$planPath"\)' 'Terraform plan output path must be passed as one expanded argument.'
   Assert-Matches $bootstrapFiles 'skeleton_include_patterns\s*=\s*concat\(' 'Repository seeding must use stable package roots.'
   Assert-Equal $false ($bootstrapFiles -match 'fileset\(local\.skeleton_root, "\*\*/\*"\)') 'Repository seeding must not scan mutable bootstrap state.'
   Assert-Matches $bootstrapFiles '\^bicep/main\\\\\.json\$' 'Repository seeding must exclude the compiled Bicep artifact.'
+  Assert-Matches $bootstrapVariables '(?s)variable "repository_source_handoff_complete".*?default\s*=\s*false' 'Repository source handoff must be opt-in until the initial seed succeeds.'
+  Assert-Equal 5 ([regex]::Matches($bootstrapFiles, 'var\.repository_source_handoff_complete').Count) 'Every seeded repository file resource must stop being declared after handoff.'
+  Assert-Matches $bootstrapScript 'function Complete-RepositorySourceHandoff' 'Bootstrap must implement an explicit repository source handoff.'
+  Assert-Matches $bootstrapScript '& terraform \$chdir ''state'' ''rm'' @sourceFileAddresses' 'Repository source handoff must detach seeded files from Terraform state.'
+  Assert-Matches $bootstrapScript '(?s)Complete-RepositorySourceHandoff.*?\$Inputs\.repository_source_handoff_complete = \$true.*?Save-Inputs.*?Render-Tfvars' 'The handoff must persist only after seeded file resources are detached.'
+  Assert-Matches $bootstrapScript '(?s)terraform apply failed.*?Complete-RepositorySourceHandoff' 'Repository source handoff must run only after a successful Terraform apply.'
   Assert-Matches $bootstrapMain 'resource "github_team_repository" "production_reviewers"' 'Production reviewer teams must receive repository access.'
   Assert-Matches $bootstrapMain 'depends_on = \[github_team_repository\.production_reviewers\]' 'Environment protection must wait for reviewer team access.'
   Assert-Matches $bootstrapMain 'can_admins_bypass\s*=\s*true' 'Repository administrators must be able to bypass a one-person environment approval deadlock.'
@@ -198,7 +207,8 @@ $capture | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION_VENDING_T
     'Get-Inputs',
     'Configure-ProductionEnv',
     'Get-ProductionReviewerAssessment',
-    'Write-ProductionReviewerGuardrail'
+    'Write-ProductionReviewerGuardrail',
+    'Complete-RepositorySourceHandoff'
   )) {
     $functionAst = $bootstrapAst.Find(
       {
@@ -228,6 +238,61 @@ $capture | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION_VENDING_T
   Assert-Equal 'preserved' $persistedInputs.test_value 'Persisted input mutations must propagate across typed function boundaries.'
   Assert-Equal 'test-tenant' $persistedInputs.tenant_id 'Persisted input values must survive Hashtable normalization.'
 
+  $script:handoffStateRemoveFails = $false
+  $script:handoffRemovedAddresses = @()
+  $script:handoffSaved = $false
+  $script:handoffRendered = $false
+  $script:ScriptRoot = $testRoot
+  function global:terraform {
+    if ($args -contains 'list') {
+      $global:LASTEXITCODE = 0
+      return @(
+        'github_repository.this',
+        'github_repository_file.accelerator_metadata[0]',
+        'github_repository_file.skeleton["README.md"]',
+        'github_repository_file.platform_auto_tfvars[0]',
+        'github_repository_file.codeowners[0]'
+      )
+    }
+    if ($args -contains 'rm') {
+      $script:handoffRemovedAddresses = @($args | Where-Object { $_ -like 'github_repository_file.*' })
+      $global:LASTEXITCODE = if ($script:handoffStateRemoveFails) { 1 } else { 0 }
+      return
+    }
+    $global:LASTEXITCODE = 1
+  }
+  function Save-Inputs { $script:handoffSaved = $true }
+  function Render-Tfvars { $script:handoffRendered = $true }
+  function Write-Info { param([string] $Message) }
+  function Write-Header { param([string] $Message) }
+  function Write-Ok { param([string] $Message) }
+
+  $handoffInputs = @{ copy_skeleton_files = $true }
+  Complete-RepositorySourceHandoff -Inputs $handoffInputs -InputsPath 'inputs.json' -TfvarsPath 'terraform.tfvars.json'
+  Assert-Equal $true $handoffInputs.repository_source_handoff_complete 'Successful handoff must persist the lifecycle flag.'
+  Assert-Equal $false $handoffInputs.copy_skeleton_files 'Successful handoff must disable legacy skeleton seeding.'
+  Assert-Equal 4 $script:handoffRemovedAddresses.Count 'Handoff must remove every seeded file address and leave unrelated state intact.'
+  Assert-Equal $true $script:handoffSaved 'Successful handoff must save the bootstrap sidecar.'
+  Assert-Equal $true $script:handoffRendered 'Successful handoff must render safe Terraform inputs.'
+
+  $script:handoffStateRemoveFails = $true
+  $script:handoffSaved = $false
+  $script:handoffRendered = $false
+  $failedHandoffInputs = @{ copy_skeleton_files = $true }
+  Assert-Throws {
+    Complete-RepositorySourceHandoff -Inputs $failedHandoffInputs -InputsPath 'inputs.json' -TfvarsPath 'terraform.tfvars.json'
+  } '*terraform state rm failed during repository source handoff*'
+  Assert-Equal $false $failedHandoffInputs.ContainsKey('repository_source_handoff_complete') 'Failed state detachment must not mark the handoff complete.'
+  Assert-Equal $true $failedHandoffInputs.copy_skeleton_files 'Failed state detachment must preserve skeleton seeding configuration.'
+  Assert-Equal $false $script:handoffSaved 'Failed state detachment must not save a completed handoff.'
+  Assert-Equal $false $script:handoffRendered 'Failed state detachment must not render a completed handoff.'
+  Remove-Item Function:\terraform
+  Remove-Item Function:\Save-Inputs
+  Remove-Item Function:\Render-Tfvars
+  Remove-Item Function:\Write-Info
+  Remove-Item Function:\Write-Header
+  Remove-Item Function:\Write-Ok
+
   function Edit-Group { return $true }
   function Read-PromptString { return 'production' }
   function Get-GitHubNumericIds {
@@ -251,6 +316,7 @@ $capture | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION_VENDING_T
   Remove-Item Function:\Get-GitHubNumericIds
   Remove-Item Function:\Write-Host
   Remove-Item Function:\Configure-ProductionEnv
+  Remove-Item Function:\Complete-RepositorySourceHandoff
   Remove-Item Function:\Get-Inputs
 
   $script:mockTeamMembers = @{
