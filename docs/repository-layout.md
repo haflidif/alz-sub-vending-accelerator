@@ -177,7 +177,7 @@ content.
 | Selected engine configuration | Absent (`terraform/terraform.auto.tfvars` or `bicep/platform.json`) | **Rendered by `bootstrap/files.tf`** with platform context |
 | Unselected engine package | Present in the accelerator skeleton | **Excluded** |
 | `.github/CODEOWNERS` | Absent | **Rendered from `bootstrap/templates/CODEOWNERS.tftpl`** with operator-chosen teams |
-| Runtime files (`terraform/`, `landingzones/`, operator docs, `scripts/`, `.github/`, `README.md`, etc.) | Source of truth | Verbatim copy via `github_repository_file` |
+| Runtime files (`terraform/`, `landingzones/`, operator docs, `scripts/`, `.github/`, `README.md`, etc.) | Source of truth | Seeded through `github_repository_file`, then detached from bootstrap state after a successful wizard apply |
 
 `bootstrap/files.tf` enforces these exclusions via
 `skeleton_excluded_prefixes` (`bootstrap/`, `powershell/`, `starters/`,

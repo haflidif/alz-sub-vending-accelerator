@@ -37,7 +37,7 @@ Each engine has an exact AVM pin:
 ```hcl
 module "subscription" {
   source  = "Azure/avm-ptn-alz-sub-vending/azure"
-  version = "0.3.1"
+  version = "0.3.2"
   ...
 }
 ```
@@ -81,7 +81,7 @@ Conventional Commits:
 
 - `feat(corp): vend prod-corp-erp-001`
 - `fix(online): correct address space for prod-online-web-001`
-- `chore(archetypes): bump AVM module to 0.3.1`
+- `chore(archetypes): bump AVM module to 0.3.2`
 - `chore(bicep): bump sub-vending AVM to 0.9.0`
 - `docs(onboarding): clarify MCA invoice section lookup`
 

@@ -95,10 +95,10 @@ Generated repositories include a local, version-aware upgrade command:
 
 ```powershell
 # Preview a specific tagged release
-pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.3.0
+pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.4.0
 
 # Create a local upgrade branch and apply the managed-file changes
-pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.3.0 -Apply
+pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.4.0 -Apply
 ```
 
 The command preserves requests, rendered platform configuration, CODEOWNERS,

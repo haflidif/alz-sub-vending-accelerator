@@ -5,12 +5,10 @@
 # the source tree (minus the bootstrap/ directory and ephemeral artefacts) is
 # pushed to the target repo as an individual github_repository_file resource.
 #
-# CAUTION: Once seeded, these resources continue to MANAGE the files. If
-# someone edits a file directly in the repo, the next `terraform apply` will
-# revert it. Two recommended patterns:
-#   1) Set copy_skeleton_files = false after the first apply, OR
-#   2) Run the bootstrap once, then `terraform state rm 'github_repository_file.skeleton'`
-#      so day-to-day commits become free-form.
+# Invoke-Bootstrap.ps1 detaches every resource in this file after the initial
+# apply and records repository_source_handoff_complete = true. The generated
+# repository then owns its source. Operators who run Terraform directly must
+# complete the same handoff before any later plan or apply.
 ###############################################################################
 
 locals {
@@ -91,6 +89,8 @@ locals {
 }
 
 resource "github_repository_file" "accelerator_metadata" {
+  count = var.repository_source_handoff_complete ? 0 : 1
+
   repository = local.github_repo_name
   branch     = var.github_default_branch
   file       = ".accelerator/metadata.json"
@@ -119,7 +119,7 @@ resource "github_repository_file" "accelerator_metadata" {
 }
 
 resource "github_repository_file" "skeleton" {
-  for_each = var.copy_skeleton_files ? toset(local.skeleton_files) : toset([])
+  for_each = var.copy_skeleton_files && !var.repository_source_handoff_complete ? toset(local.skeleton_files) : toset([])
 
   repository = local.github_repo_name
   branch     = var.github_default_branch
@@ -183,7 +183,7 @@ locals {
 }
 
 resource "github_repository_file" "platform_auto_tfvars" {
-  count = var.starter_name == "terraform" ? 1 : 0
+  count = var.starter_name == "terraform" && !var.repository_source_handoff_complete ? 1 : 0
 
   repository = local.github_repo_name
   branch     = var.github_default_branch
@@ -226,7 +226,7 @@ locals {
 }
 
 resource "github_repository_file" "bicep_platform" {
-  count = var.starter_name == "bicep" ? 1 : 0
+  count = var.starter_name == "bicep" && !var.repository_source_handoff_complete ? 1 : 0
 
   repository = local.github_repo_name
   branch     = var.github_default_branch
@@ -260,6 +260,8 @@ locals {
 }
 
 resource "github_repository_file" "codeowners" {
+  count = var.repository_source_handoff_complete ? 0 : 1
+
   repository = local.github_repo_name
   branch     = var.github_default_branch
   file       = ".github/CODEOWNERS"

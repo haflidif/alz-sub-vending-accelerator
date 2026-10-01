@@ -9,6 +9,33 @@ template itself, not the AVM modules pinned by the engines. See
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-01
+
+### Added
+
+- Added an explicit post-apply repository source handoff to the bootstrap
+  wizard. The handoff removes seeded `github_repository_file` resources from
+  Terraform state and records the completed lifecycle transition locally.
+- Added Terraform state migrations and regression coverage for existing
+  bootstrap states that adopt the source-handoff gate.
+
+### Changed
+
+- Made the generated repository the technical source owner immediately after
+  a successful wizard apply. Bootstrap continues to manage the repository,
+  identity, permissions, environments, variables, and branch protection
+  without declaring seeded source files.
+- Updated bootstrap, operator, architecture, repository-layout, contribution,
+  glossary, and upgrade documentation for the automatic handoff and the
+  Terraform AVM `0.3.2` pin.
+
+### Fixed
+
+- Prevented later bootstrap plans from overwriting or deleting repository-owned
+  source after handoff.
+- Prevented `copy_skeleton_files = false` from being treated as a safe
+  standalone handoff while seeded file resources remain in Terraform state.
+
 ## [0.3.0] - 2026-09-24
 
 ### Added
@@ -251,7 +278,8 @@ with per-subscription Terraform state and YAML-driven subscription contracts.
   archetypes, billing scopes, tagging, naming convention, schema validation,
   state storage, teardown, and a glossary under `docs/`.
 
-[Unreleased]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/releases/tag/v0.1.0

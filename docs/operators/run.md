@@ -38,8 +38,9 @@ bootstrap credentials or permissions.
 ## Updating platform inputs after bootstrap
 
 Treat the generated repository as the source of truth. Bootstrap can resume
-an incomplete initial setup, but its state is not a day-to-day source
-synchronization mechanism.
+an incomplete initial setup. After a successful wizard apply, its automatic
+source handoff removes seeded files from Terraform state, so later
+control-plane plans cannot reconcile repository-owned source.
 
 | Change | Where to change it in the generated repository |
 |---|---|
@@ -48,7 +49,8 @@ synchronization mechanism.
 | Change hub VNet or remote-gateway settings | Selected engine platform configuration |
 | Add an archetype and management group | Engine rules, platform configuration, schema, request folder, and CODEOWNERS; see [Archetypes](../archetypes.md#adding-a-new-archetype) |
 | Change branch protection or production approvers | GitHub repository settings or your separately maintained day-2 configuration |
-| Rotate the pipeline identity or recreate the repository | Separate control-plane recovery, planned from saved bootstrap state; verify that it does not reconcile seeded files |
+| Rotate the pipeline identity or recover control-plane settings | Re-run the reviewed bootstrap plan from saved state; handed-off source files are no longer declared |
+| Recreate a deleted repository | Treat as a new bootstrap or a separately planned recovery; the completed handoff intentionally cannot reseed source |
 
 Make runtime configuration changes through reviewed PRs. Shared engine,
 platform, schema, and delivery changes select every subscription for preview,
@@ -77,7 +79,7 @@ Use the dedicated [upgrade runbook](upgrade.md) to preview and apply tagged
 accelerator releases:
 
 ```powershell
-pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.3.0
+pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.4.0
 ```
 
 The runbook covers managed-file ownership, conflict resolution, older

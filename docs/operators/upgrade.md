@@ -6,7 +6,7 @@
 > change files, create a branch, or open a pull request.
 
 ```powershell
-pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.3.0
+pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.4.0
 ```
 
 Use this runbook to upgrade accelerator-managed files in an established
@@ -53,7 +53,7 @@ Before previewing an upgrade:
 Use an explicit version for reproducible upgrades:
 
 ```powershell
-pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.3.0
+pwsh ./scripts/Update-SubscriptionVending.ps1 -TargetVersion v0.4.0
 ```
 
 Use `-Latest` only when you intentionally want the latest published GitHub
@@ -111,7 +111,7 @@ and update the working tree:
 
 ```powershell
 pwsh ./scripts/Update-SubscriptionVending.ps1 `
-  -TargetVersion v0.3.0 `
+  -TargetVersion v0.4.0 `
   -Apply
 ```
 
@@ -130,7 +130,7 @@ You can ask the command to commit, push, and open the pull request:
 
 ```powershell
 pwsh ./scripts/Update-SubscriptionVending.ps1 `
-  -TargetVersion v0.3.0 `
+  -TargetVersion v0.4.0 `
   -Apply `
   -CreatePullRequest
 ```
@@ -169,7 +169,7 @@ pwsh <accelerator-checkout>/scripts/Update-SubscriptionVending.ps1 `
   -RepositoryRoot <generated-repository-path> `
   -CurrentVersion v0.2.0 `
   -Starter terraform `
-  -TargetVersion v0.3.0 `
+  -TargetVersion v0.4.0 `
   -Apply
 ```
 

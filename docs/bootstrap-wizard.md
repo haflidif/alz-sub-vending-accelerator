@@ -108,7 +108,7 @@ than one group.
 | 10 | `Tags` | `mandatory_tags` map (defaults to CAF: `managedby`/`source`/`deployedby`) | Tag-key naming (lowercase, no separators) |
 | 11 | `CostAllocation` | `cost_allocation_tag` object: `name` / `required` / `pattern` | Tag-key naming for `name`, optional regex compiles |
 | 12 | `CodeOwners` | `codeowners_default_team` (single handle), `codeowners_archetype_teams` (per-archetype overrides) | `@user` or `@org/team` format |
-| 13 | `Skeleton` | `copy_skeleton_files`, `skeleton_commit_author`, `skeleton_commit_email` | Email format |
+| 13 | `Skeleton` | `copy_skeleton_files`, `skeleton_commit_author`, `skeleton_commit_email` | Email format; source ownership is relinquished automatically after the first successful apply |
 
 The production reviewer check is advisory. A one-person setup can continue
 without changing the secure `prevent_self_review` default. When that person
@@ -123,6 +123,12 @@ been disabled for the environment.
 .bootstrap-inputs.json.bak      ← previous version, kept after each save
 terraform.tfvars.json           ← rendered by `-Phase terraform`, replaced on each run
 ```
+
+After the first successful apply, the wizard removes the seeded
+`github_repository_file` resources from Terraform state, sets
+`repository_source_handoff_complete = true`, and renders both local state files
+again. This transition keeps the generated repository as the source of truth
+while allowing later bootstrap plans to manage control-plane resources safely.
 
 **Editing rules:**
 
@@ -229,6 +235,8 @@ The Terraform script is organised into nine sections (search for
 | 9 | Main dispatcher (mode routing: BOOTSTRAP / DESTROY / CLEAN-ONLY) |
 
 ---
+
+<a name="destroying--undoing-a-bootstrap"></a>
 
 ## Destroying / undoing a bootstrap
 

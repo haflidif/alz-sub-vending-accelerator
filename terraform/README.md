@@ -25,7 +25,7 @@ terraform.auto.tfvars ───▶│  Platform context (tenant, MGs,      │
                           ┌────────────────▼─────────────────────┐
                           │  ONE module call →                   │
                           │  Azure/avm-ptn-alz-sub-vending/azure │
-                          │  pinned to v0.3.1                    │
+                          │  pinned to v0.3.2                    │
                           └──────────────────────────────────────┘
 ```
 
@@ -33,7 +33,7 @@ terraform.auto.tfvars ───▶│  Platform context (tenant, MGs,      │
 
 | File | Purpose | Edit when… |
 |---|---|---|
-| [`main.tf`](main.tf) | The **single** `module "subscription"` call into `Azure/avm-ptn-alz-sub-vending/azure` (pinned to `0.3.1` exact). All inputs are pulled from `locals.tf`. | Bumping the AVM module version (always test with `mode=all` first), or exposing a new AVM input. |
+| [`main.tf`](main.tf) | The **single** `module "subscription"` call into `Azure/avm-ptn-alz-sub-vending/azure` (pinned to `0.3.2` exact). All inputs are pulled from `locals.tf`. | Bumping the AVM module version (always test with `mode=all` first), or exposing a new AVM input. |
 | [`archetypes.tf`](archetypes.tf) | Declarative table `local.archetype_config` — per-archetype defaults and guardrails: `force_workload`, `hub_peering_default`, `hub_peering_allow_false`, `budget_required`, `budget_thresholds_*`, `extra_tags`. **This is the only file you change to add or tighten an archetype.** | Adding a new archetype, tightening sandbox budget thresholds, forcing corp to peer to hub, etc. See [`docs/archetypes.md`](../docs/archetypes.md). |
 | [`locals.tf`](locals.tf) | The heavy lifter: parses `sub.yaml`, runs `_assert_*` guardrails (required fields, known archetype, valid `billingScopeKey`, no caller-tag collisions, sandbox requires budget, cost-allocation regex), resolves archetype config + identity tags, computes the final `module "subscription"` input set. | Adding a new optional YAML field (also update the JSON Schema in `landingzones/sub.schema.json`), changing the tag-layering rules, or adding a new guardrail. |
 | [`variables.tf`](variables.tf) | Platform context shared across **every** sub vended from this repo: `tenant_id`, `vending_subscription_id`, `billing_scopes` (map), `management_group_ids` (map per archetype), `hub_virtual_network_resource_id`, `cost_allocation_tag_key` / `_required` / `_pattern`, `mandatory_tags`. Carries validation rules (e.g. `billing_scopes` must contain `default`, hub VNet ID must be a full resource ID). Plus the per-run input `sub_yaml_path`. | Adding a new platform-wide knob (also extend `bootstrap/variables.tf` and `bootstrap/files.tf` so it lands in `terraform.auto.tfvars` automatically). |

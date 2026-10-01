@@ -208,6 +208,8 @@ a no-op, and `az account subscription cancel` is safe to re-issue.
 
 ---
 
+<a name="what-about-the-pipeline-uami--state-container--github-repo"></a>
+
 ## What about the pipeline UAMI / state container / GitHub repo?
 
 These are **platform-level** resources, created by `bootstrap/`. You only

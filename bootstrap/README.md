@@ -152,7 +152,9 @@ the pipeline end-to-end. See [Consumer walkthrough](../docs/consumers/first-subs
 > **Day-2 changes go to the seeded repo, not back here.** Bootstrap can be
 > resumed after a partial failure, but a successfully completed bootstrap is
 > a one-time handoff. Its Terraform state lives on the operator workstation and
-> is **not** reapplied to rotate values or synchronize source files. Anything in
+> automatically relinquishes ownership of seeded source files after the first
+> successful wizard apply. Later bootstrap plans therefore cannot overwrite or
+> delete repository-owned source. Anything in
 > `terraform/terraform.auto.tfvars` or `bicep/platform.json` in the seeded repo
 > is changed by editing that file directly via PR. See
 > [Updating platform inputs after bootstrap](../docs/operators/run.md#updating-platform-inputs-after-bootstrap)
@@ -162,17 +164,25 @@ the pipeline end-to-end. See [Consumer walkthrough](../docs/consumers/first-subs
 
 ## Repository ownership after bootstrap
 
-The initial files are delivered with `github_repository_file` resources, but
-the generated repository becomes the source of truth when bootstrap succeeds.
-Do not run another bootstrap apply to deliver starter changes. A later apply
-would reconcile the original file resources and could overwrite repository
-customizations.
+The initial files are delivered with `github_repository_file` resources.
+After the wizard's first successful apply, it removes all seeded file resources
+from Terraform state and persists
+`repository_source_handoff_complete = true`. The generated repository then
+becomes the source of truth, while the bootstrap state continues to manage the
+repository, identity, permissions, environments, variables, and branch
+protection.
 
 Bootstrap reruns are supported only while recovering an incomplete initial
-apply. Intentional control-plane recovery after handoff must be planned from
-the saved state and reviewed to ensure it does not recreate or replace seeded
-files. Versioned starter upgrades use the generated repository's explicit
-PowerShell upgrade command and normal pull request controls.
+apply. After handoff, a later wizard plan can recover or change control-plane
+resources without reconciling seeded source. Versioned starter upgrades use
+the generated repository's explicit PowerShell upgrade command and normal pull
+request controls.
+
+If Terraform is run directly instead of through `Invoke-Bootstrap.ps1`, do not
+set `repository_source_handoff_complete = true` by itself because Terraform
+would plan to delete the still-managed files. First remove every
+`github_repository_file` resource declared in `files.tf` from state, then set
+the flag to `true` before the next plan.
 
 ## Why a UAMI instead of an app registration?
 

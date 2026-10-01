@@ -102,6 +102,8 @@ codeowners_archetype_teams = {
 # Skeleton seeding (defaults are usually fine)
 # -----------------------------------------------------------------------------
 copy_skeleton_files    = true
+# Set automatically by Invoke-Bootstrap.ps1 after it detaches seeded files.
+repository_source_handoff_complete = false
 skeleton_source_path   = ".."
 skeleton_commit_author = "sub-vending-bootstrap"
 skeleton_commit_email  = "platform-bootstrap@example.local"

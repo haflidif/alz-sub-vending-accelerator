@@ -403,7 +403,13 @@ variable "mandatory_tags" {
 variable "copy_skeleton_files" {
   type        = bool
   default     = true
-  description = "If true, push every file in skeleton_source_path (excluding bootstrap/, .terraform/, etc.) into the target repo as github_repository_file resources. Set to false after the initial seed if you do not want Terraform to keep managing them."
+  description = "If true, push every file in skeleton_source_path (excluding bootstrap/, .terraform/, etc.) during the initial seed. Invoke-Bootstrap disables this after a successful source handoff."
+}
+
+variable "repository_source_handoff_complete" {
+  type        = bool
+  default     = false
+  description = "Internal bootstrap lifecycle flag. When true, seeded repository files are no longer declared or managed by Terraform."
 }
 
 variable "skeleton_source_path" {
