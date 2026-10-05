@@ -7,7 +7,7 @@
 
 module "subscription" {
   source  = "Azure/avm-ptn-alz-sub-vending/azure"
-  version = "0.3.2"
+  version = "0.3.3"
 
   # ---- Subscription creation ----
   subscription_alias_enabled = true
