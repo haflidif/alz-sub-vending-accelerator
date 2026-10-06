@@ -151,6 +151,7 @@ pre {
   color: var(--cp-text-muted);
   display: block;
   padding: 0.35rem 0.5rem;
+  text-decoration: none;
   width: 100%;
 }
 
@@ -158,6 +159,7 @@ pre {
 .gdoc-nav__entry:focus {
   background: var(--cp-highlight);
   color: var(--cp-text);
+  text-decoration: none;
 }
 
 .gdoc-nav__entry.is-active {
@@ -165,6 +167,7 @@ pre {
   border-left-color: var(--cp-accent);
   color: var(--cp-accent);
   font-weight: 600;
+  text-decoration: none;
 }
 
 .gdoc-page {
