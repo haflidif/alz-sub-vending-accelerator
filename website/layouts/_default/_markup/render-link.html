@@ -1,0 +1,12 @@
+{{- $destination := .Destination -}}
+{{- if not (urls.Parse $destination).IsAbs -}}
+  {{- with .Page.GetPage $destination -}}
+    {{- $destination = .RelPermalink -}}
+  {{- end -}}
+{{- end -}}
+{{- $isSourceNavigation := and (eq (plainify .Text) "Documentation") (strings.HasSuffix .Destination "README.md") -}}
+<a
+  href="{{ $destination | safeURL }}"
+  {{- if $isSourceNavigation }} class="gdoc-source-navigation"{{ end }}
+  {{- with .Title }} title="{{ . }}"{{ end }}
+>{{ .Text | safeHTML }}</a>

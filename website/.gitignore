@@ -1,0 +1,5 @@
+/public/
+/resources/
+/themes/hugo-geekdoc/
+/.hugo_build.lock
+__pycache__/

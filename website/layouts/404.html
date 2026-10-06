@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.Language.Lang }}">
+  <head>
+    {{ partial "head/meta" . }}
+    <title>Page not found | {{ .Site.Title }}</title>
+    {{ partial "head/favicons" . }}
+    {{ partial "head/others" . }}
+    {{ partial "head/custom" . }}
+  </head>
+
+  <body>
+    {{ partial "svg-icon-symbols" . }}
+
+    <div class="wrapper">
+      {{ partial "site-header" (dict "Root" . "MenuEnabled" false) }}
+
+      <main id="main-content" class="gdoc-error flex-even">
+        <div class="flex align-center justify-center">
+          <div class="gdoc-error__icon">
+            <svg class="gdoc-icon gdoc_cloud_off"><use xlink:href="#gdoc_cloud_off"></use></svg>
+          </div>
+          <div class="gdoc-error__message">
+            <h1 class="gdoc-error__line gdoc-error__title">Page not found</h1>
+            <div class="gdoc-error__line gdoc-error__code">404</div>
+            <div class="gdoc-error__line gdoc-error__help">
+              Return to the <a href="{{ .Site.Home.RelPermalink }}">documentation home page</a>.
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {{ partial "site-footer" . }}
+    </div>
+  </body>
+</html>

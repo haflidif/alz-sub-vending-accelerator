@@ -1,0 +1,97 @@
+---
+main:
+  - name: Overview
+    weight: 10
+    sub:
+      - name: Documentation home
+        ref: /
+        weight: 10
+      - name: Product mandate
+        ref: /docs/product-mandate/
+        weight: 20
+      - name: Architecture
+        ref: /docs/architecture/
+        weight: 30
+
+  - name: Get started
+    weight: 20
+    sub:
+      - name: Planning
+        ref: /docs/operators/planning/
+        weight: 10
+      - name: Prerequisites
+        ref: /docs/operators/prerequisites/
+        weight: 20
+      - name: Bootstrap
+        ref: /docs/operators/bootstrap/
+        weight: 30
+
+  - name: Request subscriptions
+    weight: 30
+    sub:
+      - name: Workload team guide
+        ref: /docs/consumers/
+        weight: 10
+      - name: First subscription
+        ref: /docs/consumers/first-subscription/
+        weight: 20
+      - name: Request contract
+        ref: /landingzones/
+        weight: 30
+
+  - name: Operations
+    weight: 40
+    sub:
+      - name: Run
+        ref: /docs/operators/run/
+        weight: 10
+      - name: Upgrade
+        ref: /docs/operators/upgrade/
+        weight: 20
+      - name: Retire subscriptions
+        ref: /docs/operators/retire-subscription/
+        weight: 30
+
+  - name: Reference
+    weight: 50
+    sub:
+      - name: Archetypes
+        ref: /docs/archetypes/
+        weight: 10
+      - name: Billing scopes
+        ref: /docs/billing-scopes/
+        weight: 20
+      - name: Naming convention
+        ref: /docs/naming-convention/
+        weight: 30
+      - name: Tagging
+        ref: /docs/tagging/
+        weight: 40
+      - name: State storage
+        ref: /docs/state-storage/
+        weight: 50
+      - name: Schema validation
+        ref: /docs/schema-validation/
+        weight: 60
+      - name: Repository layout
+        ref: /docs/repository-layout/
+        weight: 70
+      - name: Bootstrap reference
+        ref: /docs/bootstrap-wizard/
+        weight: 80
+      - name: Glossary
+        ref: /docs/glossary/
+        weight: 90
+
+  - name: Community
+    weight: 60
+    sub:
+      - name: Support
+        ref: /support/
+        weight: 10
+      - name: Security
+        ref: /security/
+        weight: 20
+      - name: Contributing
+        ref: /contributing/
+        weight: 30

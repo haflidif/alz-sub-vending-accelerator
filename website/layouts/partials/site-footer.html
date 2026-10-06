@@ -1,0 +1,48 @@
+<footer class="gdoc-footer">
+  <nav class="container flex">
+    <div>
+      <section class="flex flex-wrap align-center">
+        <span class="gdoc-footer__item gdoc-footer__item--row">
+          Independent community project. Not a Microsoft product. No SLA or Microsoft Support coverage.
+        </span>
+      </section>
+      <section class="flex flex-wrap align-center">
+        <span class="gdoc-footer__item gdoc-footer__item--row">
+          Microsoft, Azure, and related names and logos are trademarks of the Microsoft group of
+          companies. Their use does not imply endorsement.
+        </span>
+      </section>
+      <section class="flex flex-wrap align-center">
+        <span class="gdoc-footer__item gdoc-footer__item--row">
+          <a href="{{ "support/" | relURL }}" class="gdoc-footer__link">Support policy</a>
+        </span>
+        <span class="gdoc-footer__item gdoc-footer__item--row">
+          <a href="{{ "security/" | relURL }}" class="gdoc-footer__link">Security</a>
+        </span>
+        <span class="gdoc-footer__item gdoc-footer__item--row">
+          <a href="{{ "code-of-conduct/" | relURL }}" class="gdoc-footer__link">Code of Conduct</a>
+        </span>
+      </section>
+      {{ with .Site.Params.geekdocContentLicense }}
+        <section class="flex flex-wrap align-center">
+          <span class="gdoc-footer__item">
+            Content licensed under
+            <a href="{{ .link }}" class="gdoc-footer__link no-wrap">{{ .name }}</a>
+          </span>
+        </section>
+      {{ end }}
+    </div>
+    {{ if (default true .Site.Params.geekdocBackToTop) }}
+      <div class="flex flex-25 justify-end">
+        <span class="gdoc-footer__item text-right">
+          <a class="gdoc-footer__link fake-link" href="#" aria-label="Back to top">
+            <svg class="gdoc-icon gdoc_keyboard_arrow_up">
+              <use xlink:href="#gdoc_keyboard_arrow_up"></use>
+            </svg>
+            <span class="hidden-mobile">Back to top</span>
+          </a>
+        </span>
+      </div>
+    {{ end }}
+  </nav>
+</footer>

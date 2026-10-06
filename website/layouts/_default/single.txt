@@ -1,0 +1,7 @@
+# {{ .Title }}
+
+{{ .Content | plainify }}
+
+---
+Source page: {{ .Permalink }}
+Last modified: {{ .Lastmod.Format "2006-01-02" }}

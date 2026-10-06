@@ -1,4 +1,4 @@
-# Azure Subscription Vending
+<h1><img src="website/static/brand/subscription-vending-mark-192.png" alt="" width="52" /> Azure Subscription Vending</h1>
 
 Azure subscription-vending accelerator with **Terraform and Bicep engines**,
 one shared YAML request contract, and GitHub Actions delivery. Terraform uses

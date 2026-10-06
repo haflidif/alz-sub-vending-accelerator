@@ -1,0 +1,18 @@
+# {{ .Site.Title }}
+
+{{ .Site.Params.description | default .Site.Title }}
+
+This is an independently maintained community project. It is not a Microsoft
+product and has no Microsoft Support coverage or service-level agreement.
+
+## Documentation sections
+
+{{- range .Site.Sections.ByTitle }}
+- [{{ .Title }}]({{ .Permalink }})
+{{- end }}
+
+## All pages
+
+{{- range .Site.RegularPages.ByTitle }}
+- [{{ .Title }}]({{ .Permalink }})
+{{- end }}
