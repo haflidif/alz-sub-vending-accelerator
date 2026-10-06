@@ -128,11 +128,13 @@ $capture | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION_VENDING_T
   $acceleratorManifest = Get-Content -LiteralPath (Join-Path $repositoryRoot 'accelerator.json') -Raw | ConvertFrom-Json
   Assert-Matches $acceleratorManifest.version '^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$' 'Accelerator version must be a semantic release identifier.'
   Assert-Equal 'v0.4.0' $acceleratorManifest.version 'Accelerator release version is incorrect.'
-  Assert-Equal 'haflidif/alz-sub-vending-terraform-accelerator' $acceleratorManifest.repository 'Accelerator source repository is incorrect.'
+  Assert-Equal 'haflidif/alz-sub-vending-accelerator' $acceleratorManifest.repository 'Accelerator source repository is incorrect.'
   $upgradeManifest = Get-Content -LiteralPath (Join-Path $repositoryRoot 'upgrade-manifest.json') -Raw | ConvertFrom-Json
   Assert-Equal '1.0' $upgradeManifest.schemaVersion 'Upgrade manifest version is incorrect.'
   Assert-Equal $true ('terraform/terraform.auto.tfvars' -in $upgradeManifest.engines.terraform.excludeFiles) 'Terraform rendered configuration must be repository-owned.'
   Assert-Equal $true ('bicep/platform.json' -in $upgradeManifest.engines.bicep.excludeFiles) 'Bicep rendered configuration must be repository-owned.'
+  Assert-Equal $true ('.github/ISSUE_TEMPLATE/' -in $upgradeManifest.common.excludePrefixes) 'Upstream issue forms must not be copied into generated repositories.'
+  Assert-Equal $true ('docs/maintainers/' -in $upgradeManifest.common.excludePrefixes) 'Maintainer-only runbooks must not be copied into generated repositories.'
   Assert-Equal $true ('docs/proposals/' -in $upgradeManifest.common.excludePrefixes) 'Source-only proposals must be excluded from upgrades.'
   Assert-Equal $true (Test-Path -LiteralPath (Join-Path $repositoryRoot 'scripts/Update-SubscriptionVending.ps1')) 'Upgrade command is missing.'
   $bicepManifest = Get-Content -LiteralPath (Join-Path $starterRoot 'bicep/starter.json') -Raw | ConvertFrom-Json
@@ -400,6 +402,18 @@ $capture | ConvertTo-Json | Set-Content -LiteralPath $env:SUBSCRIPTION_VENDING_T
   Assert-Matches $applyWorkflow '\.effective_tags\.value' 'Terraform summary must publish effective tags.'
   Assert-Matches $applyWorkflow '\.properties\.outputs\.subscriptionId\.value' 'Bicep summary must publish the subscription ID.'
   Assert-Matches $applyWorkflow 'BICEP_DEPLOYMENT_ELAPSED_SECONDS' 'Bicep summary must publish elapsed deployment time.'
+  $workflowActionReferences = [regex]::Matches(
+    "$prValidateWorkflow`n$applyWorkflow",
+    '(?m)^\s*(?:-\s+)?uses:\s+[^@\s]+@([^\s#]+)'
+  )
+  Assert-Equal $true ($workflowActionReferences.Count -gt 0) 'Workflow action references must be detected.'
+  foreach ($actionReference in $workflowActionReferences) {
+    Assert-Matches $actionReference.Groups[1].Value '^[0-9a-f]{40}$' 'Third-party actions must use immutable commit SHAs.'
+  }
+  Assert-Equal 2 ([regex]::Matches($prValidateWorkflow, 'id-token:\s*write').Count) 'Only PR preview jobs may request an OIDC token.'
+  Assert-Equal 2 ([regex]::Matches($applyWorkflow, 'id-token:\s*write').Count) 'Only deployment jobs may request an OIDC token.'
+  Assert-Equal $false ($prValidateWorkflow -match 'path:\s+terraform/tfplan') 'PR validation must not upload a binary Terraform plan.'
+  Assert-Equal $false ($applyWorkflow -match '(?m)^\s+terraform/tfplan\s*$') 'Apply must not upload a binary Terraform plan.'
   Assert-Matches $bootstrapFiles 'starter_name\s*=\s*var\.starter_name' 'CODEOWNERS rendering must receive the selected starter.'
   Assert-Matches $bootstrapFiles 'file\s*=\s*"\.accelerator/metadata\.json"' 'Bootstrap must record generated-repository accelerator metadata.'
   Assert-Matches $bootstrapFiles 'acceleratorVersion\s*=\s*local\.accelerator_manifest\.version' 'Generated metadata must record the accelerator release.'

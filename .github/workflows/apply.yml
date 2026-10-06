@@ -34,7 +34,6 @@ on:
         default: ''
 
 permissions:
-  id-token: write
   contents: read
 
 # Top-level concurrency keeps the dispatch queue ordered. Per-archetype/sub
@@ -51,10 +50,11 @@ jobs:
   runtime-check:
     name: Detect generated vending repository
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       enabled: ${{ steps.runtime.outputs.enabled }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Detect runtime repository
         id: runtime
@@ -75,12 +75,13 @@ jobs:
     needs: runtime-check
     if: needs.runtime-check.outputs.enabled == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       matrix: ${{ steps.set.outputs.matrix }}
       count:  ${{ steps.set.outputs.count }}
       shared_changed: ${{ steps.set.outputs.shared_changed }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
@@ -103,6 +104,7 @@ jobs:
     needs: discover
     if: github.event_name == 'push' && needs.discover.outputs.shared_changed == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Publish deployment guidance
         shell: bash
@@ -125,6 +127,10 @@ jobs:
     needs: discover
     if: needs.discover.outputs.count != '0' && (vars.VENDING_ENGINE == '' || vars.VENDING_ENGINE == 'terraform')
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write
     # Per-sub concurrency: same subscription cannot apply twice in parallel
     # (state-locking would fight us anyway), but different subs run freely.
     concurrency:
@@ -146,14 +152,14 @@ jobs:
       AZAPI_RETRY_GET_AFTER_PUT_MAX_TIME: '60m'
       TF_IN_AUTOMATION: 'true'
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: hashicorp/setup-terraform@v4
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
         with:
           terraform_version: 1.15.5
           terraform_wrapper: false
 
-      - uses: azure/login@v3
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3
         with:
           client-id:       ${{ vars.AZURE_CLIENT_ID }}
           tenant-id:       ${{ vars.AZURE_TENANT_ID }}
@@ -226,20 +232,23 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: apply-${{ matrix.archetype }}-${{ matrix.name }}
-          path: |
-            terraform/tfplan
-            terraform/vending-outputs.json
-          retention-days: 30
+          path: terraform/vending-outputs.json
+          if-no-files-found: ignore
+          retention-days: 7
 
   bicep-apply:
     name: Deploy ${{ matrix.archetype }}/${{ matrix.name }}
     needs: discover
     if: needs.discover.outputs.count != '0' && vars.VENDING_ENGINE == 'bicep'
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      id-token: write
     concurrency:
       group: apply-${{ matrix.archetype }}-${{ matrix.name }}
       cancel-in-progress: false
@@ -249,9 +258,9 @@ jobs:
       max-parallel: 5
       matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: azure/login@v3
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
@@ -410,13 +419,12 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: deployment-${{ matrix.archetype }}-${{ matrix.name }}
           path: |
-            bicep/request.parameters.json
             bicep/deployment.json
             bicep/deployment-status-error.txt
           if-no-files-found: ignore
-          retention-days: 30
+          retention-days: 7

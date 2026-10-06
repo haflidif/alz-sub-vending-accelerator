@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security or private conduct report
+    url: https://github.com/haflidif/alz-sub-vending-accelerator/security/advisories/new
+    about: Report vulnerabilities or Code of Conduct incidents privately.
+  - name: Support expectations
+    url: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/SUPPORT.md
+    about: Review the best-effort support policy and Microsoft support boundary.

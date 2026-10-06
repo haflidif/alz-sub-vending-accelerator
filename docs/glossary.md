@@ -39,7 +39,7 @@ the selected Terraform or Bicep runtime into the new repo. Run by an operator
 from a workstation.
 Its Terraform state is **local** to the operator's machine; the
 bootstrap is **not** re-run for day-2 changes. See the
-[bootstrap reference](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md).
+[bootstrap reference](https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/README.md).
 
 **Bootstrap wizard**: `bootstrap/Invoke-Bootstrap.ps1`. Interactive
 PowerShell wrapper around the bootstrap module. It prompts, validates,

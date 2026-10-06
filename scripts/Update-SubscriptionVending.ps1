@@ -32,6 +32,10 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$canonicalSourceRepository = 'haflidif/alz-sub-vending-accelerator'
+$legacySourceRepositories = @(
+  'haflidif/alz-sub-vending-terraform-accelerator'
+)
 
 function ConvertTo-NormalizedVersion {
   param([Parameter(Mandatory)][string] $Version)
@@ -40,6 +44,15 @@ function ConvertTo-NormalizedVersion {
     return "v$($Version.Substring(1))"
   }
   "v$Version"
+}
+
+function ConvertTo-CanonicalSourceRepository {
+  param([Parameter(Mandatory)][string] $Repository)
+
+  if ($Repository -in $legacySourceRepositories) {
+    return $canonicalSourceRepository
+  }
+  $Repository
 }
 
 function Get-NormalizedRelativePath {
@@ -455,12 +468,16 @@ if ($metadata) {
   if ($Starter -and $Starter -ne $metadata.starter) {
     throw "Starter does not match recorded starter '$($metadata.starter)'."
   }
-  if ($SourceRepository -and $SourceRepository -ne $metadata.sourceRepository) {
+  if (
+    $SourceRepository `
+      -and (ConvertTo-CanonicalSourceRepository $SourceRepository) `
+      -ne (ConvertTo-CanonicalSourceRepository $metadata.sourceRepository)
+  ) {
     throw "SourceRepository does not match recorded repository '$($metadata.sourceRepository)'."
   }
   $CurrentVersion = $metadata.acceleratorVersion
   $Starter = $metadata.starter
-  $SourceRepository = $metadata.sourceRepository
+  $SourceRepository = ConvertTo-CanonicalSourceRepository $metadata.sourceRepository
   if ($metadata.PSObject.Properties.Name -contains 'managedFiles') {
     foreach ($property in $metadata.managedFiles.PSObject.Properties) {
       $currentHashes[$property.Name] = [string] $property.Value
@@ -472,8 +489,9 @@ elseif (-not $CurrentVersion -or -not $Starter) {
 }
 
 if (-not $SourceRepository) {
-  $SourceRepository = 'haflidif/alz-sub-vending-terraform-accelerator'
+  $SourceRepository = $canonicalSourceRepository
 }
+$SourceRepository = ConvertTo-CanonicalSourceRepository $SourceRepository
 if ($SourceRepository -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
   throw "SourceRepository must use owner/repository format: '$SourceRepository'."
 }
@@ -533,7 +551,7 @@ try {
   if ((ConvertTo-NormalizedVersion $targetAccelerator.version) -ne $TargetVersion) {
     throw "Target source version '$($targetAccelerator.version)' does not match requested version '$TargetVersion'."
   }
-  if ($targetAccelerator.repository -ne $SourceRepository) {
+  if ((ConvertTo-CanonicalSourceRepository $targetAccelerator.repository) -ne $SourceRepository) {
     throw "Target source repository '$($targetAccelerator.repository)' does not match '$SourceRepository'."
   }
   $manifest = Read-JsonFile `

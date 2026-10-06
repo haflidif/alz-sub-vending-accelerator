@@ -22,6 +22,8 @@
       "docs/starter-contract.md"
     ],
     "excludePrefixes": [
+      ".github/ISSUE_TEMPLATE/",
+      "docs/maintainers/",
       "docs/proposals/"
     ],
     "excludePatterns": [

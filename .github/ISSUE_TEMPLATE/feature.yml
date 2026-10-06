@@ -1,0 +1,65 @@
+name: Feature request
+description: Propose a capability that preserves the complementary product mandate.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This accelerator complements an established Azure Landing Zones platform. It does not replace the platform landing zone or deploy workload applications.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Product boundary
+      options:
+        - label: I reviewed the product mandate and this request keeps the established ALZ platform authoritative.
+          required: true
+        - label: I searched existing issues and the roadmap for this capability.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: Describe the operator or consumer need without prescribing a solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe the observable result and who benefits.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - Shared request contract
+        - ALZ platform integration
+        - Terraform engine
+        - Bicep engine
+        - GitHub delivery provider
+        - Azure DevOps delivery provider
+        - Lifecycle and operations
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe current workarounds or other approaches you considered.
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Additional evidence
+      description: Link to public guidance, examples, or related issues without including private customer information.

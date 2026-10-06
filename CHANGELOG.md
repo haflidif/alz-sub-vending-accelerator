@@ -14,6 +14,10 @@ template itself, not the AVM modules pinned by the engines. See
 - Added a permanent product mandate defining the accelerator as the governed
   subscription-vending step after the official ALZ Accelerator establishes the
   platform landing zone.
+- Added an explicit independent-maintainer and Microsoft support boundary,
+  including best-effort community expectations and no SLA.
+- Added a Contributor Covenant Code of Conduct, structured public issue forms,
+  and a maintainer runbook for the repository rename and public launch.
 
 ### Changed
 
@@ -21,6 +25,12 @@ template itself, not the AVM modules pinned by the engines. See
   guidance that platform management groups, policy, connectivity, management,
   monitoring, security, identity, and shared services remain owned by the ALZ
   platform.
+- Prepared the engine-neutral `alz-sub-vending-accelerator` repository
+  identity while preserving upgrades from generated repositories that record
+  the former Terraform-specific name.
+- Pinned GitHub Actions to immutable commit SHAs, limited OIDC permissions to
+  Azure-facing jobs, added job timeouts, and stopped retaining Terraform plan
+  binaries as workflow artifacts.
 
 ## [0.4.0] - 2026-10-01
 
@@ -291,8 +301,8 @@ with per-subscription Terraform state and YAML-driven subscription contracts.
   archetypes, billing scopes, tagging, naming convention, schema validation,
   state storage, teardown, and a glossary under `docs/`.
 
-[Unreleased]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.4.0...HEAD
-[0.4.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/releases/tag/v0.1.0
+[Unreleased]: https://github.com/haflidif/alz-sub-vending-accelerator/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/haflidif/alz-sub-vending-accelerator/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/haflidif/alz-sub-vending-accelerator/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/haflidif/alz-sub-vending-accelerator/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/haflidif/alz-sub-vending-accelerator/releases/tag/v0.1.0

@@ -1,0 +1,53 @@
+name: Documentation improvement
+description: Report unclear, incorrect, missing, or outdated documentation.
+title: "[Docs]: "
+labels:
+  - documentation
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Page or section
+      description: Link to the page or provide the repository path and heading.
+      placeholder: docs/operators/bootstrap.md, "Repository handoff"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: problem-type
+    attributes:
+      label: Problem type
+      options:
+        - Incorrect information
+        - Missing information
+        - Unclear instructions
+        - Broken link or navigation
+        - Accessibility or formatting
+        - Example does not work
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What needs improvement
+      description: Explain what is confusing, incorrect, or missing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: Describe the change that would make the documentation more useful.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing documentation issues.
+          required: true
+        - label: I did not include tenant-specific or customer information.
+          required: true

@@ -110,7 +110,8 @@ function New-SourceFixture {
   param(
     [Parameter(Mandatory)][string] $Root,
     [Parameter(Mandatory)][string] $Version,
-    [Parameter(Mandatory)][string] $Label
+    [Parameter(Mandatory)][string] $Label,
+    [string] $Repository = 'example/accelerator'
   )
 
   New-Item -ItemType Directory -Path $Root -Force | Out-Null
@@ -118,7 +119,7 @@ function New-SourceFixture {
   @{
     schemaVersion = '1.0'
     version = $Version
-    repository = 'example/accelerator'
+    repository = $Repository
   } |
     ConvertTo-Json |
     Set-Content -LiteralPath (Join-Path $Root 'accelerator.json') -Encoding utf8NoBOM
@@ -135,6 +136,7 @@ function New-GeneratedRepository {
     [Parameter(Mandatory)][string] $Root,
     [Parameter(Mandatory)][string] $SourceRoot,
     [Parameter(Mandatory)][ValidateSet('terraform', 'bicep')][string] $Engine,
+    [string] $SourceRepository = 'example/accelerator',
     [switch] $WithMetadata
   )
 
@@ -169,7 +171,7 @@ function New-GeneratedRepository {
     }
     [ordered]@{
       schemaVersion = '1.0'
-      sourceRepository = 'example/accelerator'
+      sourceRepository = $SourceRepository
       acceleratorVersion = 'v1.0.0'
       starter = $Engine
       managedFiles = $managedFiles
@@ -196,6 +198,42 @@ try {
   Set-TestFile -Root $targetRoot -RelativePath 'terraform/added.tf' -Value '# add me'
   Set-TestFile -Root $currentRoot -RelativePath 'bicep/removed.bicep' -Value '// remove me'
   Set-TestFile -Root $targetRoot -RelativePath 'bicep/added.bicep' -Value '// add me'
+
+  $legacyCurrentRoot = Join-Path $testRoot 'source-legacy-current'
+  $renamedTargetRoot = Join-Path $testRoot 'source-renamed-target'
+  New-SourceFixture `
+    -Root $legacyCurrentRoot `
+    -Version 'v1.0.0' `
+    -Label 'legacy-current' `
+    -Repository 'haflidif/alz-sub-vending-terraform-accelerator'
+  New-SourceFixture `
+    -Root $renamedTargetRoot `
+    -Version 'v1.1.0' `
+    -Label 'renamed-target' `
+    -Repository 'haflidif/alz-sub-vending-accelerator'
+
+  $renamedRepository = Join-Path $testRoot 'renamed-repository'
+  New-GeneratedRepository `
+    -Root $renamedRepository `
+    -SourceRoot $legacyCurrentRoot `
+    -Engine terraform `
+    -SourceRepository 'haflidif/alz-sub-vending-terraform-accelerator' `
+    -WithMetadata
+  & $upgradeScript `
+    -RepositoryRoot $renamedRepository `
+    -TargetVersion v1.1.0 `
+    -CurrentSourceRoot $legacyCurrentRoot `
+    -TargetSourceRoot $renamedTargetRoot `
+    -Apply `
+    -NoBranch
+  $renamedMetadata = Get-Content `
+    -LiteralPath (Join-Path $renamedRepository '.accelerator/metadata.json') `
+    -Raw |
+    ConvertFrom-Json
+  Assert-Equal `
+    'haflidif/alz-sub-vending-accelerator' `
+    $renamedMetadata.sourceRepository `
+    'Legacy repository metadata was not migrated to the canonical repository name.'
 
   $terraformRepo = Join-Path $testRoot 'terraform-repo'
   New-GeneratedRepository -Root $terraformRepo -SourceRoot $currentRoot -Engine terraform -WithMetadata

@@ -70,5 +70,5 @@ Your tools run, the platform resources exist, and the responsible operators
 can supply Azure, billing, and GitHub access. Continue to
 [Bootstrap](bootstrap.md) from the accelerator source checkout.
 
-[source]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator
-[bootstrap-reference]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md
+[source]: https://github.com/haflidif/alz-sub-vending-accelerator
+[bootstrap-reference]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/README.md

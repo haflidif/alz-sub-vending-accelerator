@@ -19,8 +19,8 @@
   PrivateData = @{
     PSData = @{
       Tags = @('Azure', 'ALZ', 'SubscriptionVending', 'Terraform', 'Bicep')
-      ProjectUri = 'https://github.com/haflidif/alz-sub-vending-terraform-accelerator'
-      LicenseUri = 'https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/LICENSE'
+      ProjectUri = 'https://github.com/haflidif/alz-sub-vending-accelerator'
+      LicenseUri = 'https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/LICENSE'
       Prerelease = 'preview'
     }
   }
