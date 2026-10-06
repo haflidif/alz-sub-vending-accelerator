@@ -196,6 +196,10 @@ pre {
   overflow-wrap: anywhere;
 }
 
+.gdoc-markdown > p:has(> a.gdoc-source-navigation) {
+  display: none;
+}
+
 .gdoc-markdown .highlight,
 .gdoc-markdown pre {
   max-width: 100%;
