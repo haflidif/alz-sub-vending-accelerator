@@ -1,0 +1,9 @@
+# {{ .Title }}
+
+{{ .Content | plainify }}
+
+## Pages in this section
+
+{{- range .Pages.ByTitle }}
+- [{{ .Title }}]({{ .Permalink }})
+{{- end }}

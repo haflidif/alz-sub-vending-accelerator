@@ -1,0 +1,84 @@
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+
+  (() => {
+    const root = document.documentElement;
+    const preferredTheme = () =>
+      window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    const syncTheme = () => {
+      const geekdocTheme = root.getAttribute("color-theme");
+      root.setAttribute(
+        "data-theme",
+        geekdocTheme === "dark" || geekdocTheme === "light" ? geekdocTheme : preferredTheme()
+      );
+    };
+
+    new MutationObserver(syncTheme).observe(root, {
+      attributes: true,
+      attributeFilter: ["color-theme"]
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("gdoc-color-theme")?.addEventListener("click", () => {
+        requestAnimationFrame(() => requestAnimationFrame(syncTheme));
+      });
+      syncTheme();
+
+      const search = document.getElementById("gdoc-search-input");
+      let searchReplayPending = false;
+      search?.addEventListener(
+        "keyup",
+        (event) => {
+          if (window.geekdocSearchIndex || searchReplayPending) {
+            return;
+          }
+
+          event.stopImmediatePropagation();
+          searchReplayPending = true;
+          let attempts = 0;
+
+          const replayWhenReady = () => {
+            if (window.geekdocSearchIndex) {
+              setTimeout(() => {
+                searchReplayPending = false;
+                search.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true }));
+              }, 500);
+              return;
+            }
+            attempts += 1;
+            if (attempts >= 100) {
+              searchReplayPending = false;
+              return;
+            }
+            setTimeout(replayWhenReady, 50);
+          };
+
+          replayWhenReady();
+        },
+        true
+      );
+
+      let searchWarmupAttempts = 0;
+      const warmSearch = () => {
+        if (!search || window.geekdocSearchIndex || searchWarmupAttempts >= 100) {
+          return;
+        }
+        search.dispatchEvent(new FocusEvent("focus"));
+        searchWarmupAttempts += 1;
+        setTimeout(warmSearch, 50);
+      };
+      setTimeout(warmSearch, 0);
+    });
+
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncTheme);
+  })();
+</script>
+<meta
+  name="description"
+  content="Documentation for an independently maintained complementary Azure Landing Zones subscription-vending accelerator."
+/>

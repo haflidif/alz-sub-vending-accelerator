@@ -1,0 +1,119 @@
+baseURL = "https://haflidif.github.io/alz-sub-vending-accelerator/"
+locale = "en-US"
+title = "Azure Subscription Vending Accelerator"
+description = "Documentation for an independently maintained accelerator that adds governed application landing-zone subscription vending after the official Azure Landing Zones Accelerator."
+theme = "hugo-geekdoc"
+enableGitInfo = true
+enableRobotsTXT = true
+pygmentsUseClasses = true
+pygmentsCodeFences = true
+
+[outputs]
+home = ["html", "rss", "TXT"]
+page = ["html", "rss", "TXT"]
+section = ["html", "rss", "TXT"]
+
+[outputFormats.TXT]
+mediaType = "text/plain"
+baseName = "llms"
+isPlainText = true
+
+[markup.goldmark.renderer]
+unsafe = true
+
+[markup.tableOfContents]
+startLevel = 2
+endLevel = 4
+
+[taxonomies]
+tag = "tags"
+
+[params]
+geekdocToC = 3
+geekdocMenuBundle = false
+geekdocCollapseAllSections = false
+geekdocAlign = "left"
+geekdocNav = true
+geekdocNextPrev = true
+geekdocBreadcrumb = true
+geekdocRepo = "https://github.com/haflidif/alz-sub-vending-accelerator"
+geekdocEditPath = "edit/main"
+geekdocSearch = true
+geekdocSearchShowParent = true
+geekdocAnchor = true
+geekdocAnchorCopy = true
+geekdocImageLazyLoading = true
+geekdocDarkModeToggle = true
+geekdocDarkModeDim = false
+geekdocDarkModeCode = false
+geekdocBackToTop = true
+geekdocTagsToMenu = false
+geekdocFileTreeSortBy = "title"
+geekdocSubtitle = "Complementary post-ALZ subscription vending"
+
+[params.geekdocContentLicense]
+name = "MIT License"
+link = "https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/LICENSE"
+
+[module]
+[[module.mounts]]
+source = "content"
+target = "content"
+
+[[module.mounts]]
+source = "../docs/README.md"
+target = "content/docs/_index.md"
+
+[[module.mounts]]
+source = "../docs"
+target = "content/docs"
+files = [
+  "! README.md",
+  "! maintainers/**",
+  "! proposals/**",
+  "! starter-contract.md"
+]
+
+[[module.mounts]]
+source = "../landingzones/README.md"
+target = "content/landingzones/_index.md"
+
+[[module.mounts]]
+source = "../.github/CICD.md"
+target = "content/.github/CICD.md"
+
+[[module.mounts]]
+source = "../scripts/README.md"
+target = "content/scripts/_index.md"
+
+[[module.mounts]]
+source = "../SUPPORT.md"
+target = "content/support.md"
+
+[[module.mounts]]
+source = "../SECURITY.md"
+target = "content/security.md"
+
+[[module.mounts]]
+source = "../CONTRIBUTING.md"
+target = "content/contributing.md"
+
+[[module.mounts]]
+source = "../CODE_OF_CONDUCT.md"
+target = "content/code-of-conduct.md"
+
+[[module.mounts]]
+source = "assets"
+target = "assets"
+
+[[module.mounts]]
+source = "data"
+target = "data"
+
+[[module.mounts]]
+source = "layouts"
+target = "layouts"
+
+[[module.mounts]]
+source = "static"
+target = "static"

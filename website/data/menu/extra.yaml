@@ -1,0 +1,12 @@
+---
+header:
+  - name: Source repository
+    ref: https://github.com/haflidif/alz-sub-vending-accelerator
+    external: true
+    icon: gdoc_code
+    weight: 10
+  - name: Releases
+    ref: https://github.com/haflidif/alz-sub-vending-accelerator/releases
+    external: true
+    icon: gdoc_download
+    weight: 20
