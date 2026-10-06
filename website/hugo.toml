@@ -50,6 +50,7 @@ geekdocBackToTop = true
 geekdocTagsToMenu = false
 geekdocFileTreeSortBy = "title"
 geekdocSubtitle = "Complementary post-ALZ subscription vending"
+geekdocLogo = "brand/subscription-vending-mark.svg"
 
 [params.geekdocContentLicense]
 name = "MIT License"

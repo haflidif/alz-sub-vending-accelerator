@@ -1,3 +1,9 @@
+{{ $customStyles := resources.Get "custom.css" | minify | fingerprint }}
+<link
+  rel="stylesheet"
+  href="{{ $customStyles.RelPermalink }}"
+  integrity="{{ $customStyles.Data.Integrity }}"
+/>
 <script>
   (() => {
     const param = new URLSearchParams(window.location.search).get("scoutTheme");
