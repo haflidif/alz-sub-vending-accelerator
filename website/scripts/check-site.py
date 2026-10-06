@@ -73,6 +73,15 @@ def output_path_for_url(
     return candidate
 
 
+def public_url_for_output(
+    source_file: pathlib.Path, output_root: pathlib.Path, base_path: str
+) -> str:
+    relative_url = source_file.relative_to(output_root).as_posix()
+    if relative_url.endswith("index.html"):
+        relative_url = relative_url[: -len("index.html")]
+    return urllib.parse.urljoin(base_path, relative_url)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("output_root", type=pathlib.Path)
@@ -118,9 +127,9 @@ def main() -> int:
             parsed = urllib.parse.urlsplit(src)
             if parsed.scheme or parsed.netloc or src.startswith("data:"):
                 continue
-            current_url = "/" + source_file.relative_to(output_root).as_posix()
-            if current_url.endswith("index.html"):
-                current_url = current_url[: -len("index.html")]
+            current_url = public_url_for_output(
+                source_file, output_root, base_path
+            )
             resolved_url = urllib.parse.urljoin(current_url, parsed.path)
             target_file = output_path_for_url(output_root, resolved_url, base_path)
             if target_file is not None and not target_file.exists():
@@ -135,9 +144,9 @@ def main() -> int:
             if href.startswith("#"):
                 target_file = source_file
             else:
-                current_url = "/" + source_file.relative_to(output_root).as_posix()
-                if current_url.endswith("index.html"):
-                    current_url = current_url[: -len("index.html")]
+                current_url = public_url_for_output(
+                    source_file, output_root, base_path
+                )
                 resolved_url = urllib.parse.urljoin(current_url, parsed.path)
                 target_file = output_path_for_url(output_root, resolved_url, base_path)
                 if target_file is None:
