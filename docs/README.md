@@ -55,6 +55,9 @@ For upstream development, use [CONTRIBUTING][contributing] and the
 [implemented starter contract][contract]. These describe contribution and
 implementation boundaries, not extra steps for consumers.
 
+Maintainers use the [public launch and repository rename runbook][public-launch]
+for the controlled transition to the stable public repository identity.
+
 ### Proposals and historical design
 
 The [proposal index][proposals] contains extended product vision and a
@@ -70,10 +73,11 @@ compatibility pages. New links should target the canonical pages above.
 Documentation updates to existing vending repositories are reviewed PRs,
 not bootstrap reruns.
 
-[bootstrap]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md
-[powershell]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/powershell/SubscriptionVending/README.md
-[terraform]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/terraform/README.md
-[bicep]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bicep/README.md
-[contributing]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/CONTRIBUTING.md
-[contract]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/docs/starter-contract.md
-[proposals]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/docs/proposals/README.md
+[bootstrap]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/README.md
+[powershell]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/powershell/SubscriptionVending/README.md
+[terraform]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/terraform/README.md
+[bicep]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bicep/README.md
+[contributing]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/CONTRIBUTING.md
+[contract]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/docs/starter-contract.md
+[proposals]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/docs/proposals/README.md
+[public-launch]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/docs/maintainers/public-launch.md

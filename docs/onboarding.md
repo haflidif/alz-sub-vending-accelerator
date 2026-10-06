@@ -110,4 +110,4 @@ Continue to [What if I cannot run bootstrap?](operators/bootstrap.md#what-if-i-c
 
 [Documentation index](README.md)
 
-[manual]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md#usage
+[manual]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/README.md#usage

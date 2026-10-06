@@ -32,7 +32,7 @@ versioned upgrade command for source updates.
 The accelerator ships the `SubscriptionVending` PowerShell module as its
 operator entry point. Select Terraform or Bicep when creating the vending
 repository. Both engines delegate the one-time repository and identity setup
-to [`Invoke-Bootstrap.ps1`](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/Invoke-Bootstrap.ps1), preserving
+to [`Invoke-Bootstrap.ps1`](https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/Invoke-Bootstrap.ps1), preserving
 the existing prompts, validation, saved answers, and resumability.
 
 ```powershell
@@ -61,7 +61,7 @@ When the wizard finishes, capture these outputs from
 | `github_repository_full_name` | Your new vending repo |
 | `next_step_billing_role` | A copy-paste reminder of step 2 |
 
-The [bootstrap reference](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md)
+The [bootstrap reference](https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/README.md)
 describes every resource the bootstrap creates.
 
 For preview and unattended options, use the [wizard parameter reference](../bootstrap-wizard.md#parameters).
@@ -209,9 +209,9 @@ request and hand the repository to your application teams.
 The bootstrap is the **only supported** path. If you need to inspect or
 reproduce its actions by hand (e.g. for an audit, or because your
 environment forbids running Terraform from a workstation), see
-[`bootstrap/main.tf`](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/main.tf)
+[`bootstrap/main.tf`](https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/main.tf)
 names every resource explicitly. The
-[bootstrap reference](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md)
+[bootstrap reference](https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/README.md)
 describes them.
 The Terraform-side resources (UAMI, FICs, role assignments, state
 container) all have direct `az` / Azure REST equivalents; the GitHub-side
@@ -224,5 +224,5 @@ bootstrap changes.
 
 Previous: [Prerequisites](prerequisites.md) | Next: [Run](run.md) | [Documentation](../README.md)
 
-[source]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator
-[manual]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md#usage
+[source]: https://github.com/haflidif/alz-sub-vending-accelerator
+[manual]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/README.md#usage

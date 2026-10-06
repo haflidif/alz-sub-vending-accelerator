@@ -5,6 +5,25 @@ Landing Zones (ALZ) Accelerator has established the platform landing zone.
 It complements the ALZ Accelerator by providing a governed subscription
 vending service for application landing zones.
 
+## Project status and affiliation
+
+This accelerator is an independently maintained open-source project. It is not
+a Microsoft product or service, and it is not part of the official Azure
+Landing Zones Accelerator.
+
+The primary maintainer is a Microsoft employee, but maintains this project in
+an individual capacity. That employment does not create Microsoft sponsorship,
+ownership, endorsement, support, or an obligation to maintain the project.
+Microsoft and Azure names, product names, and publicly permitted branding are
+used only to identify the technologies and platform capabilities that the
+accelerator integrates with.
+
+The project has no service-level agreement, guaranteed response time, or
+production support commitment. Microsoft Support and Azure support plans do
+not cover this accelerator. Community help is available only on a best-effort
+basis. See the [support policy][support] for the complete expectations
+and support boundary.
+
 ## Mission
 
 Provide platform teams with a repeatable, reviewable, and upgradeable way to
@@ -89,3 +108,5 @@ Workload deployment
 
 This sequence is the permanent product mandate, not a temporary implementation
 limitation.
+
+[support]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/SUPPORT.md

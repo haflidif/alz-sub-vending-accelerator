@@ -24,6 +24,24 @@ applications.
 See [Product mandate](docs/product-mandate.md) for the permanent mission,
 required platform foundation, ownership boundary, and design rules.
 
+## Project status and support
+
+This is an independently maintained open-source project. It is not a Microsoft
+product or service, and it is not part of the official Azure Landing Zones
+Accelerator. The maintainer's employment by Microsoft does not create
+Microsoft sponsorship, ownership, endorsement, or support for this project.
+
+The project has no service-level agreement (SLA), guaranteed response time, or
+production support commitment. It is not covered by Microsoft Support, an
+Azure support plan, or another Microsoft commercial support agreement.
+Maintainers and contributors may provide community assistance on a best-effort
+basis, without a commitment to respond or resolve an issue.
+
+Microsoft and Azure names, product names, and publicly permitted branding are
+used only to identify the technologies that this accelerator integrates with.
+See the [support policy][support] for the complete expectations and support
+boundary.
+
 ## Two audiences, two paths
 
 | Your task | Start here |
@@ -138,6 +156,7 @@ not operating instructions or a supported-feature list.
 
 [avm]: https://registry.terraform.io/modules/Azure/avm-ptn-alz-sub-vending/azure/latest
 [bicep-avm]: https://github.com/Azure/bicep-registry-modules/tree/main/avm/ptn/lz/sub-vending
-[terraform]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/terraform/README.md
-[bicep]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bicep/README.md
-[proposals]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/docs/proposals/README.md
+[terraform]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/terraform/README.md
+[bicep]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bicep/README.md
+[proposals]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/docs/proposals/README.md
+[support]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/SUPPORT.md

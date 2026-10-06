@@ -3,7 +3,7 @@
 ## Contributing to the upstream accelerator
 
 > This section applies to contributions to the **accelerator project itself**
-> (the open-source `alz-sub-vending-terraform-accelerator`). If you are an
+> (the open-source `alz-sub-vending-accelerator`). If you are an
 > operator running a copy created from this template, skip to the operational
 > sections below.
 
@@ -17,6 +17,15 @@ Please be respectful and constructive in issues and pull requests. Security
 issues follow the [security policy][security]; for support options see the
 [support guide][support]. These links open the accelerator source because
 the policies are not copied into generated vending repositories.
+
+Participation in this project is governed by the
+[Code of Conduct][code-of-conduct]. Report conduct incidents privately by
+following its enforcement instructions.
+
+Contributing does not create a support relationship with Microsoft or the
+maintainers. This is an independently maintained project, even though the
+primary maintainer is a Microsoft employee. Review the
+[support boundary][support] before relying on the project in production.
 
 ## Vending a new subscription
 
@@ -139,7 +148,8 @@ need explicit upstream links from shared documentation. Do not edit request
 YAML or runtime Terraform comments just to update a link if that would trigger
 an unrelated deployment; a compatibility page keeps the old reference valid.
 
-[security]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/SECURITY.md
-[support]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/SUPPORT.md
-[proposals]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/docs/proposals/README.md
-[contract]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/docs/starter-contract.md
+[security]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/SECURITY.md
+[support]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/SUPPORT.md
+[code-of-conduct]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/CODE_OF_CONDUCT.md
+[proposals]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/docs/proposals/README.md
+[contract]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/docs/starter-contract.md

@@ -60,4 +60,4 @@ This journey follows the structure of the official
 adapted to subscription vending. Upstream platform deployment options are
 not a statement of this project's supported features.
 
-[ownership]: https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md#repository-ownership-after-bootstrap
+[ownership]: https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/README.md#repository-ownership-after-bootstrap

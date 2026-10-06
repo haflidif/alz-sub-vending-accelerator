@@ -1,0 +1,101 @@
+name: Bug report
+description: Report a reproducible problem with the accelerator.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem. Do not include credentials, tenant-specific secrets, customer data, or undisclosed vulnerabilities.
+
+        This project is independently maintained without a service-level agreement or Microsoft Support coverage. Review the [support policy](https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/SUPPORT.md) before filing.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for the same problem.
+          required: true
+        - label: I removed or replaced tenant IDs, subscription IDs, billing identifiers, email addresses, and other sensitive values.
+          required: true
+        - label: This is not a confidential security report or Code of Conduct report.
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Bootstrap
+        - Terraform engine
+        - Bicep engine
+        - GitHub Actions
+        - Upgrade tooling
+        - Request schema
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Accelerator version
+      description: Use the Git tag or the version from accelerator.json.
+      placeholder: v0.4.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem
+      description: Explain what happened and what you expected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest safe set of steps that reproduces the problem.
+      placeholder: |
+        1. Configure ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics
+      description: Include relevant errors or logs after removing sensitive and identifying data.
+      render: text
+
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Vending engine
+      options:
+        - Terraform
+        - Bicep
+        - Both
+        - Not applicable
+    validations:
+      required: true
+
+  - type: input
+    id: runner
+    attributes:
+      label: Execution environment
+      description: Include the operating system, shell, and whether this ran locally or in GitHub Actions.
+      placeholder: GitHub-hosted Ubuntu runner, or Windows 11 with PowerShell 7.5
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add any other sanitized information that may help reproduce the issue.

@@ -8,6 +8,11 @@ security reports.
 For suspected vulnerabilities, use **GitHub Private Vulnerability Reporting**
 via the repository's **Security** tab → **Report a vulnerability**.
 
+This is the private reporting channel for an independently maintained
+open-source project. It is not a Microsoft Security Response Center or
+Microsoft Support channel. Reports are handled on a best-effort basis without
+a service-level agreement or guaranteed response time.
+
 ## Please include
 
 - A description of the vulnerability
@@ -18,8 +23,9 @@ via the repository's **Security** tab → **Report a vulnerability**.
 
 ## Disclosure
 
-Please allow reasonable time for investigation and remediation before any public
-disclosure. Reports will be acknowledged as promptly as possible.
+Please allow reasonable time for investigation and remediation before any
+public disclosure. Reports will be acknowledged as promptly as maintainer
+availability allows.
 
 ## Public channels
 

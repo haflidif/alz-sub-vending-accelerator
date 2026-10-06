@@ -40,7 +40,7 @@ Bicep platform configuration.
 | To re-collect inputs without touching Terraform | `Invoke-Bootstrap.ps1 -Phase configure` |
 | A dry-run plan with no apply | `Invoke-Bootstrap.ps1 -PlanOnly` |
 | Destroy an existing Terraform bootstrap | `Invoke-Bootstrap.ps1 -Destroy` |
-| To drive Terraform yourself from a non-PowerShell environment | See the [manual bootstrap flow](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md#usage) |
+| To drive Terraform yourself from a non-PowerShell environment | See the [manual bootstrap flow](https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/README.md#usage) |
 
 The module, legacy wizard, and manual Terraform flow leave **identical
 Terraform state** behind. The module is now the stable product boundary while
@@ -477,7 +477,7 @@ when triaging unexpected behaviour.
 
 ## See also
 
-- [Bootstrap reference](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md)
+- [Bootstrap reference](https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/README.md)
 - [Operator guide](operators/bootstrap.md) for setup and where the wizard fits
 - [`docs/billing-scopes.md`](billing-scopes.md) — `billing_scopes` map format
 - [`docs/tagging.md`](tagging.md) — `cost_allocation_tag` + `mandatory_tags`

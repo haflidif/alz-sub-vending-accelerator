@@ -41,14 +41,14 @@ and dedicated container, then split later if needed.
 ## Bootstrap
 
 For a Terraform starter, the recommended path is the
-[`bootstrap/` Terraform module](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/tree/main/bootstrap).
+[`bootstrap/` Terraform module](https://github.com/haflidif/alz-sub-vending-accelerator/tree/main/bootstrap).
 It creates the container, grants the UAMI `Storage Blob Data Contributor` on
 the container scope, and writes the backend values to the GitHub repo as
 Actions variables (`BACKEND_RESOURCE_GROUP_NAME`,
 `BACKEND_STORAGE_ACCOUNT_NAME`, `BACKEND_CONTAINER_NAME`).
 Bicep bootstraps skip all of these resources and variables.
 See the
-[bootstrap reference](https://github.com/haflidif/alz-sub-vending-terraform-accelerator/blob/main/bootstrap/README.md).
+[bootstrap reference](https://github.com/haflidif/alz-sub-vending-accelerator/blob/main/bootstrap/README.md).
 
 It deliberately does NOT toggle versioning / soft-delete on the platform SA —
 those settings should be owned by whatever pipeline created the SA itself.
