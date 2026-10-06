@@ -1,5 +1,4 @@
 baseURL = "https://haflidif.github.io/alz-sub-vending-accelerator/"
-relativeURLs = true
 locale = "en-US"
 title = "Azure Subscription Vending Accelerator"
 description = "Documentation for an independently maintained accelerator that adds governed application landing-zone subscription vending after the official Azure Landing Zones Accelerator."
@@ -39,6 +38,7 @@ geekdocNextPrev = true
 geekdocBreadcrumb = true
 geekdocRepo = "https://github.com/haflidif/alz-sub-vending-accelerator"
 geekdocEditPath = "edit/main"
+geekdocSourcePath = "blob/main"
 geekdocSearch = true
 geekdocSearchShowParent = true
 geekdocAnchor = true

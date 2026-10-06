@@ -1,7 +1,20 @@
 {{- $destination := .Destination -}}
-{{- if not (urls.Parse $destination).IsAbs -}}
+{{- $parsedDestination := urls.Parse $destination -}}
+{{- if and (not $parsedDestination.IsAbs) (not (strings.HasPrefix $destination "#")) -}}
   {{- with .Page.GetPage $destination -}}
     {{- $destination = .RelPermalink -}}
+  {{- else -}}
+    {{- with $.Page.File -}}
+      {{- $filename := replace .Filename "\\" "/" -}}
+      {{- $repoRoot := replace (path.Dir hugo.WorkingDir) "\\" "/" -}}
+      {{- $repoPath := strings.TrimPrefix (printf "%s/" $repoRoot) $filename -}}
+      {{- $sourcePath := path.Clean (path.Join (path.Dir $repoPath) $parsedDestination.Path) -}}
+      {{- $sourceRoot := default "blob/main" $.Page.Site.Params.geekdocSourcePath -}}
+      {{- $destination = printf "%s/%s/%s" $.Page.Site.Params.geekdocRepo $sourceRoot $sourcePath -}}
+      {{- with $parsedDestination.Fragment -}}
+        {{- $destination = printf "%s#%s" $destination . -}}
+      {{- end -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{- $isSourceNavigation := and (eq (plainify .Text) "Documentation") (strings.HasSuffix .Destination "README.md") -}}
