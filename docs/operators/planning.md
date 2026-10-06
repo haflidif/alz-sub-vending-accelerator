@@ -6,16 +6,23 @@
 Decide how the service fits your existing Azure platform before running
 bootstrap. If these decisions are already agreed, continue to Prerequisites.
 
-This accelerator prepares a GitHub delivery repository for subscription
-requests. It does not deploy the platform landing zone or workload applications.
-Your platform can come from the ALZ accelerator or another deployment approach.
+Run the official ALZ Accelerator before adopting this accelerator. The ALZ
+Accelerator establishes the platform landing zone; this accelerator prepares
+the complementary GitHub delivery repository for governed application
+landing-zone subscription requests.
+
+It does not deploy the platform landing zone or workload applications. It
+consumes the existing management groups, governance, connectivity, management,
+security, identity, and shared resources. Review the
+[product mandate](../product-mandate.md) before recording implementation
+decisions.
 
 ## Decisions to record
 
 | Decision | Record before bootstrap | Reference |
 |---|---|---|
 | Runtime engine | Terraform or Bicep; a generated repository uses one engine and cannot switch in place | [Architecture](../architecture.md) |
-| Platform ownership | Tenant, platform subscription, root management group, and responsible platform team | [Repository layout](../repository-layout.md) |
+| ALZ platform ownership | Tenant, platform subscriptions, ALZ root management group, and responsible platform team | [Product mandate](../product-mandate.md) |
 | Placement | Management-group IDs for each supported archetype | [Archetypes](../archetypes.md) |
 | Billing | Agreement type, scope IDs, named scope keys including `default`, and the person authorized to grant billing roles | [Billing scopes](../billing-scopes.md) |
 | Networking | Whether requests need a spoke network or hub peering, and the existing hub VNet resource ID when used | [Archetypes](../archetypes.md) |

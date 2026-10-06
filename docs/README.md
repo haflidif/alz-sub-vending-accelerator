@@ -4,6 +4,10 @@ Choose the path for your role. The accelerator source is used to establish
 the service; the generated vending repository is where operators and workload
 teams manage subscription requests.
 
+The [product mandate](product-mandate.md) defines the permanent boundary: the
+official ALZ Accelerator establishes the platform landing zone, then this
+accelerator provides governed application landing-zone subscription vending.
+
 ## Platform operators
 
 | Phase | Outcome |
@@ -27,6 +31,7 @@ YAML and the references below when reviewing placement, ownership, and cost.
 
 | Topic | Reference |
 |---|---|
+| Mission, required ALZ foundation, and scope boundary | [Product mandate](product-mandate.md) |
 | Concepts and deployment flow | [Architecture](architecture.md) and [glossary](glossary.md) |
 | Source versus generated files | [Repository layout](repository-layout.md) |
 | Request fields | [Subscription contract](../landingzones/README.md) and [schema validation](schema-validation.md) |

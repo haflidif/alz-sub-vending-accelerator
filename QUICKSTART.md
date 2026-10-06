@@ -4,10 +4,16 @@ This is the short operator path to a working subscription-vending service.
 If your platform team has already provided a vending repository, skip setup
 and follow [Your first subscription](docs/consumers/first-subscription.md).
 
+This accelerator starts after the official ALZ Accelerator has established
+the platform landing zone. It consumes that platform's management groups,
+governance, connectivity, and shared services. It does not create or replace
+the platform foundation. Review the [product mandate](docs/product-mandate.md)
+before planning the vending service.
+
 ## Planning
 
-Choose Terraform or Bicep, identify your existing platform and billing scopes,
-and agree on archetypes, networking, tags, and reviewers.
+Choose Terraform or Bicep, identify the ALZ platform outputs and billing
+scopes, and agree on archetypes, networking, tags, and reviewers.
 Record these decisions using [Planning](docs/operators/planning.md).
 An established repository cannot switch engines in place.
 

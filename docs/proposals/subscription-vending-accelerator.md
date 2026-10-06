@@ -7,6 +7,11 @@
 > onboarding are deferred extensions. The versioned starter contract in
 > [starter-contract.md](../starter-contract.md) defines the current delivery
 > boundary.
+>
+> Permanent product mandate, 2026-10-01: this accelerator is the complementary
+> subscription-vending step after the official ALZ Accelerator establishes the
+> platform landing zone. It consumes that foundation and does not support an
+> alternative platform authority.
 
 ## Problem statement
 
@@ -40,9 +45,11 @@ subscription-vending phase:
 3. Vend and maintain application landing zones through reviewed requests.
 4. Hand off application deployment to workload teams.
 
-The platform can have been deployed by the ALZ accelerator or another approach.
-Require compatible management groups, billing access, and platform integrations,
-not a specific platform deployment history.
+The official ALZ Accelerator establishes the platform landing zone first.
+Require its management groups, governance, connectivity, shared services,
+billing access, and other platform integrations as the foundation for
+subscription vending. This accelerator must not establish a competing platform
+authority.
 
 This is an independently maintained project aligned with ALZ, not an official
 Azure product or an endorsed ALZ extension. Azure organization hosting,
