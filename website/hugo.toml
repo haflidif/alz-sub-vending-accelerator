@@ -30,7 +30,7 @@ tag = "tags"
 
 [params]
 geekdocToC = 3
-geekdocMenuBundle = false
+geekdocMenuBundle = true
 geekdocCollapseAllSections = false
 geekdocAlign = "left"
 geekdocNav = true

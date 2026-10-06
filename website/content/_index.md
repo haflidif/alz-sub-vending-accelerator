@@ -1,6 +1,5 @@
 ---
 title: Azure Subscription Vending Accelerator
-geekdocEditPath: edit/main/website
 ---
 
 # Azure Subscription Vending Accelerator

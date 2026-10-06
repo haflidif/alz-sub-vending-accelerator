@@ -99,7 +99,10 @@ def main() -> int:
                 f"{relative}: expected one h1, found {page.heading_one_count}"
             )
         for edit_link in page.edit_links:
-            if "website/content/content/" in edit_link or any(
+            if any(
+                duplicate in edit_link
+                for duplicate in ("website/content/content/", "website/website/")
+            ) or any(
                 marker in edit_link
                 for marker in ("C:/", "C%3A/", "/Users/", "/home/")
             ):

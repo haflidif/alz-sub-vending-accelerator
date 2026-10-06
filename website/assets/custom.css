@@ -115,8 +115,56 @@ pre {
 }
 
 .gdoc-nav {
-  background: var(--cp-bg);
+  background: transparent;
   border-right: 1px solid var(--cp-border);
+}
+
+.gdoc-nav nav {
+  padding-right: 1rem;
+}
+
+.gdoc-nav--main > h2 {
+  display: none;
+}
+
+.gdoc-nav > nav > .gdoc-nav--main > .gdoc-nav__list > li {
+  margin-block: 0 1.1rem;
+}
+
+.gdoc-nav > nav > .gdoc-nav--main > .gdoc-nav__list > li > span.flex {
+  color: var(--cp-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.5rem;
+  text-transform: uppercase;
+}
+
+.gdoc-nav__list .gdoc-nav__list {
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.gdoc-nav__entry {
+  border-left: 3px solid transparent;
+  border-radius: 2px;
+  color: var(--cp-text-muted);
+  display: block;
+  padding: 0.35rem 0.5rem;
+  width: 100%;
+}
+
+.gdoc-nav__entry:hover,
+.gdoc-nav__entry:focus {
+  background: var(--cp-highlight);
+  color: var(--cp-text);
+}
+
+.gdoc-nav__entry.is-active {
+  background: var(--cp-accent-soft);
+  border-left-color: var(--cp-accent);
+  color: var(--cp-accent);
+  font-weight: 600;
 }
 
 .gdoc-page {
