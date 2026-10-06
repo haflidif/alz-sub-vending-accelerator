@@ -90,20 +90,15 @@ must not create a second source of truth.
 
 ## Product sequence
 
-```text
-Official ALZ Accelerator
-        |
-        v
-Established platform landing zone
-        |
-        v
-Subscription Vending Accelerator
-        |
-        v
-Governed application landing-zone subscriptions
-        |
-        v
-Workload deployment
+```mermaid
+flowchart LR
+    alz["Official ALZ Accelerator"]
+    platform["Established platform landing zone"]
+    vending["Subscription Vending Accelerator"]
+    subscriptions["Governed application<br/>landing-zone subscriptions"]
+    workloads["Workload deployment"]
+
+    alz --> platform --> vending --> subscriptions --> workloads
 ```
 
 This sequence is the permanent product mandate, not a temporary implementation

@@ -8,17 +8,14 @@ The official ALZ Accelerator runs first and establishes the platform landing
 zone. This accelerator starts at the application landing-zone subscription
 lifecycle and integrates with the existing platform.
 
-```text
-Official ALZ Accelerator
-        |
-        v
-Management groups, policy, connectivity, management, and security foundations
-        |
-        v
-Subscription Vending Accelerator
-        |
-        v
-Governed application landing-zone subscriptions
+```mermaid
+flowchart LR
+    alz["Official ALZ Accelerator"]
+    platform["Platform landing zone<br/>Governance and shared services"]
+    vending["Subscription Vending Accelerator"]
+    subscriptions["Governed application<br/>landing-zone subscriptions"]
+
+    alz --> platform --> vending --> subscriptions
 ```
 
 The platform landing zone remains the source of truth for its hierarchy,
@@ -28,38 +25,23 @@ those foundations and does not recreate them. See the
 
 ## Components
 
-```text
-                    ┌─────────────────────────────────────────────┐
-                    │            Pull Request opened              │
-                    │  Adds/edits landingzones/<archetype>/       │
-                    │              <sub-name>.yaml                │
-                    └────────────────┬────────────────────────────┘
-                                     │
-                                     ▼
-                    ┌─────────────────────────────────────────────┐
-                    │ pr-validate.yml — discover changed subs     │
-                    │  → Terraform plan or Bicep what-if per sub  │
-                    │  → posts preview as PR comment              │
-                    └────────────────┬────────────────────────────┘
-                                     │ merge to main
-                                     ▼
-                    ┌─────────────────────────────────────────────┐
-                    │ apply.yml — discover changed subs           │
-                    │  → selected engine deploys per sub          │
-                    │  → uses GitHub Environment "production"     │
-                    │    for required-reviewer approval           │
-                    └────────────────┬────────────────────────────┘
-                                     │
-                                     ▼
-                    ┌─────────────────────────────────────────────┐
-                    │  Azure Verified Modules vending pattern     │
-                    │   • creates subscription alias              │
-                    │   • associates with management group        │
-                    │   • registers resource providers            │
-                    │   • peers to hub (corp/online if enabled)   │
-                    │   • applies tags, RBAC, budget, UMI         │
-                    └─────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    request["Subscription request<br/>YAML pull request"]
+    preview["Validate and preview<br/>Schema plus plan or what-if"]
+    approval["Review and approve<br/>Merge plus production gate"]
+    deploy["Deploy<br/>Selected engine and AVM"]
+    result["Governed subscription<br/>Placement, network, tags, RBAC, and budget"]
+
+    request --> preview --> approval --> deploy --> result
 ```
+
+`pr-validate.yml` discovers changed requests, runs a Terraform plan or Bicep
+what-if for each subscription, and posts the preview on the pull request.
+After merge and production approval, `apply.yml` invokes the selected engine.
+The AVM vending pattern creates the subscription alias, associates the
+management group, registers providers, optionally peers the hub, and applies
+the requested governance settings.
 
 ## Engine layouts
 
@@ -138,17 +120,20 @@ so cross-boundary tooling and reporting works seamlessly.
 
 Merged in this order (later wins on conflict — governed tags ALWAYS win):
 
+```mermaid
+flowchart LR
+    caller["Caller tags<br/>Free-form request tags"]
+    mandatory["Mandatory tags<br/>CAF platform baseline"]
+    archetype["Archetype tags<br/>corp, online, or sandbox"]
+    identity["Identity tags<br/>Ownership, workload, environment, and cost"]
+
+    caller --> mandatory --> archetype --> identity
 ```
-caller tags            (sub YAML `tags` map — free-form, reserved keys rejected)
-   ↓
-mandatory tags         managedby, source, deployedby (CAF defaults)
-   ↓
-archetype.extra_tags   archetype = corp | online | sandbox
-   ↓
-identity_tags          businessowner, technicalcontact,
-                       costcenter, workloadname, environment,
-                       configured cost-allocation tag (when set)
-```
+
+Reserved caller keys are rejected. The mandatory layer supplies `managedby`,
+`source`, and `deployedby`. The final governed layer supplies ownership,
+technical contact, cost center, workload, environment, and the configured
+cost-allocation tag.
 
 See [docs/tagging.md](tagging.md) for the full CAF baseline and customization
 guide.

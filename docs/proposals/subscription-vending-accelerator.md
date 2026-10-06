@@ -115,24 +115,22 @@ costs need separate consideration.
 
 Separate orchestration, bootstrap, starters, and routine vending.
 
-```text
-Operator configuration
-        |
-Dedicated PowerShell entry point
-        |
-Prerequisites -> configuration -> validation -> bootstrap
-                                                |
-                           Upstream bootstrap components + thin adapter
-                                                |
-                                     Generated vending repository
-                                                |
-Subscription YAML -> shared contract resolver -> review and approval
-                                                |
-                                   Selected deployment engine
-                                   /                        \
-                           Terraform AVM                 Bicep AVM
-                                   \                        /
-                                   Deployment receipt and handoff
+```mermaid
+flowchart TB
+    operator["Operator configuration"]
+    bootstrap["PowerShell orchestration<br/>Prepare, validate, and bootstrap"]
+    repository["Generated vending repository"]
+    request["Subscription request<br/>Shared YAML contract"]
+    approval["Resolve, preview, and approve"]
+    engine["Selected deployment engine"]
+    terraform["Terraform AVM"]
+    bicep["Bicep AVM"]
+    receipt["Deployment receipt and handoff"]
+
+    operator --> bootstrap --> repository
+    repository --> request --> approval --> engine
+    engine --> terraform --> receipt
+    engine --> bicep --> receipt
 ```
 
 ### PowerShell orchestration

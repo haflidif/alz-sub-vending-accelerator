@@ -50,12 +50,14 @@ generated repository has been handed over.
 
 ## Phases
 
-```
-┌───────────┐   ┌───────────┐   ┌───────────┐   ┌───────────┐
-│ preflight │ → │ configure │ → │ validate  │ → │ terraform │
-└───────────┘   └───────────┘   └───────────┘   └───────────┘
-   tools           prompts        Azure + GH     init/plan/apply
-   + auth          + sidecar      sanity check
+```mermaid
+flowchart LR
+    preflight["preflight<br/>Tools and authentication"]
+    configure["configure<br/>Prompts and sidecar"]
+    validate["validate<br/>Azure and GitHub checks"]
+    terraform["terraform<br/>Initialize, plan, and apply"]
+
+    preflight --> configure --> validate --> terraform
 ```
 
 Each phase is **individually runnable** via `-Phase <name>`. The default
@@ -262,25 +264,14 @@ want to delete the resources before re-running with corrected inputs.
 
 ### How destroy mode picks its path
 
-```
-                  ┌──────────────────────────────┐
-                  │ Local terraform.tfstate file │
-                  │ exists in bootstrap/ ?       │
-                  └──────────────┬───────────────┘
-                                 │
-                ┌────────────────┴────────────────┐
-                │                                 │
-              YES                                 NO
-                │                                 │
-        ┌───────▼────────┐               ┌────────▼─────────┐
-        │ terraform      │               │ Force-cleanup    │
-        │ destroy        │               │ via az + gh APIs │
-        │ (preferred)    │               │ (fallback)       │
-        └────────────────┘               └──────────────────┘
-        Knows EXACTLY what to            Reads the sidecar
-        delete because state is          (.bootstrap-inputs.json)
-        intact. Cleanest path.           and best-effort deletes
-                                          by name.
+```mermaid
+flowchart TB
+    state{"Is local Terraform state available?"}
+    destroy["Terraform destroy<br/>Exact state-based cleanup"]
+    cleanup["Force cleanup<br/>Best-effort API cleanup"]
+
+    state -->|Yes| destroy
+    state -->|No| cleanup
 ```
 
 `terraform destroy` is always the cleanest option when state is intact.
@@ -291,14 +282,14 @@ for.
 
 ### Destroy-mode flow
 
-```
-┌───────────┐   ┌───────────┐   ┌───────────────────────┐
-│ preflight │ → │ discover  │ → │ destroy + reminders   │
-└───────────┘   └───────────┘   └───────────────────────┘
-   tools          read-only        terraform destroy
-   + auth         probe of         OR force-cleanup
-   + tenant       Azure + GH       + billing-scope
-   match                           reminders
+```mermaid
+flowchart LR
+    preflight["preflight<br/>Tools, authentication, tenant"]
+    discover["discover<br/>Read-only Azure and GitHub probe"]
+    destroy["destroy<br/>State or API cleanup"]
+    remind["remind<br/>Billing-scope follow-up"]
+
+    preflight --> discover --> destroy --> remind
 ```
 
 Destroy mode is a single fixed flow (no `-Phase` selector). `-WhatIf`

@@ -39,7 +39,7 @@ https://haflidif.github.io/alz-sub-vending-accelerator/
 ```powershell
 pwsh ./website/Install-Theme.ps1
 hugo --source website --minify --gc
-python ./website/scripts/check-site.py `
+python ./website/scripts/check-site.py ./website/public `
   ./website/public `
   --base-path /alz-sub-vending-accelerator/
 ```
