@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img">
+  <title>Subscription Vending Accelerator</title>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#ffffff"/>
+  <rect x="24" y="15" width="80" height="98" rx="18" fill="#171717"/>
+  <rect x="33" y="25" width="54" height="52" rx="10" fill="#ffffff"/>
+  <rect x="40" y="32" width="40" height="16" rx="4" fill="#171717"/>
+  <rect x="40" y="53" width="40" height="16" rx="4" fill="#171717"/>
+  <circle cx="49" cy="40" r="3.2" fill="#ffffff"/>
+  <circle cx="49" cy="61" r="3.2" fill="#ffffff"/>
+  <path d="m46.7 42.3-4.2 4.2m2.3 16.8-4.2 4.2M58 40h15m-15 21h15" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-width="2.6"/>
+  <rect x="91" y="34" width="8" height="18" rx="3" fill="#ffffff"/>
+  <rect x="35" y="80" width="58" height="13" rx="4" fill="#ffffff"/>
+  <rect x="42" y="88" width="50" height="27" rx="7" fill="#171717" stroke="#ffffff" stroke-width="2"/>
+  <circle cx="54" cy="101" r="4" fill="#ffffff"/>
+  <path d="m51 104-5 5M65 99h18m-18 8h12" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-width="3"/>
+</svg>

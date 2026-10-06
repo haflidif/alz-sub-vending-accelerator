@@ -1,4 +1,5 @@
 baseURL = "https://haflidif.github.io/alz-sub-vending-accelerator/"
+relativeURLs = true
 locale = "en-US"
 title = "Azure Subscription Vending Accelerator"
 description = "Documentation for an independently maintained accelerator that adds governed application landing-zone subscription vending after the official Azure Landing Zones Accelerator."
