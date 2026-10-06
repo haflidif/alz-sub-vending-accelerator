@@ -12,6 +12,7 @@ class PageParser(html.parser.HTMLParser):
         super().__init__()
         self.ids: set[str] = set()
         self.links: list[str] = []
+        self.images: list[str] = []
         self.edit_links: list[str] = []
         self.heading_one_count = 0
         self.has_language = False
@@ -32,6 +33,8 @@ class PageParser(html.parser.HTMLParser):
             self.links.append(attributes["href"] or "")
             if attributes.get("rel") == "edit":
                 self.edit_links.append(attributes["href"] or "")
+        if tag == "img" and attributes.get("src"):
+            self.images.append(attributes["src"] or "")
         if tag == "h1":
             self.heading_one_count += 1
         if tag == "html" and attributes.get("lang"):
@@ -111,6 +114,20 @@ def main() -> int:
     for source_file, page in pages.items():
         if page.is_redirect:
             continue
+        for src in page.images:
+            parsed = urllib.parse.urlsplit(src)
+            if parsed.scheme or parsed.netloc or src.startswith("data:"):
+                continue
+            current_url = "/" + source_file.relative_to(output_root).as_posix()
+            if current_url.endswith("index.html"):
+                current_url = current_url[: -len("index.html")]
+            resolved_url = urllib.parse.urljoin(current_url, parsed.path)
+            target_file = output_path_for_url(output_root, resolved_url, base_path)
+            if target_file is not None and not target_file.exists():
+                errors.append(
+                    f"{source_file.relative_to(output_root)}: broken image {src}"
+                )
+
         for href in page.links:
             parsed = urllib.parse.urlsplit(href)
             if parsed.scheme or parsed.netloc or href.startswith(("mailto:", "tel:")):

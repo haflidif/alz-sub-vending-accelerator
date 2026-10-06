@@ -25,21 +25,27 @@ Landing Zones Accelerator has established the platform foundation.
 
 ## Product sequence
 
-```text
-Official ALZ Accelerator
-        |
-        v
-Established platform landing zone
-        |
-        v
-Subscription Vending Accelerator
-        |
-        v
-Governed application landing-zone subscriptions
-        |
-        v
-Workload deployment
-```
+<figure class="product-sequence">
+  <a
+    href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/design-area/subscription-vending"
+  >
+    <img
+      src="images/subscription-vending-high-res.png"
+      width="2184"
+      height="280"
+      style="display: block; width: 100%; max-width: 100%; height: auto"
+      alt="Four-step subscription lifecycle: create platform subscriptions, create the platform, establish subscription vending, and deploy the workload. The first two steps belong to the platform, subscription vending spans the platform and application boundary, and workload deployment belongs to the application."
+    />
+  </a>
+  <figcaption>
+    Source:
+    <a
+      href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/design-area/subscription-vending"
+    >Subscription vending, Microsoft Cloud Adoption Framework</a>.
+    Licensed under
+    <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
+  </figcaption>
+</figure>
 
 The established ALZ platform remains authoritative for management groups,
 Azure Policy, connectivity, management, monitoring, security, identity, and

@@ -222,6 +222,24 @@ pre {
   border-color: var(--cp-border);
 }
 
+.product-sequence {
+  margin: 1.5rem 0;
+}
+
+.product-sequence img {
+  background: #ffffff;
+  border: 1px solid var(--cp-border);
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.product-sequence figcaption {
+  color: var(--cp-text-muted);
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+}
+
 .gdoc-search__input,
 .gdoc-search__input:focus {
   background: var(--cp-surface);
