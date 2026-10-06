@@ -10,14 +10,25 @@ Use Hugo Extended `0.167.0` or newer. The pinned Geekdoc release requires Hugo
 
 ## Preview locally
 
-Install the verified theme and start Hugo:
+Install Hugo Extended on Windows if needed:
 
 ```powershell
-pwsh ./website/Install-Theme.ps1
-hugo server --source website --buildDrafts
+winget install --id Hugo.Hugo.Extended --exact --source winget
 ```
 
-Open the local URL shown by Hugo. The production site uses:
+Restart the terminal after installing Hugo, then run the version-checking
+preview wrapper:
+
+```powershell
+pwsh ./website/Start-Preview.ps1
+```
+
+The wrapper installs the verified theme, rejects incompatible or non-extended
+Hugo versions with an actionable message, and serves the site at
+`http://localhost:1313/`. Additional Hugo server arguments can be appended to
+the command.
+
+The production site uses:
 
 ```text
 https://haflidif.github.io/alz-sub-vending-accelerator/
