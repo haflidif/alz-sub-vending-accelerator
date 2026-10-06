@@ -98,9 +98,7 @@ pre {
 }
 
 .gdoc-brand__img {
-  display: block;
-  height: 2.75rem;
-  width: 2.75rem;
+  display: none;
 }
 
 .gdoc-brand__title {

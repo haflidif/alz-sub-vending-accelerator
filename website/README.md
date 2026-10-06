@@ -46,15 +46,3 @@ python ./website/scripts/check-site.py `
 
 The checker validates internal links and fragments, document titles, language
 metadata, and the main-content landmark.
-
-## Brand assets
-
-The icon-only SVG master is the source of truth for accelerator branding:
-
-- `static/brand/subscription-vending-mark.svg`: primary color mark
-- `static/brand/subscription-vending-mark-monochrome-dark.svg`: white mark on dark background
-- `static/brand/subscription-vending-mark-monochrome-light.svg`: dark mark on light background
-
-Use the icon without a wordmark for favicons, site headers, repository avatars,
-and compact badges. Derive raster sizes from the SVG master rather than
-maintaining separately edited PNG artwork.
