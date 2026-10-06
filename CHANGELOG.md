@@ -9,6 +9,19 @@ template itself, not the AVM modules pinned by the engines. See
 
 ## [Unreleased]
 
+### Added
+
+- Added a permanent product mandate defining the accelerator as the governed
+  subscription-vending step after the official ALZ Accelerator establishes the
+  platform landing zone.
+
+### Changed
+
+- Clarified across entry-point, planning, architecture, and contribution
+  guidance that platform management groups, policy, connectivity, management,
+  monitoring, security, identity, and shared services remain owned by the ALZ
+  platform.
+
 ## [0.4.0] - 2026-10-01
 
 ### Added

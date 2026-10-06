@@ -7,6 +7,23 @@ state. Bicep uses the Azure Verified Modules subscription-vending pattern with
 management-group deployments through
 [`br/public:avm/ptn/lz/sub-vending:0.8.0`][bicep-avm].
 
+## Product mandate
+
+This accelerator is the **next operational step after the official Azure
+Landing Zones Accelerator has built the platform landing zone**. It is a
+complementary accelerator for governed application landing-zone subscription
+vending.
+
+The established ALZ platform remains authoritative for management groups,
+Azure Policy, connectivity, management, monitoring, security, identity, and
+shared platform resources. This accelerator consumes those foundations to
+create and maintain application landing-zone subscriptions. It does not deploy
+or replace the platform landing zone, and it does not deploy workload
+applications.
+
+See [Product mandate](docs/product-mandate.md) for the permanent mission,
+required platform foundation, ownership boundary, and design rules.
+
 ## Two audiences, two paths
 
 | Your task | Start here |

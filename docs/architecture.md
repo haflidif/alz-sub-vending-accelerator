@@ -2,6 +2,30 @@
 
 This document describes how subscription vending works end-to-end in this repo.
 
+## Platform relationship
+
+The official ALZ Accelerator runs first and establishes the platform landing
+zone. This accelerator starts at the application landing-zone subscription
+lifecycle and integrates with the existing platform.
+
+```text
+Official ALZ Accelerator
+        |
+        v
+Management groups, policy, connectivity, management, and security foundations
+        |
+        v
+Subscription Vending Accelerator
+        |
+        v
+Governed application landing-zone subscriptions
+```
+
+The platform landing zone remains the source of truth for its hierarchy,
+governance, connectivity, and shared services. Subscription vending consumes
+those foundations and does not recreate them. See the
+[product mandate](product-mandate.md).
+
 ## Components
 
 ```text

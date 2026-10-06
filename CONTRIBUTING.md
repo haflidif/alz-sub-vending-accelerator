@@ -75,6 +75,21 @@ matches the planned Git tag, including the leading `v`. Generated repositories
 record this value with the managed-file hashes used by later upgrades. Keep
 `upgrade-manifest.json` aligned with any new seeded paths or ownership changes.
 
+## Product mandate
+
+All contributions must preserve this accelerator's complementary role after
+the official ALZ Accelerator has established the platform landing zone.
+
+Changes may integrate subscription vending with ALZ platform management
+groups, policies, connectivity, AVNM, IPAM, monitoring, security, identities,
+and shared services. They must consume those platform capabilities rather than
+recreate or replace them.
+
+Do not add features that turn this repository into a competing platform
+landing-zone accelerator or a workload deployment framework. Review
+[`docs/product-mandate.md`](docs/product-mandate.md) before proposing a new
+product capability.
+
 ## Commit messages
 
 Conventional Commits:
